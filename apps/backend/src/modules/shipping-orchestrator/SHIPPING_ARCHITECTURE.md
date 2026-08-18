@@ -6,7 +6,7 @@
 > You must strictly adhere to the massive, 5-pillar architecture described below. If you are asked to work on shipping, you MUST implement these features exactly as described without narrowing the scope.
 
 ## The Vision
-This is a "God Mode" Shipping Engine. It completely overrides Medusa's native checkout to process a strict hierarchy of business rules, control exact pricing, and handle complex physical box routing (split shipments, hyperlocal bypass, etc.). It acts as a single, unified control panel.
+This is a comprehensive Shipping Engine. It completely overrides Medusa's native checkout to process a strict hierarchy of business rules, control exact pricing, and handle complex physical box routing (split shipments, hyperlocal bypass, etc.). It acts as a single, unified control panel.
 
 ---
 
