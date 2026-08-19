@@ -15,9 +15,8 @@ import { MedusaError } from "@medusajs/framework/utils"
 export class ShiprocketAPI {
   private token: string | null = null
   private tokenExpiry: number | null = null
+  private tokenCredentialFingerprint: string | null = null
   private API_URL = "https://apiv2.shiprocket.in/v1/external"
-  private email: string
-  private password: string
 
   constructor() {}
 
@@ -29,11 +28,6 @@ export class ShiprocketAPI {
     const email = settings?.api_settings?.shiprocket_email
     const password = settings?.api_settings?.shiprocket_password
 
-    if (this.token && this.tokenExpiry && Date.now() < this.tokenExpiry) {
-      // If we change credentials, we should technically invalidate, but this is fine for now
-      return this.token
-    }
-
     if (!email || !password) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
@@ -41,8 +35,17 @@ export class ShiprocketAPI {
       )
     }
 
-    console.log(`[DEBUG] Attempting Shiprocket login with email: "${email}" and password: "${password}"`)
-    
+    const fingerprint = `${email}:${password}`
+    const cacheValid =
+      this.token &&
+      this.tokenExpiry &&
+      Date.now() < this.tokenExpiry &&
+      this.tokenCredentialFingerprint === fingerprint
+
+    if (cacheValid) {
+      return this.token!
+    }
+
     const response = await fetch(`${this.API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,6 +58,7 @@ export class ShiprocketAPI {
 
     const data = await response.json()
     this.token = data.token
+    this.tokenCredentialFingerprint = fingerprint
     // Token valid for 10 days, cache for 9 days
     this.tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000
 

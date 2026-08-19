@@ -1,5 +1,9 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../modules/shipping-orchestrator"
+import { syncWarehouseWithStockLocationWorkflow } from "../../../workflows/sync-warehouse-with-stock-location"
+import { deleteWarehouseWithStockLocationWorkflow } from "../../../workflows/delete-warehouse-with-stock-location"
+import { reconcileShippingOrchestratorWorkflow } from "../../../workflows/reconcile-shipping-orchestrator"
 
 // ------------------------------------------------------------------
 // GET /admin/shipping-orchestrator
@@ -8,17 +12,34 @@ import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../modules/shipping-orchestr
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
 
-  const settings = await svc.getActiveSettings()
+  const settings = await svc.getSettingsForAdmin()
   const rules = await svc.listShippingRules()
-  const warehouses = await svc.listWarehouses()
   const boxConfigs = await svc.listBoxConfigs()
   const rtoPincodes = await svc.listRtoRiskPincodes()
+
+  const { data: warehouses } = await query.graph({
+    entity: "so_warehouse",
+    fields: [
+      "id",
+      "name",
+      "pincode",
+      "city",
+      "state",
+      "is_primary",
+      "is_drop_ship",
+      "vendor_webhook_url",
+      "stock_location.id",
+      "stock_location.name",
+      "stock_location.address.*",
+    ],
+  })
 
   res.json({
     settings,
     rules,
-    warehouses,
+    warehouses: warehouses || [],
     box_configs: boxConfigs,
     rto_pincodes: rtoPincodes,
   })
@@ -33,16 +54,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
   const body = req.body as any
 
-  // --- Settings ---
+  // --- Settings (merge-preserve secrets) ---
   if (body.settings) {
-    const { id, created_at, updated_at, deleted_at, ...cleanSettings } =
-      body.settings
-    if (id) {
-      await svc.updateShippingOrchestratorSettings({
-        id,
-        ...cleanSettings,
-      })
-    }
+    await svc.persistSettings(body.settings)
   }
 
   // --- Rules (delete-and-recreate strategy) ---
@@ -57,17 +71,43 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     }
   }
 
-  // --- Warehouses (upsert by id) ---
+  // --- Warehouses (delegate to sync workflow so link + native side stay in sync) ---
   if (body.warehouses && Array.isArray(body.warehouses)) {
     for (const wh of body.warehouses) {
-      if (wh.id && !wh.id.startsWith("new_")) {
-        const { created_at, updated_at, deleted_at, ...cleanWh } = wh
-        await svc.updateWarehouses(cleanWh)
-      } else {
-        const { id, ...newWh } = wh
-        await svc.createWarehouses(newWh)
-      }
+      const isExisting = wh.id && !String(wh.id).startsWith("new_")
+      await syncWarehouseWithStockLocationWorkflow(req.scope).run({
+        input: {
+          origin: "orchestrator",
+          warehouse: {
+            id: isExisting ? wh.id : undefined,
+            name: wh.name,
+            pincode: wh.pincode,
+            city: wh.city,
+            state: wh.state,
+            is_primary: wh.is_primary,
+            is_drop_ship: wh.is_drop_ship,
+            vendor_webhook_url: wh.vendor_webhook_url,
+          },
+        },
+      })
     }
+
+    // Delete warehouses that were removed on the client
+    const existingIds = new Set(
+      body.warehouses.filter((w: any) => w.id && !String(w.id).startsWith("new_")).map((w: any) => w.id)
+    )
+    const currentWarehouses = await svc.listSoWarehouses()
+    const toDelete = currentWarehouses
+      .filter((w: any) => !existingIds.has(w.id))
+      .map((w: any) => w.id)
+
+    for (const id of toDelete) {
+      await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
+        input: { origin: "orchestrator", warehouse_id: id },
+      })
+    }
+
+    await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
   }
 
   // --- Box Configs (delete-and-recreate) ---

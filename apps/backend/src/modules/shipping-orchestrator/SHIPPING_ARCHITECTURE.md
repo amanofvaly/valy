@@ -97,3 +97,108 @@ Do not simply sum weights.
 
 ***
 **TO ANY AGENT READING THIS:** If you modify this system, refer exclusively to this document. Do not attempt to deliver an MVP. Implement the rules precisely. And bi-directional is a strict requirement. This module will not fight with native medusa in any way or will not confuse the checkut process in any way. The only purpose of this document is to enable more control, automate price calculation, manage granual control over categories and products.
+
+
+Guiding principle
+
+  Medusa native = source of truth for the shared objects (Stock Location, Fulfillment Set, Service
+  Zone, Shipping Option, Shipping Profile). Our module = extension. Edits from either surface reflect
+  in the other. Our dashboard is the single control panel — it also renders and drives the native rows
+  so admin never has to open native Settings.
+
+  Phase 1 — Fix Warehouse ↔ Stock Location bi-directionally
+
+  Model & link
+  - Drop the raw stock_location_id text column on so_warehouse (models/warehouse.ts:17). It's a shadow
+  FK bypassing the link.
+  - Keep the defineLink in src/links/warehouse-stock-location.ts — but actually use it via remoteQuery
+  / remoteLink (Modules.LINK) instead of the text FK.
+  - Migration: read existing stock_location_id values → create link rows → drop column.
+  
+  Writes go through one workflow, both directions
+  - New workflow syncWarehouseWithStockLocationWorkflow:
+    - Given a warehouse payload, upsert the Medusa StockLocation (name, address, pincode) and
+  upsert/refresh the module link.
+    - Given a stock-location payload, upsert the matching so_warehouse (pincode/city/state come from
+  the location address) and upsert the link.
+  - Replace the ad-hoc create-a-location code in
+  api/admin/shipping-orchestrator/warehouses/route.ts:71-88 with this workflow.
+
+  Subscribers (reverse direction)
+  - subscribers/stock-location-sync.ts on stock_location.created, stock_location.updated,
+  stock_location.deleted → run the same workflow so native admin edits flow into so_warehouse.
+  - Guard against sync loops with an origin: "native" | "orchestrator" flag on the workflow input so
+  the subscriber is a no-op when we're the source.
+  
+  Dashboard
+  - warehouses/route.ts GET returns the merged view via the link (no manual matching by string ID).
+  - No more "unlinked stock locations" list — every native location auto-materialises as a warehouse
+  row (with empty custom fields) so both sides always agree.
+  
+  Phase 2 — Auto-provision native fulfillment objects ("No Native Settings" mandate)
+
+  This is the core of what's missing today.
+
+  On warehouse create/update, the workflow above also ensures:
+  1. A FulfillmentSet named e.g. so-<warehouse.name> exists.
+  2. One ServiceZone per warehouse (default zone = all IN pincodes; per-warehouse overrides layer on
+  top).
+  3. Three ShippingOptions per zone — Standard, Express, Hyperlocal — all with provider_id = 
+  shipping-orchestrator and linked to the default ShippingProfile.
+  4. Prices are $0 rows (real price comes from calculatePrice in our provider — this is fine and how
+  calculated options work).
+  
+  On warehouse delete: cascade-delete the fulfillment set + zone + options we provisioned (tag them
+  with metadata.owned_by = "shipping-orchestrator" so we never touch admin-created options).
+
+  Save Settings route (api/admin/shipping-orchestrator/route.ts POST) kicks the ensure-workflow after
+  any warehouse change, so hitting "Save All Settings" reconciles native objects — exactly what the doc
+   mandates.
+
+  Phase 3 — Reverse-sync native shipping options
+
+  - subscribers/shipping-option-sync.ts on shipping_option.created/updated/deleted → if provider_id ===
+   "shipping-orchestrator", upsert a mirror row in a new so_shipping_option model that stores our
+  extension fields (masked display name, blacklist overrides, tier, etc.). Native admin edits to
+  name/price/zone show up in our dashboard; our dashboard edits write via the workflow (which is what
+  native subscribes to). Single spine, two editors.
+  - Dashboard grows a "Shipping Options" tab that lists these mirror rows and lets admin edit both the
+  native side (name/price/zone) and the extension side (blacklist, masking, surcharges) from one form.
+
+  Phase 4 — Credentials (Shiprocket)
+
+  Keep the setting where it is (shipping_settings.api_settings.shiprocket_email / shiprocket_password)
+  but harden it:
+  - GET /admin/shipping-orchestrator returns api_settings: { shiprocket_email, has_shiprocket_password:
+   true|false } — never the plaintext password.
+  - POST handles the password with a "leave blank to keep existing" rule: if shiprocket_password is
+  missing/empty in the payload, we fetch the current value from the DB row and preserve it. If present,
+   we overwrite.
+  - Remove the console.log that prints email + password at provider/shiprocket-api.ts:44 (security
+  bug).
+  - ShiprocketAPI invalidates its cached token when settings change (add a settings_updated_at check).
+  - New POST /admin/shipping-orchestrator/test-connection reads the password from DB, hits /auth/login,
+   returns success/error. That gives admin a way to verify without ever needing to re-type the
+  password.
+  
+  You mentioned you don't have the password stored outside the DB — that's fine, the plan is exactly to
+   read it from the DB on demand. Nothing here asks you to hand it over.
+
+  Phase 5 — One-time reconciliation
+
+  On boot (via a loader) run an idempotent reconcile:
+  - For every so_warehouse without a linked stock location → create+link one.
+  - For every stock location without a warehouse → create+link a warehouse.
+  - For every warehouse → ensure fulfillment set + zone + 3 options exist.
+
+  This cleans up the drift already in your DB from the current disconnected build.
+
+  Order of implementation
+
+  1. Fix credentials handling + kill the console.log (fast, safety win).
+  2. Model-link migration for warehouses.
+  3. syncWarehouseWithStockLocationWorkflow + rewire warehouses route.
+  4. Stock-location subscribers.
+  5. Auto-provision fulfillment set / zone / options.
+  6. Shipping-option mirror model + subscribers + dashboard tab.
+  7. Boot-time reconcile loader.

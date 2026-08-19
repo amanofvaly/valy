@@ -1,95 +1,97 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../../modules/shipping-orchestrator"
-import { Modules } from "@medusajs/framework/utils"
+import { syncWarehouseWithStockLocationWorkflow } from "../../../../workflows/sync-warehouse-with-stock-location"
+import { deleteWarehouseWithStockLocationWorkflow } from "../../../../workflows/delete-warehouse-with-stock-location"
+import { reconcileShippingOrchestratorWorkflow } from "../../../../workflows/reconcile-shipping-orchestrator"
 
 // ------------------------------------------------------------------
 // GET /admin/shipping-orchestrator/warehouses
-// Returns warehouses merged with Medusa stock locations
+// Returns warehouses joined with their linked stock locations via
+// the module link (source of truth).
 // ------------------------------------------------------------------
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
-  const stockLocationService = req.scope.resolve(Modules.STOCK_LOCATION) as any
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
 
-  const warehouses = await svc.listWarehouses()
-
-  // Enrich with Medusa stock location data
-  let stockLocations: any[] = []
-  try {
-    stockLocations = await stockLocationService.listStockLocations()
-  } catch {
-    // Stock location module may not be fully configured
-  }
-
-  const enriched = warehouses.map((wh: any) => {
-    const linked = stockLocations.find(
-      (sl: any) => sl.id === wh.stock_location_id
-    )
-    return {
-      ...wh,
-      stock_location: linked || null,
-    }
+  const { data: warehouses } = await query.graph({
+    entity: "so_warehouse",
+    fields: [
+      "id",
+      "name",
+      "pincode",
+      "city",
+      "state",
+      "is_primary",
+      "is_drop_ship",
+      "vendor_webhook_url",
+      "stock_location.id",
+      "stock_location.name",
+      "stock_location.address.*",
+    ],
   })
 
-  // Also include unlinked stock locations so the admin can link them
-  const linkedIds = new Set(
-    warehouses
-      .map((wh: any) => wh.stock_location_id)
-      .filter(Boolean)
-  )
-  const unlinked = stockLocations.filter(
-    (sl: any) => !linkedIds.has(sl.id)
-  )
+  const enriched = (warehouses || []).map((wh: any) => ({
+    ...wh,
+    stock_location: wh.stock_location || null,
+    stock_location_id: wh.stock_location?.id || null,
+  }))
 
-  res.json({
-    warehouses: enriched,
-    unlinked_stock_locations: unlinked,
-  })
+  res.json({ warehouses: enriched })
 }
 
 // ------------------------------------------------------------------
 // POST /admin/shipping-orchestrator/warehouses
-// Create or update a warehouse, optionally linking to a stock location
+// Create or update. Body: warehouse fields. The workflow guarantees
+// a matching Medusa StockLocation exists and is linked bi-directionally.
 // ------------------------------------------------------------------
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
-  const stockLocationService = req.scope.resolve(Modules.STOCK_LOCATION) as any
   const body = req.body as any
 
-  let warehouse: any
+  const { result } = await syncWarehouseWithStockLocationWorkflow(
+    req.scope
+  ).run({
+    input: {
+      origin: "orchestrator",
+      warehouse: {
+        id: body.id,
+        name: body.name,
+        pincode: body.pincode,
+        city: body.city,
+        state: body.state,
+        is_primary: body.is_primary,
+        is_drop_ship: body.is_drop_ship,
+        vendor_webhook_url: body.vendor_webhook_url,
+      },
+    },
+  })
 
-  if (body.id) {
-    // Update existing
-    const { created_at, updated_at, deleted_at, stock_location, ...clean } = body
-    warehouse = await svc.updateWarehouses(clean)
-  } else {
-    // Create new
-    const { stock_location, ...newData } = body
+  // Reconcile once so native fulfillment set / zone / options track the
+  // (possibly new) primary warehouse.
+  await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
 
-    // If no stock_location_id provided, also create a Medusa stock location
-    if (!newData.stock_location_id && newData.name) {
-      try {
-        const created = await stockLocationService.createStockLocations({
-          name: newData.name,
-          address: {
-            address_1: "",
-            city: newData.city || "",
-            province: newData.state || "",
-            postal_code: newData.pincode || "",
-            country_code: "in",
-          },
-        })
-        newData.stock_location_id = created.id
-      } catch (e: any) {
-        // Non-fatal: warehouse can exist without stock location link
-      }
-    }
+  // Return the fresh row with link join, so the UI sees the same shape as GET
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
+  const { data } = await query.graph({
+    entity: "so_warehouse",
+    fields: [
+      "id",
+      "name",
+      "pincode",
+      "city",
+      "state",
+      "is_primary",
+      "is_drop_ship",
+      "vendor_webhook_url",
+      "stock_location.id",
+      "stock_location.name",
+      "stock_location.address.*",
+    ],
+    filters: { id: result.warehouse_id },
+  })
 
-    warehouse = await svc.createWarehouses(newData)
-  }
-
-  res.json({ warehouse })
+  res.json({ warehouse: data?.[0] || null })
 }
 
 // ------------------------------------------------------------------
@@ -97,12 +99,21 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 // ------------------------------------------------------------------
 
 export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
-  const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
   const body = req.body as any
 
-  if (body.id) {
-    await svc.deleteWarehouses([body.id])
+  if (!body.id) {
+    res.status(400).json({ error: "id is required" })
+    return
   }
+
+  await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
+    input: {
+      origin: "orchestrator",
+      warehouse_id: body.id,
+    },
+  })
+
+  await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
 
   res.json({ success: true })
 }

@@ -1,5 +1,6 @@
 export { ShippingOrchestratorSettings } from "./shipping-settings"
 export { ShippingRule } from "./shipping-rule"
-export { Warehouse } from "./warehouse"
+export { SoWarehouse } from "./warehouse"
 export { BoxConfig } from "./box-config"
 export { RtoRiskPincode } from "./rto-risk-pincode"
+export { ShippingOptionExtension } from "./shipping-option-extension"

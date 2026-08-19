@@ -2,18 +2,20 @@ import { MedusaService } from "@medusajs/framework/utils"
 import {
   ShippingOrchestratorSettings,
   ShippingRule,
-  Warehouse,
+  SoWarehouse,
   BoxConfig,
   RtoRiskPincode,
+  ShippingOptionExtension,
 } from "./models"
 import { ShiprocketAPI } from "./provider/shiprocket-api"
 
 class ShippingOrchestratorService extends MedusaService({
   ShippingOrchestratorSettings,
   ShippingRule,
-  Warehouse,
+  SoWarehouse,
   BoxConfig,
   RtoRiskPincode,
+  ShippingOptionExtension,
 }) {
   options_: any
   shiprocketApi: ShiprocketAPI
@@ -45,18 +47,76 @@ class ShippingOrchestratorService extends MedusaService({
   }
 
   /**
+   * Returns settings with credentials stripped and replaced by
+   * a boolean flag. Safe to return to the admin UI.
+   */
+  async getSettingsForAdmin() {
+    const settings = await this.getActiveSettings()
+    const apiSettings = (settings.api_settings as any) || {}
+    const { shiprocket_password, ...restApiSettings } = apiSettings
+
+    return {
+      ...settings,
+      api_settings: {
+        ...restApiSettings,
+        has_shiprocket_password: Boolean(shiprocket_password),
+      },
+    }
+  }
+
+  /**
+   * Merge incoming settings with what's already stored, preserving any
+   * secret fields (e.g. shiprocket_password) when the caller sends them
+   * blank. Callers should not need to know about individual secret keys.
+   */
+  async persistSettings(incoming: Record<string, any>) {
+    const current = await this.getActiveSettings()
+    const currentApi = (current.api_settings as any) || {}
+    const incomingApi = incoming.api_settings || {}
+
+    const mergedApi: Record<string, any> = { ...currentApi, ...incomingApi }
+
+    // Strip UI-only marker fields
+    delete mergedApi.has_shiprocket_password
+
+    // Preserve password if caller sent it blank or omitted
+    if (!incomingApi.shiprocket_password) {
+      if (currentApi.shiprocket_password) {
+        mergedApi.shiprocket_password = currentApi.shiprocket_password
+      } else {
+        delete mergedApi.shiprocket_password
+      }
+    }
+
+    const {
+      id,
+      created_at,
+      updated_at,
+      deleted_at,
+      api_settings: _ignoredApiSettings,
+      ...rest
+    } = incoming
+
+    return await this.updateShippingOrchestratorSettings({
+      id: current.id,
+      ...rest,
+      api_settings: mergedApi,
+    })
+  }
+
+  /**
    * Find the warehouse whose pincode matches, for hyperlocal check.
    */
-  async getWarehouseForPincode(pincode: string) {
-    const warehouses = await this.listWarehouses({ pincode })
+  async getSoWarehouseForPincode(pincode: string) {
+    const warehouses = await this.listSoWarehouses({ pincode })
     return warehouses.length > 0 ? warehouses[0] : null
   }
 
   /**
    * Get the primary warehouse (fallback origin).
    */
-  async getPrimaryWarehouse() {
-    const warehouses = await this.listWarehouses({ is_primary: true })
+  async getPrimarySoWarehouse() {
+    const warehouses = await this.listSoWarehouses({ is_primary: true })
     return warehouses.length > 0 ? warehouses[0] : null
   }
 

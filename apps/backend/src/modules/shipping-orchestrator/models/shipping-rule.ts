@@ -7,6 +7,7 @@ export const ShippingRule = model.define("shipping_rule", {
   target_type: model.enum([
     "category",
     "product",
+    "variant",
     "pincode",
     "customer_group",
   ]),
@@ -23,6 +24,8 @@ export const ShippingRule = model.define("shipping_rule", {
     "cod_block",
     "cod_premium",
     "b2b_override",
+    "add_surcharge_flat",
+    "add_surcharge_percent",
   ]),
 
   // Configuration payload (rate amounts, pincode arrays, etc.)

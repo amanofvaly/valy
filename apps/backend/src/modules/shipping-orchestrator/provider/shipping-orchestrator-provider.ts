@@ -105,7 +105,15 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       // --- Load all config from DB ---
       const settings = await this.svc_.getActiveSettings()
       const rules = await this.svc_.listShippingRules()
-      const warehouses = await this.svc_.listWarehouses()
+      const warehouses = await this.svc_.listSoWarehouses()
+
+      // --- Per-option extension (masking, per-option blacklist, surcharge) ---
+      const optionExtensions = optionData?.id
+        ? await this.svc_.listShippingOptionExtensions({
+            native_option_id: optionData.id,
+          })
+        : []
+      const optionExtension = optionExtensions[0] || null
 
       const deliveryPincode = cart.shipping_address?.postal_code
       const cartSubtotal = cart.total || 0
@@ -124,25 +132,87 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       let flatRateOverrides = 0
       let hasFreeSHippingExcludedCategory = false
 
-      for (const item of cart.items || []) {
-        const metadata = item.variant?.product?.metadata || {}
-        const itemCategories = item.variant?.product?.categories || []
+      // Per-item additive fees. Flat is summed across the cart; percent
+      // takes the max across qualifying items (so two 5% items don't
+      // stack to 10.25%).
+      let perItemFlatSurcharge = 0
+      let maxItemPercentSurcharge = 0
 
-        // --- P1.3: Pincode Blacklisting per Category ---
+      const applyItemSurcharges = (
+        metadata: Record<string, any>,
+        quantity: number,
+        rules: any[],
+        categoryIds: string[],
+        productId?: string,
+        variantId?: string
+      ) => {
+        const flat = Number(metadata.shipping_flat_surcharge || 0)
+        const pct = Number(metadata.shipping_percent_surcharge || 0)
+        if (flat > 0) perItemFlatSurcharge += flat * quantity
+        if (pct > maxItemPercentSurcharge) maxItemPercentSurcharge = pct
+
+        // Product- and variant-scoped rules (mirror the metadata paths)
+        const scopedRules = rules.filter(
+          (r: any) =>
+            (r.target_type === "product" && r.target_id === productId) ||
+            (r.target_type === "variant" && r.target_id === variantId) ||
+            (r.target_type === "category" &&
+              categoryIds.includes(r.target_id))
+        )
+        for (const rule of scopedRules) {
+          const val = Number((rule.value as any)?.action_value || 0)
+          if (rule.rule_type === "add_surcharge_flat" && val > 0) {
+            perItemFlatSurcharge += val * quantity
+          }
+          if (rule.rule_type === "add_surcharge_percent" && val > 0) {
+            if (val > maxItemPercentSurcharge) maxItemPercentSurcharge = val
+          }
+        }
+      }
+
+      for (const item of cart.items || []) {
+        // Variant metadata wins over product metadata so a single heavy
+        // variant can override its parent product's shipping behaviour.
+        const productMeta = item.variant?.product?.metadata || {}
+        const variantMeta = item.variant?.metadata || {}
+        const metadata = { ...productMeta, ...variantMeta }
+        const itemCategories = item.variant?.product?.categories || []
+        const categoryIds = itemCategories.map((c: any) => c.id)
+        const productId = item.variant?.product?.id
+        const variantId = item.variant?.id
+
+        // --- P1.3: Pincode Blacklisting per Category / Product / Variant ---
         if (deliveryPincode) {
-          for (const cat of itemCategories) {
-            const blocked = await this.svc_.checkPincodeBlocked(
-              cat.id,
-              deliveryPincode
-            )
-            if (blocked) {
+          const blockRules = rules.filter(
+            (r: any) =>
+              r.rule_type === "block_pincode" &&
+              ((r.target_type === "category" &&
+                categoryIds.includes(r.target_id)) ||
+                (r.target_type === "product" && r.target_id === productId) ||
+                (r.target_type === "variant" && r.target_id === variantId))
+          )
+          for (const rule of blockRules) {
+            const blockedPincodes = (rule.value as any)?.pincodes || []
+            if (blockedPincodes.includes(deliveryPincode)) {
               throw new MedusaError(
                 MedusaError.Types.INVALID_DATA,
-                `Delivery to pincode ${deliveryPincode} is not available for "${cat.name || cat.id}" items.`
+                `Delivery to pincode ${deliveryPincode} is not available for one or more items in your cart.`
               )
             }
           }
         }
+
+        // Additive item-level fees (product + variant metadata, product +
+        // variant + category rules). Applied even when the line is later
+        // handled as flat-rate / free / ships-separately.
+        applyItemSurcharges(
+          metadata,
+          item.quantity,
+          rules,
+          categoryIds,
+          productId,
+          variantId
+        )
 
         // --- Per-product free shipping metadata ---
         if (
@@ -159,28 +229,31 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
           continue
         }
 
-        // --- Category rules: flat rate, free shipping exclusion ---
-        let categoryFlatApplied = false
-        for (const cat of itemCategories) {
-          const catRules = rules.filter(
-            (r: any) =>
-              r.target_type === "category" && r.target_id === cat.id
-          )
+        // --- Product / variant / category rules: flat rate, exclusion ---
+        let ruleFlatApplied = false
+        const scopedFlatRules = rules.filter(
+          (r: any) =>
+            ((r.target_type === "category" &&
+              categoryIds.includes(r.target_id)) ||
+              (r.target_type === "product" && r.target_id === productId) ||
+              (r.target_type === "variant" && r.target_id === variantId)) &&
+            (r.rule_type === "force_flat_rate" ||
+              r.rule_type === "free_shipping_exclusion")
+        )
 
-          for (const rule of catRules) {
-            if (rule.rule_type === "force_flat_rate") {
-              flatRateOverrides +=
-                Number((rule.value as any)?.action_value || 0) *
-                item.quantity
-              categoryFlatApplied = true
-            }
-            if (rule.rule_type === "free_shipping_exclusion") {
-              hasFreeSHippingExcludedCategory = true
-            }
+        for (const rule of scopedFlatRules) {
+          if (rule.rule_type === "force_flat_rate") {
+            flatRateOverrides +=
+              Number((rule.value as any)?.action_value || 0) *
+              item.quantity
+            ruleFlatApplied = true
+          }
+          if (rule.rule_type === "free_shipping_exclusion") {
+            hasFreeSHippingExcludedCategory = true
           }
         }
 
-        if (categoryFlatApplied) continue
+        if (ruleFlatApplied) continue
 
         // --- P1.1: Ships Separately ---
         const weight =
@@ -336,6 +409,29 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
             calculated_amount *
             (Number(settings.surcharge_value) / 100)
         }
+      }
+
+      // --- Per-option extension surcharge (layered on top of global) ---
+      if (optionExtension) {
+        if (Number(optionExtension.surcharge_flat) > 0) {
+          calculated_amount += Number(optionExtension.surcharge_flat)
+        }
+        if (Number(optionExtension.surcharge_percent) > 0) {
+          calculated_amount +=
+            calculated_amount *
+            (Number(optionExtension.surcharge_percent) / 100)
+        }
+      }
+
+      // --- Per-item surcharges (product/variant metadata + rules) ---
+      // Flat is summed across the cart; percent uses the max of any
+      // qualifying item so multiple flagged items don't compound.
+      if (perItemFlatSurcharge > 0) {
+        calculated_amount += perItemFlatSurcharge
+      }
+      if (maxItemPercentSurcharge > 0) {
+        calculated_amount +=
+          calculated_amount * (maxItemPercentSurcharge / 100)
       }
 
       // ================================================================
@@ -495,7 +591,7 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
     }
 
     const settings = await this.svc_.getActiveSettings()
-    const warehouses = await this.svc_.listWarehouses()
+    const warehouses = await this.svc_.listSoWarehouses()
     const primaryWarehouse =
       warehouses.find((w: any) => w.is_primary) || warehouses[0]
 
@@ -514,7 +610,9 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
         hsn: "",
       }
 
-      const metadata = (i as any).variant?.product?.metadata || {}
+      const productMeta = (i as any).variant?.product?.metadata || {}
+      const variantMeta = (i as any).variant?.metadata || {}
+      const metadata = { ...productMeta, ...variantMeta }
       if (
         metadata.ships_separately === "true" ||
         metadata.ships_separately === true
@@ -618,6 +716,19 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       }
     }
 
+    // --- P4.2: Courier Masking applied to fulfillment metadata ---
+    const rawCouriers = allResponses
+      .map((r) => r.courier_name || r.courier_company_name || "")
+      .filter(Boolean)
+    const displayMap =
+      (settings.courier_display_map as Record<string, string>) || {}
+    const maskedCouriers = rawCouriers.map((name) => {
+      const match = Object.entries(displayMap).find(([raw]) =>
+        name.toLowerCase().includes(raw.toLowerCase())
+      )
+      return match ? match[1] : name
+    })
+
     return {
       data: {
         ...data,
@@ -631,6 +742,9 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
           .map((r) => r.awb_code)
           .filter(Boolean)
           .join(","),
+        // Both raw (for support / auditing) and masked (for customer display)
+        courier_names_raw: rawCouriers.join(","),
+        courier_names_display: maskedCouriers.join(","),
       },
       labels: [],
     }

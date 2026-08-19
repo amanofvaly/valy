@@ -24,6 +24,7 @@ type Rule = Record<string, any>
 type WarehouseData = Record<string, any>
 type BoxConfigData = Record<string, any>
 type RtoPincodeData = Record<string, any>
+type ShippingOptionRow = { native: Record<string, any>; extension: Record<string, any> | null }
 
 // ====================================================================
 // Main Component
@@ -36,6 +37,8 @@ const ShippingOrchestrator = () => {
   const [boxConfigs, setBoxConfigs] = useState<BoxConfigData[]>([])
   const [rtoPincodes, setRtoPincodes] = useState<RtoPincodeData[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+  const [shippingOptions, setShippingOptions] = useState<ShippingOptionRow[]>([])
+  const [serviceZones, setServiceZones] = useState<Record<string, any>[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("engine")
@@ -50,6 +53,47 @@ const ShippingOrchestrator = () => {
   // ------------------------------------------------------------------
   // Load Data
   // ------------------------------------------------------------------
+
+  const loadShippingOptions = () =>
+    fetch("/admin/shipping-orchestrator/shipping-options", {
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((d) => setShippingOptions(d.options || []))
+      .catch(() => setShippingOptions([]))
+
+  const loadServiceZones = () =>
+    fetch("/admin/shipping-orchestrator/service-zones", {
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((d) => setServiceZones(d.service_zones || []))
+      .catch(() => setServiceZones([]))
+
+  const saveServiceZone = async (
+    id: string,
+    patch: Record<string, any>
+  ) => {
+    try {
+      const res = await fetch(
+        "/admin/shipping-orchestrator/service-zones",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id, ...patch }),
+        }
+      )
+      if (res.ok) {
+        toast.success("Service zone updated")
+        loadServiceZones()
+      } else {
+        toast.error("Failed to update service zone")
+      }
+    } catch {
+      toast.error("Failed to update service zone")
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -71,7 +115,35 @@ const ShippingOrchestrator = () => {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+
+    loadShippingOptions()
+    loadServiceZones()
   }, [])
+
+  const saveShippingOption = async (
+    nativeId: string,
+    patch: Record<string, any>
+  ) => {
+    try {
+      const res = await fetch(
+        "/admin/shipping-orchestrator/shipping-options",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ native_option_id: nativeId, ...patch }),
+        }
+      )
+      if (res.ok) {
+        toast.success("Shipping option updated")
+        loadShippingOptions()
+      } else {
+        toast.error("Failed to update shipping option")
+      }
+    } catch {
+      toast.error("Failed to update shipping option")
+    }
+  }
 
   // ------------------------------------------------------------------
   // Save All
@@ -155,15 +227,46 @@ const ShippingOrchestrator = () => {
             Unified control panel for your entire logistics engine.
           </Text>
         </div>
-        <Button variant="primary" onClick={handleSave} isLoading={saving}>
-          Save All Settings
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              try {
+                const res = await fetch(
+                  "/admin/shipping-orchestrator/reconcile",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                  }
+                )
+                const data = await res.json()
+                if (data.ok) {
+                  toast.success(
+                    `Reconciled: ${JSON.stringify(data.report)}`
+                  )
+                  loadShippingOptions()
+                } else {
+                  toast.error(`Reconcile failed: ${data.error}`)
+                }
+              } catch {
+                toast.error("Reconcile failed")
+              }
+            }}
+          >
+            Reconcile Now
+          </Button>
+          <Button variant="primary" onClick={handleSave} isLoading={saving}>
+            Save All Settings
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Trigger value="engine">Core Engine</Tabs.Trigger>
           <Tabs.Trigger value="warehouses">Warehouses</Tabs.Trigger>
+          <Tabs.Trigger value="shipping-options">Shipping Options</Tabs.Trigger>
           <Tabs.Trigger value="pricing">Pricing</Tabs.Trigger>
           <Tabs.Trigger value="rules">Rules Engine</Tabs.Trigger>
           <Tabs.Trigger value="couriers">Courier Controls</Tabs.Trigger>
@@ -268,9 +371,45 @@ const ShippingOrchestrator = () => {
                       shiprocket_password: e.target.value,
                     })
                   }
-                  placeholder="••••••••"
+                  placeholder={
+                    settings.api_settings?.has_shiprocket_password
+                      ? "•••••••• (leave blank to keep saved)"
+                      : "••••••••"
+                  }
                 />
+                {settings.api_settings?.has_shiprocket_password && (
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    A password is stored. Leave blank to keep it.
+                  </Text>
+                )}
               </div>
+
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      "/admin/shipping-orchestrator/test-connection",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.ok) {
+                      toast.success(`Connected as ${data.email}`)
+                    } else {
+                      toast.error(`Connection failed: ${data.error}`)
+                    }
+                  } catch {
+                    toast.error("Connection test failed")
+                  }
+                }}
+              >
+                Test Shiprocket Connection
+              </Button>
             </Container>
 
             {/* Box Configurations */}
@@ -584,6 +723,268 @@ const ShippingOrchestrator = () => {
                 ))}
               </div>
             )}
+          </Container>
+        </Tabs.Content>
+
+        {/* ============================================================ */}
+        {/* TAB: SHIPPING OPTIONS (native + extension merged view)       */}
+        {/* ============================================================ */}
+        <Tabs.Content value="shipping-options">
+          {/* --- Serviceable Area (edits native ServiceZone geo_zones) --- */}
+          <Container className="flex flex-col gap-4 bg-ui-bg-subtle mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Heading level="h2" className="text-lg">
+                  Serviceable Area
+                </Heading>
+                <Text className="text-ui-fg-subtle" size="small">
+                  Countries and pincode ranges where the auto-provisioned
+                  options are offered.
+                </Text>
+              </div>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={loadServiceZones}
+              >
+                Reload
+              </Button>
+            </div>
+
+            {serviceZones.length === 0 && (
+              <Text className="text-ui-fg-muted">
+                No service zones yet — add a warehouse to auto-provision one.
+              </Text>
+            )}
+
+            {serviceZones.map((zone) => {
+              const geoZones = zone.geo_zones || []
+              const countries = geoZones
+                .filter((g: any) => g.type === "country")
+                .map((g: any) => g.country_code)
+                .join(", ")
+              const zips = geoZones
+                .filter((g: any) => g.type === "zip")
+                .map((g: any) => g.postal_expression)
+                .join(", ")
+
+              return (
+                <Container
+                  key={zone.id}
+                  className="flex flex-col gap-3 bg-ui-bg-base"
+                >
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    {zone.id}
+                  </Text>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <Label>Zone name</Label>
+                      <Input
+                        defaultValue={zone.name || ""}
+                        onBlur={(e) => {
+                          if (e.target.value !== zone.name) {
+                            saveServiceZone(zone.id, {
+                              name: e.target.value,
+                            })
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label>Country codes (comma separated, e.g. in, us)</Label>
+                      <Input
+                        defaultValue={countries}
+                        onBlur={(e) => {
+                          const codes = e.target.value
+                            .split(",")
+                            .map((s) => s.trim().toLowerCase())
+                            .filter(Boolean)
+                          const otherZones = geoZones.filter(
+                            (g: any) => g.type !== "country"
+                          )
+                          const nextGeo = [
+                            ...otherZones,
+                            ...codes.map((code) => ({
+                              type: "country",
+                              country_code: code,
+                            })),
+                          ]
+                          saveServiceZone(zone.id, { geo_zones: nextGeo })
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 col-span-2">
+                      <Label>
+                        Pincode / ZIP expressions (comma separated,
+                        e.g. 110001, 4000*)
+                      </Label>
+                      <Textarea
+                        defaultValue={zips}
+                        onBlur={(e) => {
+                          const exprs = e.target.value
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                          const otherZones = geoZones.filter(
+                            (g: any) => g.type !== "zip"
+                          )
+                          const nextGeo = [
+                            ...otherZones,
+                            ...exprs.map((expr) => ({
+                              type: "zip",
+                              country_code:
+                                geoZones.find((g: any) => g.type === "country")
+                                  ?.country_code || "in",
+                              postal_expression: expr,
+                            })),
+                          ]
+                          saveServiceZone(zone.id, { geo_zones: nextGeo })
+                        }}
+                      />
+                    </div>
+                  </div>
+                </Container>
+              )
+            })}
+          </Container>
+
+          <Container className="flex flex-col gap-4 bg-ui-bg-subtle mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Heading level="h2" className="text-lg">
+                  Native Shipping Options
+                </Heading>
+                <Text className="text-ui-fg-subtle" size="small">
+                  Auto-provisioned per warehouse. Edits here update both the
+                  Medusa native option and our extension fields.
+                </Text>
+              </div>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={loadShippingOptions}
+              >
+                Reload
+              </Button>
+            </div>
+
+            {shippingOptions.length === 0 && (
+              <Text className="text-ui-fg-muted">
+                No native options yet. Add a warehouse to auto-provision
+                Standard / Express / Local options.
+              </Text>
+            )}
+
+            <div className="flex flex-col gap-4">
+              {shippingOptions.map((row) => {
+                const nativeId = row.native.id
+                const currentName = row.native.name || ""
+                const currentDisplay =
+                  row.extension?.display_name ||
+                  row.native.metadata?.display_name ||
+                  ""
+                const currentBlacklist = Array.isArray(
+                  row.extension?.carrier_blacklist
+                )
+                  ? (row.extension?.carrier_blacklist as string[]).join(", ")
+                  : ""
+                const surchargeFlat = row.extension?.surcharge_flat ?? 0
+                const surchargePct = row.extension?.surcharge_percent ?? 0
+
+                return (
+                  <Container
+                    key={nativeId}
+                    className="flex flex-col gap-3 bg-ui-bg-base"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Badge>{row.extension?.tier || "custom"}</Badge>
+                        <Text
+                          size="xsmall"
+                          className="text-ui-fg-muted mt-1"
+                        >
+                          {nativeId}
+                        </Text>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <Label>Native name</Label>
+                        <Input
+                          defaultValue={currentName}
+                          onBlur={(e) => {
+                            if (e.target.value !== currentName) {
+                              saveShippingOption(nativeId, {
+                                name: e.target.value,
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label>Display name (customer-facing)</Label>
+                        <Input
+                          defaultValue={currentDisplay}
+                          onBlur={(e) => {
+                            if (e.target.value !== currentDisplay) {
+                              saveShippingOption(nativeId, {
+                                display_name: e.target.value,
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 col-span-2">
+                        <Label>Per-option carrier blacklist (comma separated)</Label>
+                        <Textarea
+                          defaultValue={currentBlacklist}
+                          onBlur={(e) => {
+                            const next = e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                            saveShippingOption(nativeId, {
+                              carrier_blacklist: next,
+                            })
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label>Surcharge flat (₹)</Label>
+                        <Input
+                          type="number"
+                          defaultValue={String(surchargeFlat)}
+                          onBlur={(e) => {
+                            const n = Number(e.target.value) || 0
+                            if (n !== surchargeFlat) {
+                              saveShippingOption(nativeId, {
+                                surcharge_flat: n,
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label>Surcharge % on top of calc</Label>
+                        <Input
+                          type="number"
+                          defaultValue={String(surchargePct)}
+                          onBlur={(e) => {
+                            const n = Number(e.target.value) || 0
+                            if (n !== surchargePct) {
+                              saveShippingOption(nativeId, {
+                                surcharge_percent: n,
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Container>
+                )
+              })}
+            </div>
           </Container>
         </Tabs.Content>
 
