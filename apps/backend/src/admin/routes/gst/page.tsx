@@ -44,7 +44,7 @@ const GstSettingsPage = () => {
      setCategoryRates([...categoryRates, { category_id: "", rate: 0, is_recursive: false }])
   }
 
-  const handleCategoryRateChange = (index: number, field: string, value: string | number) => {
+  const handleCategoryRateChange = (index: number, field: string, value: string | number | boolean) => {
      const newRates = [...categoryRates]
      newRates[index] = { ...newRates[index], [field]: value }
      setCategoryRates(newRates)

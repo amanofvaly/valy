@@ -3,7 +3,7 @@
 > **CRITICAL INSTRUCTION FOR ALL FUTURE AI AGENTS:**
 > This document is the ultimate source of truth for the Shipping Orchestrator module. 
 > DO NOT build this in phases. DO NOT build an MVP. DO NOT strip away features or simplify the scope.
-> You must strictly adhere to the massive, 5-pillar architecture described below. If you are asked to work on shipping, you MUST implement these features exactly as described without narrowing the scope.
+> You must strictly adhere to the 5-pillar architecture described below. If you are asked to work on shipping, you MUST implement these features exactly as described without narrowing the scope.
 
 ## The Vision
 This is a comprehensive Shipping Engine. It completely overrides Medusa's native checkout to process a strict hierarchy of business rules, control exact pricing, and handle complex physical box routing (split shipments, hyperlocal bypass, etc.). It acts as a single, unified control panel.

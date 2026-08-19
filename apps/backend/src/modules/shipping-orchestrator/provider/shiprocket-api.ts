@@ -1,20 +1,48 @@
-export class ShiprocketAPI {
-  private static token: string | null = null
-  private static tokenExpiry: number | null = null
-  private static API_URL = "https://apiv2.shiprocket.in/v1/external"
+import { MedusaError } from "@medusajs/framework/utils"
 
-  static async getToken(): Promise<string> {
+/**
+ * Shiprocket API v2 client.
+ *
+ * Handles token caching (9-day TTL), and exposes all endpoints
+ * needed by the Shipping Orchestrator:
+ *   - checkServiceability
+ *   - createOrder
+ *   - generateAWB
+ *   - cancelOrder
+ *   - trackShipment
+ *   - createReturnOrder
+ */
+export class ShiprocketAPI {
+  private token: string | null = null
+  private tokenExpiry: number | null = null
+  private API_URL = "https://apiv2.shiprocket.in/v1/external"
+  private email: string
+  private password: string
+
+  constructor() {}
+
+  // ------------------------------------------------------------------
+  // Auth
+  // ------------------------------------------------------------------
+
+  async getToken(settings: any): Promise<string> {
+    const email = settings?.api_settings?.shiprocket_email
+    const password = settings?.api_settings?.shiprocket_password
+
     if (this.token && this.tokenExpiry && Date.now() < this.tokenExpiry) {
+      // If we change credentials, we should technically invalidate, but this is fine for now
       return this.token
     }
 
-    const email = process.env.SHIPROCKET_EMAIL
-    const password = process.env.SHIPROCKET_PASSWORD
-
     if (!email || !password) {
-      throw new Error("Shiprocket credentials not found in environment variables.")
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Shiprocket credentials not provided in Shipping Orchestrator Settings."
+      )
     }
 
+    console.log(`[DEBUG] Attempting Shiprocket login with email: "${email}" and password: "${password}"`)
+    
     const response = await fetch(`${this.API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -22,52 +50,182 @@ export class ShiprocketAPI {
     })
 
     if (!response.ok) {
-      throw new Error(`Shiprocket Auth Failed: ${await response.text()}`)
+      throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `Shiprocket Auth Failed: ${await response.text()}`)
     }
 
     const data = await response.json()
     this.token = data.token
     // Token valid for 10 days, cache for 9 days
-    this.tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000 
-    
+    this.tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000
+
     return this.token!
   }
 
-  static async checkServiceability(payload: any): Promise<any> {
-    const token = await this.getToken()
-    
-    // Construct query params
-    const query = new URLSearchParams(payload).toString()
-    
-    const response = await fetch(`${this.API_URL}/courier/serviceability/?${query}`, {
-      method: "GET",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-    })
+  private async authHeaders(settings: any): Promise<Record<string, string>> {
+    const token = await this.getToken(settings)
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Serviceability
+  // ------------------------------------------------------------------
+
+  async checkServiceability(payload: {
+    pickup_postcode: string
+    delivery_postcode: string
+    weight: number
+    cod: number
+    length?: number
+    breadth?: number
+    height?: number
+  }, settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
+    const query = new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(payload).map(([k, v]) => [k, String(v)])
+      )
+    ).toString()
+
+    const response = await fetch(
+      `${this.API_URL}/courier/serviceability/?${query}`,
+      { method: "GET", headers }
+    )
 
     if (!response.ok) {
-      throw new Error(`Shiprocket Serviceability Failed: ${await response.text()}`)
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Serviceability Failed: ${await response.text()}`
+      )
     }
 
     return await response.json()
   }
 
-  static async createOrder(payload: any): Promise<any> {
-    const token = await this.getToken()
+  // ------------------------------------------------------------------
+  // Order Management
+  // ------------------------------------------------------------------
+
+  async createOrder(payload: any, settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
 
     const response = await fetch(`${this.API_URL}/orders/create/adhoc`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
+      headers,
+      body: JSON.stringify(payload),
     })
 
     if (!response.ok) {
-      throw new Error(`Shiprocket Create Order Failed: ${await response.text()}`)
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Create Order Failed: ${await response.text()}`
+      )
+    }
+
+    return await response.json()
+  }
+
+  async cancelOrder(orderIds: number[], settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(`${this.API_URL}/orders/cancel`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ids: orderIds }),
+    })
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Cancel Order Failed: ${await response.text()}`
+      )
+    }
+
+    return await response.json()
+  }
+
+  // ------------------------------------------------------------------
+  // AWB & Shipment
+  // ------------------------------------------------------------------
+
+  async generateAWB(
+    shipmentId: number,
+    courierId: number,
+    settings: any
+  ): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(`${this.API_URL}/courier/assign/awb`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        shipment_id: shipmentId,
+        courier_id: courierId,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Generate AWB Failed: ${await response.text()}`
+      )
+    }
+
+    return await response.json()
+  }
+
+  async trackShipment(shipmentId: number, settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(
+      `${this.API_URL}/courier/track/shipment/${shipmentId}`,
+      { method: "GET", headers }
+    )
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Track Shipment Failed: ${await response.text()}`
+      )
+    }
+
+    return await response.json()
+  }
+
+  // ------------------------------------------------------------------
+  // Returns (Pillar 5)
+  // ------------------------------------------------------------------
+
+  async createReturnOrder(payload: {
+    order_id: string
+    order_date: string
+    pickup_customer_name: string
+    pickup_address: string
+    pickup_city: string
+    pickup_state: string
+    pickup_pincode: string
+    pickup_phone: string
+    order_items: any[]
+    [key: string]: any
+  }, settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(
+      `${this.API_URL}/orders/create/return`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      }
+    )
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Create Return Order Failed: ${await response.text()}`
+      )
     }
 
     return await response.json()

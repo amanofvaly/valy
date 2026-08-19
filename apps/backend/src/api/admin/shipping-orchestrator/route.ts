@@ -1,65 +1,102 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../modules/shipping-orchestrator"
 
+// ------------------------------------------------------------------
+// GET /admin/shipping-orchestrator
+// Returns all config: settings, rules, warehouses, boxes, rto pincodes
+// ------------------------------------------------------------------
+
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const orchestratorModuleService = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE)
+  const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
 
-  let [settings] = await orchestratorModuleService.listShippingOrchestratorSettings()
-  
-  if (!settings) {
-    settings = await orchestratorModuleService.createShippingOrchestratorSettings({
-      active_provider: "shiprocket",
-      volumetric_divisor: 5000,
-      fallback_weight_grams: 500,
-      free_shipping_threshold: 0,
-      global_markup_type: "none",
-      global_markup_value: 0
-    })
-  }
-  
-  const rules = await orchestratorModuleService.listShippingRules()
-
-  const uiRules = rules.map((r: any) => ({
-    id: r.id,
-    value: r.target_id,
-    action_type: r.value?.action_type || "flat_rate",
-    action_value: r.value?.action_value || 0
-  }))
+  const settings = await svc.getActiveSettings()
+  const rules = await svc.listShippingRules()
+  const warehouses = await svc.listWarehouses()
+  const boxConfigs = await svc.listBoxConfigs()
+  const rtoPincodes = await svc.listRtoRiskPincodes()
 
   res.json({
     settings,
-    rules: uiRules
+    rules,
+    warehouses,
+    box_configs: boxConfigs,
+    rto_pincodes: rtoPincodes,
   })
 }
 
+// ------------------------------------------------------------------
+// POST /admin/shipping-orchestrator
+// Saves all config sections in one call
+// ------------------------------------------------------------------
+
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const orchestratorModuleService = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE)
+  const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
+  const body = req.body as any
 
-  const { settings, rules } = req.body as any
-
-  if (settings) {
-    const { id, created_at, updated_at, deleted_at, ...cleanSettings } = settings
-    await orchestratorModuleService.updateShippingOrchestratorSettings({ id, ...cleanSettings })
+  // --- Settings ---
+  if (body.settings) {
+    const { id, created_at, updated_at, deleted_at, ...cleanSettings } =
+      body.settings
+    if (id) {
+      await svc.updateShippingOrchestratorSettings({
+        id,
+        ...cleanSettings,
+      })
+    }
   }
 
-  if (rules && Array.isArray(rules)) {
-    // For rules, the easiest is to delete all and recreate them since it's a simple mapping.
-    // Or we can upsert if we pass ids.
-    const existingRules = await orchestratorModuleService.listShippingRules()
+  // --- Rules (delete-and-recreate strategy) ---
+  if (body.rules && Array.isArray(body.rules)) {
+    const existingRules = await svc.listShippingRules()
     if (existingRules.length > 0) {
-       await orchestratorModuleService.deleteShippingRules(existingRules.map((r: any) => r.id))
+      await svc.deleteShippingRules(existingRules.map((r: any) => r.id))
     }
-    
-    // Create new ones
-    if (rules.length > 0) {
-      await orchestratorModuleService.createShippingRules(
-        rules.map((r: any) => ({
-          target_type: "category",
-          target_id: r.value, // This is the category ID from the UI
-          rule_type: r.action_type === "flat_rate" ? "force_flat_rate" : "block_service", 
-          value: { action_value: r.action_value, action_type: r.action_type }
-        }))
-      )
+
+    if (body.rules.length > 0) {
+      await svc.createShippingRules(body.rules)
+    }
+  }
+
+  // --- Warehouses (upsert by id) ---
+  if (body.warehouses && Array.isArray(body.warehouses)) {
+    for (const wh of body.warehouses) {
+      if (wh.id && !wh.id.startsWith("new_")) {
+        const { created_at, updated_at, deleted_at, ...cleanWh } = wh
+        await svc.updateWarehouses(cleanWh)
+      } else {
+        const { id, ...newWh } = wh
+        await svc.createWarehouses(newWh)
+      }
+    }
+  }
+
+  // --- Box Configs (delete-and-recreate) ---
+  if (body.box_configs && Array.isArray(body.box_configs)) {
+    const existingBoxes = await svc.listBoxConfigs()
+    if (existingBoxes.length > 0) {
+      await svc.deleteBoxConfigs(existingBoxes.map((b: any) => b.id))
+    }
+
+    if (body.box_configs.length > 0) {
+      await svc.createBoxConfigs(body.box_configs.map((b: any) => {
+        const { id, created_at, updated_at, deleted_at, ...clean } = b
+        return clean
+      }))
+    }
+  }
+
+  // --- RTO Pincodes (delete-and-recreate) ---
+  if (body.rto_pincodes && Array.isArray(body.rto_pincodes)) {
+    const existing = await svc.listRtoRiskPincodes()
+    if (existing.length > 0) {
+      await svc.deleteRtoRiskPincodes(existing.map((r: any) => r.id))
+    }
+
+    if (body.rto_pincodes.length > 0) {
+      await svc.createRtoRiskPincodes(body.rto_pincodes.map((r: any) => {
+        const { id, created_at, updated_at, deleted_at, ...clean } = r
+        return clean
+      }))
     }
   }
 

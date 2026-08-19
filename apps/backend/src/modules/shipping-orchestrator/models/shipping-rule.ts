@@ -2,12 +2,29 @@ import { model } from "@medusajs/framework/utils"
 
 export const ShippingRule = model.define("shipping_rule", {
   id: model.id().primaryKey(),
-  
-  target_type: model.enum(["category", "pincode_zone", "customer_group"]),
-  target_id: model.text(), // ID of the category/group, or value of pincode zone
-  
-  rule_type: model.enum(["block_service", "force_flat_rate", "force_surface_only", "hyperlocal_bypass"]),
-  
-  value: model.json().nullable(), // Store numeric rates or config details
 
+  // What this rule targets
+  target_type: model.enum([
+    "category",
+    "product",
+    "pincode",
+    "customer_group",
+  ]),
+  target_id: model.text(),
+
+  // What the rule does
+  rule_type: model.enum([
+    "block_pincode",
+    "block_service",
+    "force_flat_rate",
+    "force_surface_only",
+    "hyperlocal_bypass",
+    "free_shipping_exclusion",
+    "cod_block",
+    "cod_premium",
+    "b2b_override",
+  ]),
+
+  // Configuration payload (rate amounts, pincode arrays, etc.)
+  value: model.json().nullable(),
 })

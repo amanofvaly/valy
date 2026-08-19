@@ -18,8 +18,8 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
     const originState = "07"
     
     let destState = ""
-    if (context.address && context.address.province) {
-        destState = context.address.province
+    if (context.address && context.address.province_code) {
+        destState = context.address.province_code
     }
 
     // A simple match for intra-state vs inter-state
@@ -28,10 +28,11 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
     for (const itemLine of itemLines) {
         const rates = itemLine.rates || []
         for (const rate of rates) {
+            const rateValue = rate.rate ?? 0
             if (isIntrastate) {
-                const halfRate = rate.rate / 2
+                const halfRate = rateValue / 2
                 lines.push({
-                    line_item_id: itemLine.item.id,
+                    line_item_id: itemLine.line_item.id,
                     rate_id: rate.id,
                     name: "CGST",
                     rate: halfRate,
@@ -39,7 +40,7 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
                     provider_id: this.getIdentifier()
                 } as any)
                 lines.push({
-                    line_item_id: itemLine.item.id,
+                    line_item_id: itemLine.line_item.id,
                     rate_id: rate.id,
                     name: "SGST",
                     rate: halfRate,
@@ -48,10 +49,10 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
                 } as any)
             } else {
                 lines.push({
-                    line_item_id: itemLine.item.id,
+                    line_item_id: itemLine.line_item.id,
                     rate_id: rate.id,
                     name: "IGST",
-                    rate: rate.rate,
+                    rate: rateValue,
                     code: "IGST",
                     provider_id: this.getIdentifier()
                 } as any)
@@ -62,8 +63,9 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
     for (const shippingLine of shippingLines) {
         const rates = shippingLine.rates || []
         for (const rate of rates) {
+            const rateValue = rate.rate ?? 0
             if (isIntrastate) {
-                const halfRate = rate.rate / 2
+                const halfRate = rateValue / 2
                 lines.push({
                     shipping_line_id: shippingLine.shipping_line.id,
                     rate_id: rate.id,
@@ -85,7 +87,7 @@ export default class IndiaGstTaxProvider implements ITaxProvider {
                     shipping_line_id: shippingLine.shipping_line.id,
                     rate_id: rate.id,
                     name: "IGST",
-                    rate: rate.rate,
+                    rate: rateValue,
                     code: "IGST",
                     provider_id: this.getIdentifier()
                 } as any)

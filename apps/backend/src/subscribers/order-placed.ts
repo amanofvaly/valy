@@ -18,8 +18,7 @@ export default async function orderPlacedHandler({
     // Add additional summarized tax fields here for your specific ERP requirements
   }
 
-  await orderService.updateOrders({
-    id: order.id,
+  await orderService.updateOrders(order.id, {
     metadata: {
       ...order.metadata,
       gst_summary: gstSummary
