@@ -6,7 +6,7 @@
 > You must strictly adhere to the 5-pillar architecture described below. If you are asked to work on shipping, you MUST implement these features exactly as described without narrowing the scope.
 
 ## The Vision
-This is a comprehensive Shipping Engine. It completely overrides Medusa's native checkout to process a strict hierarchy of business rules, control exact pricing, and handle complex physical box routing (split shipments, hyperlocal bypass, etc.). It acts as a single, unified control panel.
+This is a comprehensive Shipping Engine. It completely extends Medusa's native checkout to process a strict hierarchy of business rules, control exact pricing, and handle complex physical box routing (split shipments, hyperlocal bypass, etc.). It acts as a single, unified control panel. So both Medusa native and our custom module deal with same exact tables and functions, but out custom module does a lot more. And there should be no ambiguity about checkout process. 
 
 ---
 
@@ -68,6 +68,7 @@ Do not simply sum weights.
 
 ### 4.1 Smart Carrier Blacklisting & Filtering
 *   The dashboard must allow configuring a comma-separated list of blacklisted couriers (e.g., "Xpressbees, Delhivery Surface").
+* Need to find a way for admin users to know the exact values since they wont know which words to use to block a service provider.
 *   When the engine pings the Shiprocket `/courier/serviceability/` API, it must actively strip out any returned couriers that match the blacklist before selecting the cheapest/fastest rate.
 
 ### 4.2 Courier Masking
@@ -95,4 +96,4 @@ Do not simply sum weights.
 *   The "Save Settings" API route must automatically inject and wire `shipping-orchestrator` into the store's `IFulfillmentModuleService`, fully bridging the gap seamlessly.
 
 ***
-**TO ANY AGENT READING THIS:** If you modify this system, refer exclusively to this document. Do not attempt to deliver an MVP. Implement the rules precisely.
+**TO ANY AGENT READING THIS:** If you modify this system, refer exclusively to this document. Do not attempt to deliver an MVP. Implement the rules precisely. And bi-directional is a strict requirement. This module will not fight with native medusa in any way or will not confuse the checkut process in any way. The only purpose of this document is to enable more control, automate price calculation, manage granual control over categories and products.
