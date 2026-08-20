@@ -1,97 +1,61 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../../modules/shipping-orchestrator"
-import { syncWarehouseWithStockLocationWorkflow } from "../../../../workflows/sync-warehouse-with-stock-location"
-import { deleteWarehouseWithStockLocationWorkflow } from "../../../../workflows/delete-warehouse-with-stock-location"
-import { reconcileShippingOrchestratorWorkflow } from "../../../../workflows/reconcile-shipping-orchestrator"
+import { Modules } from "@medusajs/framework/utils"
+import {
+  demoteOtherPrimaries,
+  listWarehouses,
+  primaryWarehouse,
+  storeCountryCode,
+  toStockLocationInput,
+  toWarehouse,
+} from "../../../../modules/shipping-orchestrator"
+import { provisionNativeShippingWorkflow } from "../../../../workflows/provision-native-shipping"
+import { deprovisionNativeShippingWorkflow } from "../../../../workflows/deprovision-native-shipping"
+
+// ------------------------------------------------------------------
+// A warehouse is a Medusa stock location. These handlers read and write
+// that record directly — there is no second table to keep in step.
+// ------------------------------------------------------------------
 
 // ------------------------------------------------------------------
 // GET /admin/shipping-orchestrator/warehouses
-// Returns warehouses joined with their linked stock locations via
-// the module link (source of truth).
 // ------------------------------------------------------------------
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
-
-  const { data: warehouses } = await query.graph({
-    entity: "so_warehouse",
-    fields: [
-      "id",
-      "name",
-      "pincode",
-      "city",
-      "state",
-      "is_primary",
-      "is_drop_ship",
-      "vendor_webhook_url",
-      "stock_location.id",
-      "stock_location.name",
-      "stock_location.address.*",
-    ],
-  })
-
-  const enriched = (warehouses || []).map((wh: any) => ({
-    ...wh,
-    stock_location: wh.stock_location || null,
-    stock_location_id: wh.stock_location?.id || null,
-  }))
-
-  res.json({ warehouses: enriched })
+  res.json({ warehouses: await listWarehouses(req.scope) })
 }
 
 // ------------------------------------------------------------------
 // POST /admin/shipping-orchestrator/warehouses
-// Create or update. Body: warehouse fields. The workflow guarantees
-// a matching Medusa StockLocation exists and is linked bi-directionally.
+// Create when there is no id, update when there is.
 // ------------------------------------------------------------------
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  const stockLocationService = req.scope.resolve(Modules.STOCK_LOCATION) as any
   const body = req.body as any
 
-  const { result } = await syncWarehouseWithStockLocationWorkflow(
-    req.scope
-  ).run({
-    input: {
-      origin: "orchestrator",
-      warehouse: {
-        id: body.id,
-        name: body.name,
-        pincode: body.pincode,
-        city: body.city,
-        state: body.state,
-        is_primary: body.is_primary,
-        is_drop_ship: body.is_drop_ship,
-        vendor_webhook_url: body.vendor_webhook_url,
-      },
-    },
-  })
+  const input = toStockLocationInput(body, await storeCountryCode(req.scope))
+  const isExisting = body.id && !String(body.id).startsWith("new_")
 
-  // Reconcile once so native fulfillment set / zone / options track the
-  // (possibly new) primary warehouse.
-  await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
+  const location = isExisting
+    ? await stockLocationService.updateStockLocations(body.id, input)
+    : await stockLocationService.createStockLocations(input)
 
-  // Return the fresh row with link join, so the UI sees the same shape as GET
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
-  const { data } = await query.graph({
-    entity: "so_warehouse",
-    fields: [
-      "id",
-      "name",
-      "pincode",
-      "city",
-      "state",
-      "is_primary",
-      "is_drop_ship",
-      "vendor_webhook_url",
-      "stock_location.id",
-      "stock_location.name",
-      "stock_location.address.*",
-    ],
-    filters: { id: result.warehouse_id },
-  })
+  if (location?.id && body.is_primary) {
+    await demoteOtherPrimaries(req.scope, location.id)
+  }
 
-  res.json({ warehouse: data?.[0] || null })
+  // Provision for whichever warehouse is now the origin. This is the write
+  // path doing its own job, not a repair pass: everything checkout needs is
+  // created here, at the moment the warehouse is saved.
+  const origin = primaryWarehouse(await listWarehouses(req.scope))
+
+  if (origin) {
+    await provisionNativeShippingWorkflow(req.scope).run({
+      input: { stock_location_id: origin.id, warehouse_name: origin.name },
+    })
+  }
+
+  res.json({ warehouse: toWarehouse(location) })
 }
 
 // ------------------------------------------------------------------
@@ -99,6 +63,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 // ------------------------------------------------------------------
 
 export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
+  const stockLocationService = req.scope.resolve(Modules.STOCK_LOCATION) as any
   const body = req.body as any
 
   if (!body.id) {
@@ -106,14 +71,25 @@ export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
-    input: {
-      origin: "orchestrator",
-      warehouse_id: body.id,
-    },
+  // Deprovision first: the fulfillment set is found by walking the location's
+  // links, and once the location is gone there is nothing left to walk, so the
+  // set would be stranded in Medusa's own shipping settings.
+  await deprovisionNativeShippingWorkflow(req.scope).run({
+    input: { stock_location_id: body.id },
   })
 
-  await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
+  await stockLocationService.deleteStockLocations([body.id])
+
+  // Provision for whichever warehouse is now the origin. This is the write
+  // path doing its own job, not a repair pass: everything checkout needs is
+  // created here, at the moment the warehouse is saved.
+  const origin = primaryWarehouse(await listWarehouses(req.scope))
+
+  if (origin) {
+    await provisionNativeShippingWorkflow(req.scope).run({
+      input: { stock_location_id: origin.id, warehouse_name: origin.name },
+    })
+  }
 
   res.json({ success: true })
 }

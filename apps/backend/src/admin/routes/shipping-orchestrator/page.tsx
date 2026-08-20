@@ -76,10 +76,12 @@ const ShippingOrchestrator = () => {
       .then((d) => setShippingOptions(d.options || []))
       .catch(() => setShippingOptions([]))
 
+  // A failed check is not a health report. Anything without a summary is an
+  // error body, and storing it would crash the banner that reads it.
   const loadHealth = () =>
     fetch("/admin/shipping-orchestrator/health", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => setHealth(d))
+      .then((d) => setHealth(d?.summary ? d : null))
       .catch(() => setHealth(null))
 
   const loadServiceZones = () =>
@@ -163,6 +165,59 @@ const ShippingOrchestrator = () => {
       }
     } catch {
       toast.error("Failed to update shipping option")
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Remove a warehouse
+  // ------------------------------------------------------------------
+  // Deletes on the server straight away rather than dropping the row from
+  // local state and waiting for "Save All Settings". A red button that only
+  // hides the row until an unrelated save reads as a delete that did nothing.
+
+  const removeWarehouse = async (idx: number) => {
+    const warehouse = warehouses[idx]
+
+    // Never saved, so there is nothing on the server to remove.
+    if (!warehouse?.id || String(warehouse.id).startsWith("new_")) {
+      const updated = [...warehouses]
+      updated.splice(idx, 1)
+      setWarehouses(updated)
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${warehouse.name || "this warehouse"}"?\n\n` +
+        "This is a Medusa stock location, so its inventory levels and the " +
+        "delivery options provisioned for it are removed with it."
+    )
+    if (!confirmed) return
+
+    try {
+      const res = await fetch("/admin/shipping-orchestrator/warehouses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: warehouse.id }),
+      })
+
+      if (!res.ok) {
+        toast.error("Failed to delete warehouse")
+        return
+      }
+
+      toast.success("Warehouse deleted")
+
+      const configData = await fetch("/admin/shipping-orchestrator", {
+        credentials: "include",
+      }).then((r) => r.json())
+      setWarehouses(configData.warehouses || [])
+
+      loadShippingOptions()
+      loadServiceZones()
+      loadHealth()
+    } catch {
+      toast.error("Failed to delete warehouse")
     }
   }
 
@@ -260,34 +315,6 @@ const ShippingOrchestrator = () => {
           </Text>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              try {
-                const res = await fetch(
-                  "/admin/shipping-orchestrator/reconcile",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                  }
-                )
-                const data = await res.json()
-                if (data.ok) {
-                  toast.success(
-                    `Reconciled: ${JSON.stringify(data.report)}`
-                  )
-                  loadShippingOptions()
-                } else {
-                  toast.error(`Reconcile failed: ${data.error}`)
-                }
-              } catch {
-                toast.error("Reconcile failed")
-              }
-            }}
-          >
-            Reconcile Now
-          </Button>
           <Button variant="primary" onClick={handleSave} isLoading={saving}>
             Save All Settings
           </Button>
@@ -776,10 +803,10 @@ const ShippingOrchestrator = () => {
                       pincode: "",
                       city: "",
                       state: "",
+                      country_code: warehouses[0]?.country_code || "",
                       is_primary: warehouses.length === 0,
                       is_drop_ship: false,
                       vendor_webhook_url: null,
-                      stock_location_id: null,
                     },
                   ])
                 }
@@ -788,8 +815,8 @@ const ShippingOrchestrator = () => {
               </Button>
             </div>
             <Text className="text-ui-fg-subtle text-sm">
-              Each warehouse maps bidirectionally to a Medusa Stock Location.
-              Shipping rates are calculated per origin pincode.
+              A warehouse is a Medusa stock location — the same record you see
+              under Settings &rarr; Locations. Rates are quoted from its pincode.
             </Text>
 
             {warehouses.length === 0 ? (
@@ -820,17 +847,13 @@ const ShippingOrchestrator = () => {
                       <Button
                         variant="danger"
                         size="small"
-                        onClick={() => {
-                          const updated = [...warehouses]
-                          updated.splice(idx, 1)
-                          setWarehouses(updated)
-                        }}
+                        onClick={() => removeWarehouse(idx)}
                       >
                         Remove
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-4 gap-3">
                       <div>
                         <Label>Pincode</Label>
                         <Input
@@ -872,6 +895,30 @@ const ShippingOrchestrator = () => {
                             setWarehouses(updated)
                           }}
                         />
+                      </div>
+                      <div>
+                        <Label>Country (two-letter code)</Label>
+                        <Input
+                          placeholder="in"
+                          value={wh.country_code || ""}
+                          onChange={(e) => {
+                            const updated = [...warehouses]
+                            updated[idx] = {
+                              ...updated[idx],
+                              country_code: e.target.value
+                                .trim()
+                                .toLowerCase(),
+                            }
+                            setWarehouses(updated)
+                          }}
+                        />
+                        <Text size="xsmall" className="text-ui-fg-muted">
+                          Where this warehouse ships <strong>from</strong>.
+                          Used once, to pick the starting country for a new
+                          delivery area; changing it later does not move an
+                          existing one. Edit where you ship{" "}
+                          <strong>to</strong> under Shipping Options.
+                        </Text>
                       </div>
                     </div>
 
@@ -922,12 +969,6 @@ const ShippingOrchestrator = () => {
                         />
                       </div>
                     )}
-
-                    {wh.stock_location_id && (
-                      <Text size="xsmall" className="text-ui-fg-muted">
-                        Linked to Medusa Location: {wh.stock_location_id}
-                      </Text>
-                    )}
                   </div>
                 ))}
               </div>
@@ -947,8 +988,10 @@ const ShippingOrchestrator = () => {
                   Serviceable Area
                 </Heading>
                 <Text className="text-ui-fg-subtle" size="small">
-                  Countries and pincode ranges where the auto-provisioned
-                  options are offered.
+                  Where you deliver <strong>to</strong>. A customer outside
+                  these countries sees no delivery options and cannot check
+                  out. Separate from the warehouse, which is where parcels
+                  ship <strong>from</strong>.
                 </Text>
               </div>
               <Button
@@ -992,7 +1035,7 @@ const ShippingOrchestrator = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <Label>Zone name</Label>
+                      <Label>Zone name (label only — nothing depends on it)</Label>
                       <Input
                         defaultValue={zone.name || ""}
                         onBlur={(e) => {
@@ -1005,7 +1048,10 @@ const ShippingOrchestrator = () => {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label>Country codes (comma separated, e.g. in, us)</Label>
+                      <Label>
+                        Countries you deliver to — two-letter codes, comma
+                        separated (in = India, us = United States)
+                      </Label>
                       <Input
                         defaultValue={countries}
                         onBlur={(e) => {
@@ -1029,8 +1075,8 @@ const ShippingOrchestrator = () => {
                     </div>
                     <div className="flex flex-col gap-1 col-span-2">
                       <Label>
-                        Pincode / ZIP expressions (comma separated,
-                        e.g. 110001, 4000*)
+                        Restrict to specific pincodes (optional — leave empty
+                        to deliver anywhere in the countries above)
                       </Label>
                       <Textarea
                         defaultValue={zips}

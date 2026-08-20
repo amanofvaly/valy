@@ -13,6 +13,7 @@ import {
   SHIPPING_ORCHESTRATOR_PROVIDER_ID,
   rulesForTier,
 } from "../modules/shipping-orchestrator"
+import { mirrorShippingOptionWorkflow } from "./mirror-shipping-option"
 
 // ====================================================================
 // Input
@@ -92,20 +93,53 @@ const ensureFulfillmentSetStep = createStep(
     // 1. Find a fulfillment set linked to this location that we own
     const { data: linked } = await query.graph({
       entity: "stock_location",
-      fields: ["id", "fulfillment_sets.*"],
+      fields: ["id", "address.country_code", "fulfillment_sets.*"],
       filters: { id: input.stock_location_id },
     })
 
-    const existingSets = linked?.[0]?.fulfillment_sets || []
+    const existingSets = (linked?.[0]?.fulfillment_sets || []).filter(
+      (s: any) => s?.id
+    )
     let ownedSet = existingSets.find(
       (s: any) => s.metadata?.owned_by === OWNED_BY
     )
+
+    // A link outlives the record it points at, so a set that was deleted in
+    // the native admin still shows up here. Building a service zone under it
+    // fails with "fulfillment set does not exist"; treat it as absent and
+    // provision a fresh one instead.
+    if (ownedSet?.id) {
+      const [live] = await fulfillmentService.listFulfillmentSets({
+        id: ownedSet.id,
+      })
+      if (!live) {
+        ownedSet = undefined
+      }
+    }
 
     // Ownership is tracked in metadata, so these names are free to be the
     // ones the merchant actually reads in the admin. Earlier versions named
     // them `so-<warehouse>`, which leaked an internal prefix into the UI.
     const setName = `${input.warehouse_name} delivery`
     const zoneName = `${input.warehouse_name} area`
+
+    // Which country this area covers. Taken from the warehouse's own address,
+    // falling back to the countries the store actually sells to. It used to be
+    // the literal "in", so a store deploying anywhere else silently got a
+    // delivery area for India and no way to know why checkout was empty.
+    let countryCode: string | undefined =
+      linked?.[0]?.address?.country_code || undefined
+
+    if (!countryCode) {
+      const { data: regions } = await query.graph({
+        entity: "region",
+        fields: ["id", "countries.iso_2"],
+      })
+      countryCode = (regions ?? [])
+        .flatMap((r: any) => r.countries ?? [])
+        .map((c: any) => c.iso_2)
+        .find(Boolean)
+    }
 
     if (!ownedSet) {
       ownedSet = await fulfillmentService.createFulfillmentSets({
@@ -139,7 +173,9 @@ const ensureFulfillmentSetStep = createStep(
         name: zoneName,
         fulfillment_set_id: ownedSet.id,
         metadata: { owned_by: OWNED_BY },
-        geo_zones: [{ type: "country", country_code: "in" }],
+        geo_zones: countryCode
+          ? [{ type: "country", country_code: countryCode }]
+          : [],
       })
     } else if (String(zone.name).startsWith("so-")) {
       await fulfillmentService.updateServiceZones(zone.id, { name: zoneName })
@@ -281,6 +317,38 @@ const ensureShippingOptionsStep = createStep(
 )
 
 // ====================================================================
+// Step: give every option we own its extension row
+// ====================================================================
+
+const mirrorOwnedOptionsStep = createStep(
+  "mirror-owned-options",
+  async (input: { service_zone_id: string }, { container }) => {
+    const fulfillmentService = container.resolve(Modules.FULFILLMENT) as any
+
+    // Without an extension row a per-option surcharge or courier mask is
+    // stored nowhere and silently does nothing, so it is created alongside
+    // the option rather than backfilled later.
+    const options = await fulfillmentService.listShippingOptions({
+      service_zone_id: input.service_zone_id,
+    })
+
+    let mirrored = 0
+
+    for (const option of options ?? []) {
+      if (option.provider_id !== SHIPPING_ORCHESTRATOR_PROVIDER_ID) {
+        continue
+      }
+      await mirrorShippingOptionWorkflow(container).run({
+        input: { native_option_id: option.id },
+      })
+      mirrored++
+    }
+
+    return new StepResponse({ mirrored_options: mirrored })
+  }
+)
+
+// ====================================================================
 // Workflow
 // ====================================================================
 
@@ -298,6 +366,7 @@ export const provisionNativeShippingWorkflow = createWorkflow(
       shipping_profile_id: profile.shipping_profile_id,
       provider_id: provider.provider_id,
     })
+    mirrorOwnedOptionsStep({ service_zone_id: set.service_zone_id })
     return new WorkflowResponse(opts)
   }
 )

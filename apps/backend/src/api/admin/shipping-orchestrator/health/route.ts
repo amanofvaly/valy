@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import {
   SHIPPING_ORCHESTRATOR_MODULE,
   SHIPPING_ORCHESTRATOR_PROVIDER_ID,
+  listWarehouses,
 } from "../../../../modules/shipping-orchestrator"
 
 // ------------------------------------------------------------------
@@ -40,7 +41,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // Settings + warehouses
   // ----------------------------------------------------------------
   const settings = await svc.getActiveSettings()
-  const warehouses = await svc.listSoWarehouses()
+  const warehouses = await listWarehouses(req.scope)
   const boxConfigs = await svc.listBoxConfigs()
 
   if (!warehouses.length) {
@@ -171,7 +172,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
     add({
       id: "products.no_weight",
-      level: weightless.length === liveVariants.length ? "error" : "warning",
+      // Never blocking: the fallback weight means a quote is still produced
+      // and checkout still completes. The price is wrong, which is exactly
+      // what "Review" means here.
+      level: "warning",
       title: "Products have no shipping weight",
       detail:
         `${weightless.length} of ${liveVariants.length} live variants have no weight, ` +
@@ -403,10 +407,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     fields: ["id", "name", "stock_locations.id", "stock_locations.fulfillment_sets.id"],
   })
 
+  // A link pointing at a deleted record comes back as a hole in the list, so
+  // every level is filtered before it is walked.
   const reachableSets = new Set<string>(
     (salesChannels ?? []).flatMap((sc: any) =>
-      (sc.stock_locations ?? []).flatMap((sl: any) =>
-        (sl.fulfillment_sets ?? []).map((fs: any) => fs.id)
+      (sc?.stock_locations ?? []).filter(Boolean).flatMap((sl: any) =>
+        (sl?.fulfillment_sets ?? [])
+          .filter((fs: any) => fs?.id)
+          .map((fs: any) => fs.id)
       )
     )
   )

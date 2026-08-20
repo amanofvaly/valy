@@ -1,9 +1,15 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { SHIPPING_ORCHESTRATOR_MODULE } from "../../../modules/shipping-orchestrator"
-import { syncWarehouseWithStockLocationWorkflow } from "../../../workflows/sync-warehouse-with-stock-location"
-import { deleteWarehouseWithStockLocationWorkflow } from "../../../workflows/delete-warehouse-with-stock-location"
-import { reconcileShippingOrchestratorWorkflow } from "../../../workflows/reconcile-shipping-orchestrator"
+import { Modules } from "@medusajs/framework/utils"
+import {
+  SHIPPING_ORCHESTRATOR_MODULE,
+  demoteOtherPrimaries,
+  listWarehouses,
+  primaryWarehouse,
+  storeCountryCode,
+  toStockLocationInput,
+} from "../../../modules/shipping-orchestrator"
+import { provisionNativeShippingWorkflow } from "../../../workflows/provision-native-shipping"
+import { deprovisionNativeShippingWorkflow } from "../../../workflows/deprovision-native-shipping"
 
 // ------------------------------------------------------------------
 // GET /admin/shipping-orchestrator
@@ -12,34 +18,16 @@ import { reconcileShippingOrchestratorWorkflow } from "../../../workflows/reconc
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const svc = req.scope.resolve(SHIPPING_ORCHESTRATOR_MODULE) as any
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
 
   const settings = await svc.getSettingsForAdmin()
   const rules = await svc.listShippingRules()
   const boxConfigs = await svc.listBoxConfigs()
   const rtoPincodes = await svc.listRtoRiskPincodes()
 
-  const { data: warehouses } = await query.graph({
-    entity: "so_warehouse",
-    fields: [
-      "id",
-      "name",
-      "pincode",
-      "city",
-      "state",
-      "is_primary",
-      "is_drop_ship",
-      "vendor_webhook_url",
-      "stock_location.id",
-      "stock_location.name",
-      "stock_location.address.*",
-    ],
-  })
-
   res.json({
     settings,
     rules,
-    warehouses: warehouses || [],
+    warehouses: await listWarehouses(req.scope),
     box_configs: boxConfigs,
     rto_pincodes: rtoPincodes,
   })
@@ -71,51 +59,60 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     }
   }
 
-  // --- Warehouses (delegate to sync workflow so link + native side stay in sync) ---
+  // --- Warehouses (Medusa stock locations) ---
   if (body.warehouses && Array.isArray(body.warehouses)) {
-    const processedIds = new Set<string>()
+    const stockLocationService = req.scope.resolve(Modules.STOCK_LOCATION) as any
+    const savedIds = new Set<string>()
+    const fallbackCountry = await storeCountryCode(req.scope)
 
     for (const wh of body.warehouses) {
+      const input = toStockLocationInput(wh, fallbackCountry)
       const isExisting = wh.id && !String(wh.id).startsWith("new_")
-      const result = await syncWarehouseWithStockLocationWorkflow(req.scope).run({
-        input: {
-          origin: "orchestrator",
-          warehouse: {
-            id: isExisting ? wh.id : undefined,
-            name: wh.name,
-            pincode: wh.pincode,
-            city: wh.city,
-            state: wh.state,
-            is_primary: wh.is_primary,
-            is_drop_ship: wh.is_drop_ship,
-            vendor_webhook_url: wh.vendor_webhook_url,
-          },
-        },
-      })
 
-      if (result.result?.warehouse_id) {
-        processedIds.add(result.result.warehouse_id)
+      const location = isExisting
+        ? await stockLocationService.updateStockLocations(wh.id, input)
+        : await stockLocationService.createStockLocations(input)
+
+      if (location?.id) {
+        savedIds.add(location.id)
+
+        if (wh.is_primary) {
+          await demoteOtherPrimaries(req.scope, location.id)
+        }
       }
     }
 
-    // Delete warehouses that were removed on the client. This pass deletes
-    // everything the sync loop did not account for, so it is only safe when
-    // every submitted warehouse reported an id back — one silent miss would
-    // otherwise wipe the whole table (and cascade into its stock locations).
-    if (processedIds.size === body.warehouses.length) {
-      const currentWarehouses = await svc.listSoWarehouses()
-      const toDelete = currentWarehouses
-        .filter((w: any) => !processedIds.has(w.id))
-        .map((w: any) => w.id)
+    // Delete the warehouses removed on the client. This deletes everything the
+    // save loop did not account for, so it only runs when every submitted
+    // warehouse came back with an id — one silent miss would otherwise take
+    // out locations the merchant never touched.
+    if (savedIds.size === body.warehouses.length) {
+      const existing = await listWarehouses(req.scope)
+      const toDelete = existing
+        .filter((w) => !savedIds.has(w.id))
+        .map((w) => w.id)
 
       for (const id of toDelete) {
-        await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
-          input: { origin: "orchestrator", warehouse_id: id },
+        // Before the location goes, so its fulfillment set can still be found.
+        await deprovisionNativeShippingWorkflow(req.scope).run({
+          input: { stock_location_id: id },
         })
+      }
+
+      if (toDelete.length) {
+        await stockLocationService.deleteStockLocations(toDelete)
       }
     }
 
-    await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })
+    // Provision for whichever warehouse is now the origin. The write path
+    // does its own job here; there is no repair pass behind it.
+    const origin = primaryWarehouse(await listWarehouses(req.scope))
+
+    if (origin) {
+      await provisionNativeShippingWorkflow(req.scope).run({
+        input: { stock_location_id: origin.id, warehouse_name: origin.name },
+      })
+    }
   }
 
   // --- Box Configs (delete-and-recreate) ---

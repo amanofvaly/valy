@@ -18,6 +18,7 @@ import {
   Logger,
 } from "@medusajs/framework/types"
 import { SHIPPING_ORCHESTRATOR_MODULE } from "../constants"
+import { listWarehouses, primaryWarehouse } from "../warehouses"
 import {
   addressIncomplete,
   blocked,
@@ -309,7 +310,7 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       // --- Load all config from DB ---
       const settings = await this.svc_.getActiveSettings()
       const rules = await this.svc_.listShippingRules()
-      const warehouses = await this.svc_.listSoWarehouses()
+      const warehouses = await listWarehouses(appContainer)
 
       if (!warehouses.length) {
         throw notConfigured(
@@ -333,13 +334,12 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       )
 
       // Find origin warehouse (primary fallback)
-      const primaryWarehouse =
-        warehouses.find((w: any) => w.is_primary) || warehouses[0]
-      const originPincode = primaryWarehouse?.pincode
+      const originWarehouse = primaryWarehouse(warehouses)
+      const originPincode = originWarehouse?.pincode
 
       if (!originPincode) {
         throw notConfigured(
-          `Warehouse "${primaryWarehouse?.name ?? "primary"}" has no pincode, ` +
+          `Warehouse "${originWarehouse?.name ?? "primary"}" has no pincode, ` +
             "so distance-based rates cannot be requested. " +
             "Set it under Shipping Orchestrator \u2192 Warehouses."
         )
@@ -1039,9 +1039,8 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
     }
 
     const settings = await this.svc_.getActiveSettings()
-    const warehouses = await this.svc_.listSoWarehouses()
-    const primaryWarehouse =
-      warehouses.find((w: any) => w.is_primary) || warehouses[0]
+    const warehouses = await listWarehouses(appContainer)
+    const originWarehouse = primaryWarehouse(warehouses)
 
     // Classify items
     const standardItems: any[] = []
@@ -1121,7 +1120,7 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       const response = await pushToShiprocket(
         standardItems,
         "STD",
-        primaryWarehouse
+        originWarehouse
       )
       allResponses.push(response)
     }
@@ -1132,16 +1131,16 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       const response = await pushToShiprocket(
         [sepItem],
         `SPLIT${splitCounter}`,
-        primaryWarehouse
+        originWarehouse
       )
       allResponses.push(response)
       splitCounter++
     }
 
     // --- P2.3: Drop-shipping webhook ---
-    if (primaryWarehouse?.is_drop_ship && primaryWarehouse?.vendor_webhook_url) {
+    if (originWarehouse?.is_drop_ship && originWarehouse?.vendor_webhook_url) {
       try {
-        await fetch(primaryWarehouse.vendor_webhook_url, {
+        await fetch(originWarehouse.vendor_webhook_url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1155,7 +1154,7 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
           }),
         })
         this.logger_.info(
-          `[ShippingOrchestrator] Drop-ship webhook dispatched to ${primaryWarehouse.vendor_webhook_url}`
+          `[ShippingOrchestrator] Drop-ship webhook dispatched to ${originWarehouse.vendor_webhook_url}`
         )
       } catch (webhookError: any) {
         this.logger_.error(

@@ -2,7 +2,6 @@ import { MedusaService } from "@medusajs/framework/utils"
 import {
   ShippingOrchestratorSettings,
   ShippingRule,
-  SoWarehouse,
   BoxConfig,
   RtoRiskPincode,
   ShippingOptionExtension,
@@ -12,7 +11,6 @@ import { ShiprocketAPI } from "./provider/shiprocket-api"
 class ShippingOrchestratorService extends MedusaService({
   ShippingOrchestratorSettings,
   ShippingRule,
-  SoWarehouse,
   BoxConfig,
   RtoRiskPincode,
   ShippingOptionExtension,
@@ -108,22 +106,6 @@ class ShippingOrchestratorService extends MedusaService({
       ...rest,
       api_settings: mergedApi,
     })
-  }
-
-  /**
-   * Find the warehouse whose pincode matches, for hyperlocal check.
-   */
-  async getSoWarehouseForPincode(pincode: string) {
-    const warehouses = await this.listSoWarehouses({ pincode })
-    return warehouses.length > 0 ? warehouses[0] : null
-  }
-
-  /**
-   * Get the primary warehouse (fallback origin).
-   */
-  async getPrimarySoWarehouse() {
-    const warehouses = await this.listSoWarehouses({ is_primary: true })
-    return warehouses.length > 0 ? warehouses[0] : null
   }
 
   /**

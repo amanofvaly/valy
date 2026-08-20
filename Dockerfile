@@ -26,4 +26,11 @@ COPY --from=builder /app/apps/backend ./apps/backend
 
 WORKDIR /app/apps/backend/.medusa/server
 EXPOSE 9000
-CMD ["npm", "run", "start"]
+# Schema first, then serve. Migrations belong to the deploy, not to an
+# admin remembering to run them after every publish. Medusa records what
+# has already run, so this is a no-op when nothing is pending.
+#
+# Safe here because exactly one container serves this app. With more than
+# one replica this has to move into its own step that runs before them,
+# or they race each other applying the same migration.
+CMD ["sh", "-c", "npx medusa db:migrate && npm run start"]

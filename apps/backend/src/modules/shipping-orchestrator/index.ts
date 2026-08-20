@@ -13,6 +13,17 @@ export {
 } from "./constants"
 export type { ShippingTier } from "./constants"
 
+export {
+  WAREHOUSE_LOCATION_FIELDS,
+  toWarehouse,
+  toStockLocationInput,
+  listWarehouses,
+  demoteOtherPrimaries,
+  primaryWarehouse,
+  storeCountryCode,
+} from "./warehouses"
+export type { Warehouse } from "./warehouses"
+
 export default Module(SHIPPING_ORCHESTRATOR_MODULE, {
   service: ShippingOrchestratorService,
 })
