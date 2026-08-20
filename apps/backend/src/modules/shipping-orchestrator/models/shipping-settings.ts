@@ -3,6 +3,16 @@ import { model } from "@medusajs/framework/utils"
 export const ShippingOrchestratorSettings = model.define("shipping_settings", {
   id: model.id().primaryKey(),
 
+  // There is exactly one settings row for the store. Without a constraint,
+  // "read it, create it if missing" lets two concurrent first-boot requests
+  // each insert one — the admin page loads config and health together, so a
+  // fresh database reliably ends up with two rows that then drift apart as
+  // edits save to whichever one is read.
+  //
+  // Always true, unique: the database refuses the second insert regardless of
+  // what the rest of the row contains.
+  singleton: model.boolean().default(true),
+
   // --- Pillar 1: Core Engine ---
   active_provider: model
     .enum(["shiprocket", "manual_slabs", "hyperlocal"])
@@ -55,4 +65,9 @@ export const ShippingOrchestratorSettings = model.define("shipping_settings", {
 
   // --- API Settings ---
   api_settings: model.json().default({} as Record<string, unknown>),
-})
+}).indexes([
+  {
+    on: ["singleton"],
+    unique: true,
+  },
+])

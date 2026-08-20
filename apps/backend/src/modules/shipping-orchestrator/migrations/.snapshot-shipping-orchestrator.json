@@ -198,6 +198,22 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "singleton": {
+          "name": "singleton",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
         "active_provider": {
           "name": "active_provider",
           "type": "text",
@@ -637,6 +653,15 @@
           "primary": false,
           "unique": false,
           "expression": "CREATE INDEX IF NOT EXISTS \"IDX_shipping_settings_deleted_at\" ON \"shipping_settings\" (\"deleted_at\") WHERE deleted_at IS NULL"
+        },
+        {
+          "keyName": "IDX_shipping_settings_singleton_unique",
+          "columnNames": [],
+          "composite": false,
+          "constraint": false,
+          "primary": false,
+          "unique": false,
+          "expression": "CREATE UNIQUE INDEX IF NOT EXISTS \"IDX_shipping_settings_singleton_unique\" ON \"shipping_settings\" (\"singleton\") WHERE deleted_at IS NULL"
         },
         {
           "keyName": "shipping_settings_pkey",

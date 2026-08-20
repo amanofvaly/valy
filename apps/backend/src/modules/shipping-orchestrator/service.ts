@@ -31,23 +31,34 @@ class ShippingOrchestratorService extends MedusaService({
    * Returns the single settings row, creating defaults if none exists.
    */
   async getActiveSettings() {
-    // Ordered explicitly: two concurrent first-boot requests can each insert a
-    // defaults row, and an unordered list would then hand different callers
-    // different rows (one of which has no carrier credentials).
-    const [existing] = await this.listShippingOrchestratorSettings(
-      {},
-      { order: { created_at: "ASC" } }
-    )
+    const readOne = async () => {
+      const [existing] = await this.listShippingOrchestratorSettings(
+        {},
+        { order: { created_at: "ASC" } }
+      )
+      return existing
+    }
+
+    const existing = await readOne()
     if (existing) return existing
 
-    return await this.createShippingOrchestratorSettings({
-      active_provider: "shiprocket",
-      volumetric_divisor: 5000,
-      fallback_weight_grams: 500,
-      free_shipping_threshold: 0,
-      global_markup_type: "none",
-      global_markup_value: 0,
-    })
+    // A unique index on `singleton` means only one of several concurrent
+    // first-boot requests can insert. The others lose the race and land here,
+    // where the row they failed to create is now readable.
+    try {
+      return await this.createShippingOrchestratorSettings({
+        active_provider: "shiprocket",
+        volumetric_divisor: 5000,
+        fallback_weight_grams: 500,
+        free_shipping_threshold: 0,
+        global_markup_type: "none",
+        global_markup_value: 0,
+      })
+    } catch (e) {
+      const row = await readOne()
+      if (row) return row
+      throw e
+    }
   }
 
   /**
