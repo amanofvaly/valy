@@ -1,3 +1,22 @@
+# Production stack for TrueNAS.
+#
+# THIS FILE IS PRODUCTION. It is a byte-for-byte match of what runs at
+# /mnt/Server-Storage/valy_backend/docker-compose.yml, so a change here is a
+# change to the running system and a diff here is reviewable.
+#
+# It exists because container configuration used to live only on that box, and
+# the same settings could be edited in two places — this file and Portainer's
+# container editor. Whichever ran last won, silently. On 2026-08-20 a CORS
+# origin set through Portainer was erased the next time compose ran, with no
+# error and no trace, after a Portainer container recreate had already taken
+# the tunnel down by dropping a network alias.
+#
+# So: change containers HERE, apply with `docker compose up -d`, and never use
+# Portainer's container-level Recreate or Duplicate/Edit on this stack.
+#
+# Secrets stay out of git. `.env` beside the compose file on the server holds
+# POSTGRES_PASSWORD, JWT_SECRET, COOKIE_SECRET and the CORS origins.
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -10,6 +29,8 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     ports:
+      # Reachable from the whole LAN, on the default credentials unless .env
+      # overrides them. Anyone on the network can read the Shiprocket password.
       - "5432:5432"
 
   redis:
@@ -29,9 +50,9 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      # Product images. Without this they live in the container's own writable
-      # layer, and watchtower replaces that container on every deploy — the
-      # files vanish while the database keeps pointing at them.
+      # Product images. Without this they live in the container's writable
+      # layer and are thrown away every time the container is replaced, while
+      # the database keeps pointing at them.
       - ./uploads:/app/apps/backend/.medusa/server/static
     environment:
       # Baked into every stored image URL by the local file provider.
@@ -45,6 +66,8 @@ services:
       - STORE_CORS=${STORE_CORS}
       - ADMIN_CORS=${ADMIN_CORS}
       - AUTH_CORS=${AUTH_CORS}
+      # Readable timestamps in `docker logs`; the default is UTC.
+      - TZ=${TZ:-Asia/Kolkata}
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -55,7 +78,15 @@ services:
       - ./cloudflared:/etc/cloudflared
     depends_on:
       - medusa
+    environment:
+      - TZ=${TZ:-Asia/Kolkata}
 
+  # Polls the registry and replaces valy-medusa when a new image is pushed.
+  #
+  # This is the third thing that can recreate a container, alongside compose and
+  # Portainer. It is here because nothing else triggers a deploy; once CI can
+  # redeploy the stack directly, this should be removed rather than kept as a
+  # second mechanism doing the same job by a different route.
   watchtower:
     image: containrrr/watchtower
     container_name: valy-watchtower
@@ -63,3 +94,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 300 valy-medusa
+    environment:
+      - TZ=${TZ:-Asia/Kolkata}
+      - WATCHTOWER_LOG_FORMAT=Pretty
