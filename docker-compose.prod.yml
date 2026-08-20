@@ -14,8 +14,13 @@
 # So: change containers HERE, apply with `docker compose up -d`, and never use
 # Portainer's container-level Recreate or Duplicate/Edit on this stack.
 #
-# Secrets stay out of git. `.env` beside the compose file on the server holds
-# POSTGRES_PASSWORD, JWT_SECRET, COOKIE_SECRET and the CORS origins.
+# Secrets stay out of git: they are set as stack environment variables in
+# Portainer, not in this file.
+#
+# Host paths are absolute on purpose. Portainer clones this repo into its own
+# directory, so a relative `./postgres-data` would resolve inside that clone —
+# giving an empty database, no uploads, and a cloudflared with no credentials,
+# while the real data sat untouched somewhere else.
 
 services:
   postgres:
@@ -27,7 +32,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-medusa}
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - /mnt/Server-Storage/valy_backend/postgres-data:/var/lib/postgresql/data
     ports:
       # Reachable from the whole LAN, on the default credentials unless .env
       # overrides them. Anyone on the network can read the Shiprocket password.
@@ -53,7 +58,7 @@ services:
       # Product images. Without this they live in the container's writable
       # layer and are thrown away every time the container is replaced, while
       # the database keeps pointing at them.
-      - ./uploads:/app/apps/backend/.medusa/server/static
+      - /mnt/Server-Storage/valy_backend/uploads:/app/apps/backend/.medusa/server/static
     environment:
       # Baked into every stored image URL by the local file provider.
       - BACKEND_URL=${BACKEND_URL:-https://api.valy.in}
@@ -75,7 +80,7 @@ services:
     restart: always
     command: tunnel --config /etc/cloudflared/config.yml run
     volumes:
-      - ./cloudflared:/etc/cloudflared
+      - /mnt/Server-Storage/valy_backend/cloudflared:/etc/cloudflared
     depends_on:
       - medusa
     environment:
