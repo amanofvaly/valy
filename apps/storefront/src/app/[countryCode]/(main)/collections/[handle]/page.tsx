@@ -8,16 +8,14 @@ import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 
-// A handle created after the last build has no prebuilt page. Without
-// dynamicParams its URL 404s until the storefront is redeployed, which would
-// mean rebuilding the frontend every time a product is published.
+// A handle created after the last build has no prebuilt page; dynamicParams
+// lets its URL render on demand instead of 404ing until a redeploy.
 //
-// revalidate is the floor, not the mechanism: the backend calls
-// /api/revalidate when catalogue data changes, and this bounds how long a page
-// can stay stale if that call is ever missed.
+// Deliberately no `revalidate`. It makes the page ISR, and ISR renders with no
+// request attached, so the cookies() call inside getAuthHeaders() throws
+// DYNAMIC_SERVER_USAGE and every render 500s. Catalogue data is read per
+// request instead of being cached and invalidated.
 export const dynamicParams = true
-export const revalidate = 300
-
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>

@@ -4,11 +4,6 @@ import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
 
-// Backed by the same catalogue cache the backend invalidates via
-// /api/revalidate; this bounds staleness if that call is missed.
-export const revalidate = 300
-
-
 export const metadata: Metadata = {
   title: "Store",
   description: "Explore all of our products.",

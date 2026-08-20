@@ -18,32 +18,7 @@ export const getAuthHeaders = async (): Promise<
   }
 }
 
-/**
- * Catalogue data is identical for every visitor, so it is tagged with a plain,
- * shared name.
- *
- * Everything else keeps the per-visitor `_medusa_cache_id` suffix, because a
- * cart or a customer must never be served from another visitor's cache entry.
- *
- * The distinction matters for more than tidiness: a per-visitor tag can only be
- * invalidated from inside that visitor's own request. Publishing a product in
- * the admin could never clear `products-3f2a…` for thousands of unknown
- * browsers, so catalogue changes were only visible after a rebuild.
- */
-const GLOBAL_TAGS = new Set([
-  "products",
-  "variants",
-  "collections",
-  "categories",
-  "regions",
-  "locales",
-])
-
 export const getCacheTag = async (tag: string): Promise<string> => {
-  if (GLOBAL_TAGS.has(tag)) {
-    return tag
-  }
-
   try {
     const cookies = await nextCookies()
     const cacheId = cookies.get("_medusa_cache_id")?.value

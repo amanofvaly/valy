@@ -19,22 +19,11 @@ export const listProducts = async ({
   queryParams,
   countryCode,
   regionId,
-  live = false,
 }: {
   pageParam?: number
   queryParams?: ProductListQueryParams
   countryCode?: string
   regionId?: string
-  /**
-   * Skip the cache entirely and read the current record.
-   *
-   * Price and stock are the two things a customer must never see a stale
-   * version of: a wrong price looks perfectly normal and is only discovered
-   * when the total at checkout disagrees with the page. Everything around it —
-   * title, description, images — can lag harmlessly, so only the callers that
-   * render price or availability pay for this.
-   */
-  live?: boolean
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -67,7 +56,12 @@ export const listProducts = async ({
     ...(await getAuthHeaders()),
   }
 
-  const next = live ? undefined : { ...(await getCacheOptions("products")) }
+  // Catalogue data is read per request. Caching it is what produced stale
+  // prices that nothing could clear: entries never expired, tags were
+  // per-visitor so no webhook could target them, and Vercel restored the old
+  // cache into each new deployment. The API answers in milliseconds; the page
+  // shell around this is still prebuilt.
+  const next = undefined
 
   return sdk.client
     .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
@@ -84,7 +78,7 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: live ? "no-store" : "force-cache",
+        cache: "no-store",
       }
     )
     .then(({ products, count }) => {
