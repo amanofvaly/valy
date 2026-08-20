@@ -6,21 +6,18 @@ type FaceplateProps = {
   code: string
   /** Short status read out on the right of the plate, e.g. "In stock" */
   status?: string
-  /** Number of drive bays drawn along the bottom of the panel */
-  bays?: number
   className?: string
   children?: React.ReactNode
 }
 
 /**
- * The recurring "front panel" of a Valy machine: a label plate, a status LED
- * and a row of drive bays. Used for the hero unit, the configuration cards and
- * the closing band so the page reads like a rack of the same equipment.
+ * The recurring "front panel" of a Valy machine: a label plate and a status
+ * LED above the panel content. Used for the hero unit, the configuration cards
+ * and the closing band so the page reads like a rack of the same equipment.
  */
 const Faceplate: React.FC<FaceplateProps> = ({
   code,
   status,
-  bays = 4,
   className,
   children,
 }) => {
@@ -47,21 +44,6 @@ const Faceplate: React.FC<FaceplateProps> = ({
       </div>
 
       {children && <div className="relative flex-1">{children}</div>}
-
-      <div
-        aria-hidden
-        className="flex items-center gap-1.5 border-t border-zinc-800 bg-zinc-950 px-4 py-3"
-      >
-        {Array.from({ length: bays }).map((_, index) => (
-          <div
-            key={index}
-            className="flex h-7 flex-1 items-center justify-between rounded-soft bg-zinc-900 px-2 ring-1 ring-inset ring-zinc-800"
-          >
-            <span className="h-3 w-px bg-zinc-700" />
-            <span className="h-1 w-1 rounded-circle bg-amber-400/80" />
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

@@ -10,7 +10,6 @@ const configurations = [
   {
     code: "VLY-N2",
     name: "Nano",
-    bays: 2,
     from: "32,000",
     for: "Photos, documents, and a single 4K stream",
     specs: [
@@ -25,7 +24,6 @@ const configurations = [
   {
     code: "VLY-C4",
     name: "Core",
-    bays: 4,
     from: "68,000",
     for: "The family archive plus a Proxmox lab",
     featured: true,
@@ -41,7 +39,6 @@ const configurations = [
   {
     code: "VLY-V8",
     name: "Vault",
-    bays: 8,
     from: "1,42,000",
     for: "Studio masters, backups, and heavy VMs",
     specs: [
@@ -72,7 +69,6 @@ const Configurations = () => {
               <Faceplate
                 code={`${config.code} · ${config.name}`}
                 status={config.featured ? "Most ordered" : undefined}
-                bays={config.bays}
                 className="h-full"
               >
                 <div className="flex h-full flex-col gap-6 p-5">

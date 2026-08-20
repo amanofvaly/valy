@@ -5,7 +5,7 @@ const BuildDesk = () => {
   return (
     <section className="bg-zinc-950 py-16 lg:py-24">
       <div className="content-container">
-        <Faceplate code="VLY · Build desk" status="Open 10-19 IST" bays={6}>
+        <Faceplate code="VLY · Build desk" status="Open 10-19 IST">
           <div className="grid grid-cols-1 gap-10 p-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:p-10">
             <div className="flex flex-col gap-5">
               <h2 className="max-w-xl font-display text-3xl leading-[1.1] tracking-tight text-white [font-stretch:108%] md:text-4xl">

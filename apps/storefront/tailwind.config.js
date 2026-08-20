@@ -68,6 +68,22 @@ module.exports = {
           "Ubuntu",
           "sans-serif",
         ],
+        // Loaded by next/font/google in src/app/layout.tsx.
+        display: [
+          "var(--font-display)",
+          "Archivo",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-mono)",
+          "IBM Plex Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
       },
       keyframes: {
         ring: {
