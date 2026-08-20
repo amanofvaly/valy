@@ -101,9 +101,15 @@ const ensureFulfillmentSetStep = createStep(
       (s: any) => s.metadata?.owned_by === OWNED_BY
     )
 
+    // Ownership is tracked in metadata, so these names are free to be the
+    // ones the merchant actually reads in the admin. Earlier versions named
+    // them `so-<warehouse>`, which leaked an internal prefix into the UI.
+    const setName = `${input.warehouse_name} delivery`
+    const zoneName = `${input.warehouse_name} area`
+
     if (!ownedSet) {
       ownedSet = await fulfillmentService.createFulfillmentSets({
-        name: `so-${input.warehouse_name}`,
+        name: setName,
         type: "shipping",
         metadata: { owned_by: OWNED_BY },
       })
@@ -116,6 +122,10 @@ const ensureFulfillmentSetStep = createStep(
           fulfillment_set_id: ownedSet.id,
         },
       })
+    } else if (String(ownedSet.name).startsWith("so-")) {
+      await fulfillmentService.updateFulfillmentSets(ownedSet.id, {
+        name: setName,
+      })
     }
 
     // 2. Ensure a service zone exists
@@ -126,17 +136,66 @@ const ensureFulfillmentSetStep = createStep(
 
     if (!zone) {
       zone = await fulfillmentService.createServiceZones({
-        name: `so-${input.warehouse_name}-zone`,
+        name: zoneName,
         fulfillment_set_id: ownedSet.id,
         metadata: { owned_by: OWNED_BY },
         geo_zones: [{ type: "country", country_code: "in" }],
       })
+    } else if (String(zone.name).startsWith("so-")) {
+      await fulfillmentService.updateServiceZones(zone.id, { name: zoneName })
     }
 
     return new StepResponse({
       fulfillment_set_id: ownedSet.id,
       service_zone_id: zone.id,
     })
+  }
+)
+
+// ====================================================================
+// Step: ensure the location is reachable from the sales channels
+// ====================================================================
+
+const ensureSalesChannelLinkStep = createStep(
+  "ensure-sales-channel-link",
+  async (input: { stock_location_id: string }, { container }) => {
+    const salesChannelService = container.resolve(Modules.SALES_CHANNEL) as any
+    const link = container.resolve(ContainerRegistrationKeys.LINK) as any
+    const query = container.resolve(ContainerRegistrationKeys.QUERY) as any
+
+    // Checkout only reaches a fulfillment set through
+    // sales channel -> stock location -> fulfillment set. Provisioning the
+    // set without this link leaves the store with no shipping options at all
+    // and nothing in the response to explain why, so it has to be part of
+    // provisioning rather than a manual step in the native admin.
+    const { data: linked } = await query.graph({
+      entity: "stock_location",
+      fields: ["id", "sales_channels.id"],
+      filters: { id: input.stock_location_id },
+    })
+
+    const alreadyLinked = new Set(
+      (linked?.[0]?.sales_channels ?? []).map((sc: any) => sc.id)
+    )
+
+    const channels = await salesChannelService.listSalesChannels({})
+    let created = 0
+
+    for (const channel of channels) {
+      if (alreadyLinked.has(channel.id)) {
+        continue
+      }
+
+      await link.create({
+        [Modules.SALES_CHANNEL]: { sales_channel_id: channel.id },
+        [Modules.STOCK_LOCATION]: {
+          stock_location_id: input.stock_location_id,
+        },
+      })
+      created++
+    }
+
+    return new StepResponse({ linked_sales_channels: created })
   }
 )
 
@@ -231,6 +290,9 @@ export const provisionNativeShippingWorkflow = createWorkflow(
     const provider = resolveProviderStep({})
     const profile = ensureShippingProfileStep({})
     const set = ensureFulfillmentSetStep(input)
+    ensureSalesChannelLinkStep({
+      stock_location_id: input.stock_location_id,
+    })
     const opts = ensureShippingOptionsStep({
       service_zone_id: set.service_zone_id,
       shipping_profile_id: profile.shipping_profile_id,

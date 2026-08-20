@@ -982,9 +982,14 @@ const ShippingOrchestrator = () => {
                   key={zone.id}
                   className="flex flex-col gap-3 bg-ui-bg-base"
                 >
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    {zone.id}
-                  </Text>
+                  <div className="flex items-baseline justify-between">
+                    <Heading level="h3" className="text-base">
+                      {zone.name || "Delivery area"}
+                    </Heading>
+                    <Text size="xsmall" className="text-ui-fg-muted">
+                      {zone.fulfillment_set?.name || ""}
+                    </Text>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
                       <Label>Zone name</Label>
@@ -1106,14 +1111,11 @@ const ShippingOrchestrator = () => {
                     className="flex flex-col gap-3 bg-ui-bg-base"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex items-center gap-x-2">
                         <Badge>{row.extension?.tier || "custom"}</Badge>
-                        <Text
-                          size="xsmall"
-                          className="text-ui-fg-muted mt-1"
-                        >
-                          {nativeId}
-                        </Text>
+                        <Heading level="h3" className="text-base">
+                          {currentDisplay || currentName || "Shipping option"}
+                        </Heading>
                       </div>
                     </div>
 
