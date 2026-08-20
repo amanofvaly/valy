@@ -17,6 +17,11 @@ jobs:
       contents: read
       packages: write
 
+    # The secrets context is not available in a step-level `if`, so the URL is
+    # surfaced as an env var and the step keys off that instead.
+    env:
+      PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,11 +42,39 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}-backend
 
+      # Tagged with the commit as well as latest, so the image running in
+      # production can be traced back to a commit. `latest` is a moving
+      # pointer and its digest says nothing about what is inside.
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/valy-backend:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/valy-backend:latest
+            ghcr.io/${{ github.repository_owner }}/valy-backend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # Redeploys the stack from docker-compose.prod.yml in this repo.
+      #
+      # This is what lets watchtower go. Watchtower replaces the container
+      # while reusing the config the previous one happened to have, so a
+      # change to the compose file never reaches production on its own —
+      # which is how container config ended up editable in two places that
+      # silently overwrote each other. A stack redeploy reapplies the file,
+      # so the file is the only thing that decides what runs.
+      #
+      # Skipped when the secret is absent, so the build still works before
+      # the Portainer stack exists.
+      - name: Trigger production redeploy
+        if: env.PORTAINER_WEBHOOK_URL != ''
+        run: |
+          echo "Triggering stack redeploy"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "$PORTAINER_WEBHOOK_URL")
+          echo "Portainer responded ${status}"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Redeploy failed — production is still running the previous image."
+            exit 1
+          fi
