@@ -73,9 +73,11 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   // --- Warehouses (delegate to sync workflow so link + native side stay in sync) ---
   if (body.warehouses && Array.isArray(body.warehouses)) {
+    const processedIds = new Set<string>()
+
     for (const wh of body.warehouses) {
       const isExisting = wh.id && !String(wh.id).startsWith("new_")
-      await syncWarehouseWithStockLocationWorkflow(req.scope).run({
+      const result = await syncWarehouseWithStockLocationWorkflow(req.scope).run({
         input: {
           origin: "orchestrator",
           warehouse: {
@@ -90,15 +92,16 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           },
         },
       })
+      
+      if (result.result?.warehouse_id) {
+        processedIds.add(result.result.warehouse_id)
+      }
     }
 
     // Delete warehouses that were removed on the client
-    const existingIds = new Set(
-      body.warehouses.filter((w: any) => w.id && !String(w.id).startsWith("new_")).map((w: any) => w.id)
-    )
     const currentWarehouses = await svc.listSoWarehouses()
     const toDelete = currentWarehouses
-      .filter((w: any) => !existingIds.has(w.id))
+      .filter((w: any) => !processedIds.has(w.id))
       .map((w: any) => w.id)
 
     for (const id of toDelete) {

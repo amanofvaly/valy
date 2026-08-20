@@ -187,6 +187,15 @@ const ShippingOrchestrator = () => {
       })
       if (res.ok) {
         toast.success("All settings saved successfully")
+        
+        // Reload config to get real IDs for any newly created items
+        const configData = await fetch("/admin/shipping-orchestrator", { credentials: "include" }).then((r) => r.json())
+        setSettings(configData.settings)
+        setRules(configData.rules || [])
+        setWarehouses(configData.warehouses || [])
+        setBoxConfigs(configData.box_configs || [])
+        setRtoPincodes(configData.rto_pincodes || [])
+        
         // Re-run the readiness checks so the banner reflects what was just fixed.
         loadHealth()
       } else {
