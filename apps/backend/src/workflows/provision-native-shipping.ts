@@ -117,9 +117,10 @@ const ensureFulfillmentSetStep = createStep(
       }
     }
 
-    // Ownership is tracked in metadata, so these names are free to be the
-    // ones the merchant actually reads in the admin. Earlier versions named
-    // them `so-<warehouse>`, which leaked an internal prefix into the UI.
+    // Names are labels: nothing keys off them, ownership lives in metadata.
+    // They are set once, at creation, and never rewritten afterwards — an
+    // existing name belongs to whoever set it. Renaming on every save is how
+    // a cosmetic tidy-up took checkout down.
     const setName = `${input.warehouse_name} delivery`
     const zoneName = `${input.warehouse_name} area`
 
@@ -156,10 +157,6 @@ const ensureFulfillmentSetStep = createStep(
           fulfillment_set_id: ownedSet.id,
         },
       })
-    } else if (String(ownedSet.name).startsWith("so-")) {
-      await fulfillmentService.updateFulfillmentSets(ownedSet.id, {
-        name: setName,
-      })
     }
 
     // 2. Ensure a service zone exists
@@ -177,8 +174,6 @@ const ensureFulfillmentSetStep = createStep(
           ? [{ type: "country", country_code: countryCode }]
           : [],
       })
-    } else if (String(zone.name).startsWith("so-")) {
-      await fulfillmentService.updateServiceZones(zone.id, { name: zoneName })
     }
 
     return new StepResponse({
