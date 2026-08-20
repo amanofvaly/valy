@@ -24,6 +24,6 @@ COPY --from=builder /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/backend ./apps/backend
 
-WORKDIR /app/apps/backend
+WORKDIR /app/apps/backend/.medusa/server
 EXPOSE 9000
-CMD ["pnpm", "start"]
+CMD ["npm", "run", "start"]
