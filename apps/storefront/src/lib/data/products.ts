@@ -19,11 +19,22 @@ export const listProducts = async ({
   queryParams,
   countryCode,
   regionId,
+  live = false,
 }: {
   pageParam?: number
   queryParams?: ProductListQueryParams
   countryCode?: string
   regionId?: string
+  /**
+   * Skip the cache entirely and read the current record.
+   *
+   * Price and stock are the two things a customer must never see a stale
+   * version of: a wrong price looks perfectly normal and is only discovered
+   * when the total at checkout disagrees with the page. Everything around it —
+   * title, description, images — can lag harmlessly, so only the callers that
+   * render price or availability pay for this.
+   */
+  live?: boolean
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -56,9 +67,7 @@ export const listProducts = async ({
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("products")),
-  }
+  const next = live ? undefined : { ...(await getCacheOptions("products")) }
 
   return sdk.client
     .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
@@ -75,7 +84,7 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: "force-cache",
+        cache: live ? "no-store" : "force-cache",
       }
     )
     .then(({ products, count }) => {
