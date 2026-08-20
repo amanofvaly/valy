@@ -92,22 +92,27 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           },
         },
       })
-      
+
       if (result.result?.warehouse_id) {
         processedIds.add(result.result.warehouse_id)
       }
     }
 
-    // Delete warehouses that were removed on the client
-    const currentWarehouses = await svc.listSoWarehouses()
-    const toDelete = currentWarehouses
-      .filter((w: any) => !processedIds.has(w.id))
-      .map((w: any) => w.id)
+    // Delete warehouses that were removed on the client. This pass deletes
+    // everything the sync loop did not account for, so it is only safe when
+    // every submitted warehouse reported an id back — one silent miss would
+    // otherwise wipe the whole table (and cascade into its stock locations).
+    if (processedIds.size === body.warehouses.length) {
+      const currentWarehouses = await svc.listSoWarehouses()
+      const toDelete = currentWarehouses
+        .filter((w: any) => !processedIds.has(w.id))
+        .map((w: any) => w.id)
 
-    for (const id of toDelete) {
-      await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
-        input: { origin: "orchestrator", warehouse_id: id },
-      })
+      for (const id of toDelete) {
+        await deleteWarehouseWithStockLocationWorkflow(req.scope).run({
+          input: { origin: "orchestrator", warehouse_id: id },
+        })
+      }
     }
 
     await reconcileShippingOrchestratorWorkflow(req.scope).run({ input: {} })

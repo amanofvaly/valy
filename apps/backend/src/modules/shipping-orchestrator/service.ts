@@ -33,7 +33,13 @@ class ShippingOrchestratorService extends MedusaService({
    * Returns the single settings row, creating defaults if none exists.
    */
   async getActiveSettings() {
-    const [existing] = await this.listShippingOrchestratorSettings()
+    // Ordered explicitly: two concurrent first-boot requests can each insert a
+    // defaults row, and an unordered list would then hand different callers
+    // different rows (one of which has no carrier credentials).
+    const [existing] = await this.listShippingOrchestratorSettings(
+      {},
+      { order: { created_at: "ASC" } }
+    )
     if (existing) return existing
 
     return await this.createShippingOrchestratorSettings({
