@@ -6,6 +6,7 @@ import {
   PopoverPanel,
   Transition,
 } from "@headlessui/react"
+import { goodsTotal, isTaxInclusiveCart } from "@lib/util/cart-totals"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -35,7 +36,12 @@ const CartDropdown = ({
       return acc + item.quantity
     }, 0) || 0
 
-  const subtotal = cartState?.subtotal ?? 0
+  // `cart.subtotal` is items *plus shipping*, both with tax stripped out — a
+  // figure that matches neither the line items above it nor anything the
+  // customer agreed to. A mini cart shows the value of the goods, in the same
+  // basis as the prices next to them.
+  const subtotal = goodsTotal(cartState)
+  const taxInclusive = isTaxInclusiveCart(cartState)
   const itemRef = useRef<number>(totalItems || 0)
 
   const timedOpen = () => {
@@ -178,7 +184,9 @@ const CartDropdown = ({
                   <div className="flex items-center justify-between">
                     <span className="text-ui-fg-base font-semibold">
                       Subtotal{" "}
-                      <span className="font-normal">(excl. taxes)</span>
+                      <span className="font-normal">
+                        {taxInclusive ? "(incl. taxes)" : "(excl. taxes)"}
+                      </span>
                     </span>
                     <span
                       className="text-large-semi"

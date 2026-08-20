@@ -6,6 +6,7 @@ type CheckboxProps = {
   onChange?: () => void
   label: string
   name?: string
+  id?: string
   'data-testid'?: string
 }
 
@@ -14,13 +15,20 @@ const CheckboxWithLabel: React.FC<CheckboxProps> = ({
   onChange,
   label,
   name,
+  id,
   'data-testid': dataTestId
 }) => {
+  // The id has to be unique per checkbox: `htmlFor` binds a label to the *first*
+  // matching id in the document, so two checkboxes sharing one id would make the
+  // second label toggle the first box. Derived from `name` so it stays stable
+  // between server and client render.
+  const inputId = id ?? (name ? `checkbox-${name}` : "checkbox")
+
   return (
     <div className="flex items-center space-x-2 ">
       <Checkbox
         className="text-base-regular flex items-center gap-x-2"
-        id="checkbox"
+        id={inputId}
         role="checkbox"
         checked={checked}
         readOnly
@@ -30,7 +38,7 @@ const CheckboxWithLabel: React.FC<CheckboxProps> = ({
         data-testid={dataTestId}
       />
       <Label
-        htmlFor="checkbox"
+        htmlFor={inputId}
         className="!transform-none !txt-medium"
       >
         {label}

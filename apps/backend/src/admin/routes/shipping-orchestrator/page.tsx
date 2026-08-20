@@ -25,6 +25,19 @@ type WarehouseData = Record<string, any>
 type BoxConfigData = Record<string, any>
 type RtoPincodeData = Record<string, any>
 type ShippingOptionRow = { native: Record<string, any>; extension: Record<string, any> | null }
+type HealthCheck = {
+  id: string
+  level: "error" | "warning" | "ok"
+  title: string
+  detail: string
+  action?: string
+  tab?: string
+}
+type Health = {
+  status: "error" | "warning" | "ok"
+  summary: { errors: number; warnings: number; checkout_ready: boolean }
+  checks: HealthCheck[]
+}
 
 // ====================================================================
 // Main Component
@@ -41,7 +54,8 @@ const ShippingOrchestrator = () => {
   const [serviceZones, setServiceZones] = useState<Record<string, any>[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState("engine")
+  const [activeTab, setActiveTab] = useState("setup")
+  const [health, setHealth] = useState<Health | null>(null)
 
   // --- Test Serviceability State ---
   const [testPickup, setTestPickup] = useState("")
@@ -61,6 +75,12 @@ const ShippingOrchestrator = () => {
       .then((r) => r.json())
       .then((d) => setShippingOptions(d.options || []))
       .catch(() => setShippingOptions([]))
+
+  const loadHealth = () =>
+    fetch("/admin/shipping-orchestrator/health", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setHealth(d))
+      .catch(() => setHealth(null))
 
   const loadServiceZones = () =>
     fetch("/admin/shipping-orchestrator/service-zones", {
@@ -118,6 +138,7 @@ const ShippingOrchestrator = () => {
 
     loadShippingOptions()
     loadServiceZones()
+    loadHealth()
   }, [])
 
   const saveShippingOption = async (
@@ -166,6 +187,8 @@ const ShippingOrchestrator = () => {
       })
       if (res.ok) {
         toast.success("All settings saved successfully")
+        // Re-run the readiness checks so the banner reflects what was just fixed.
+        loadHealth()
       } else {
         toast.error("Failed to save settings")
       }
@@ -262,8 +285,66 @@ const ShippingOrchestrator = () => {
         </div>
       </div>
 
+      {health && health.status !== "ok" && activeTab !== "setup" && (
+        <div
+          className={
+            "flex items-start justify-between gap-4 rounded-lg border px-4 py-3 " +
+            (health.status === "error"
+              ? "border-ui-border-error bg-ui-bg-subtle"
+              : "border-ui-border-base bg-ui-bg-subtle")
+          }
+        >
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Badge color={health.status === "error" ? "red" : "orange"}>
+                {health.status === "error"
+                  ? "Checkout blocked"
+                  : "Needs attention"}
+              </Badge>
+              <Text className="font-medium">
+                {health.summary.errors > 0 &&
+                  `${health.summary.errors} problem${
+                    health.summary.errors === 1 ? "" : "s"
+                  } will stop customers from checking out`}
+                {health.summary.errors === 0 &&
+                  `${health.summary.warnings} setting${
+                    health.summary.warnings === 1 ? "" : "s"
+                  } left to review`}
+              </Text>
+            </div>
+            <Text size="small" className="text-ui-fg-subtle">
+              {health.checks[0]?.title}
+              {health.checks.length > 1 &&
+                ` and ${health.checks.length - 1} more`}
+            </Text>
+          </div>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => setActiveTab("setup")}
+          >
+            Review setup
+          </Button>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <Tabs.List>
+          <Tabs.Trigger value="setup">
+            Setup
+            {health && health.summary.errors > 0 && (
+              <Badge color="red" size="2xsmall" className="ml-2">
+                {health.summary.errors}
+              </Badge>
+            )}
+            {health &&
+              health.summary.errors === 0 &&
+              health.summary.warnings > 0 && (
+                <Badge color="orange" size="2xsmall" className="ml-2">
+                  {health.summary.warnings}
+                </Badge>
+              )}
+          </Tabs.Trigger>
           <Tabs.Trigger value="engine">Core Engine</Tabs.Trigger>
           <Tabs.Trigger value="warehouses">Warehouses</Tabs.Trigger>
           <Tabs.Trigger value="shipping-options">Shipping Options</Tabs.Trigger>
@@ -273,6 +354,90 @@ const ShippingOrchestrator = () => {
           <Tabs.Trigger value="cod">COD & RTO</Tabs.Trigger>
           <Tabs.Trigger value="returns">Returns</Tabs.Trigger>
         </Tabs.List>
+
+        {/* ============================================================ */}
+        {/* TAB 0: SETUP & READINESS                                     */}
+        {/* ============================================================ */}
+        <Tabs.Content value="setup">
+          <Container className="flex flex-col gap-4 bg-ui-bg-subtle mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Heading level="h2" className="text-lg">
+                  Setup &amp; readiness
+                </Heading>
+                <Text className="text-ui-fg-subtle" size="small">
+                  Everything that has to be true before a customer can pick a
+                  delivery option and pay.
+                </Text>
+              </div>
+              <Button variant="secondary" size="small" onClick={loadHealth}>
+                Re-check
+              </Button>
+            </div>
+
+            {!health && (
+              <Text className="text-ui-fg-subtle">Running checks…</Text>
+            )}
+
+            {health && health.checks.length === 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-3">
+                <Badge color="green">Ready</Badge>
+                <Text>
+                  Shipping is fully configured. Customers can select a delivery
+                  option and check out.
+                </Text>
+              </div>
+            )}
+
+            {health && health.checks.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {!health.summary.checkout_ready && (
+                  <Text size="small" className="text-ui-fg-subtle">
+                    Items marked <strong>Blocking</strong> stop checkout today.
+                    Items marked <strong>Review</strong> still let customers buy,
+                    but the result may not be what you intend.
+                  </Text>
+                )}
+
+                {health.checks.map((check) => (
+                  <div
+                    key={check.id}
+                    className="flex items-start justify-between gap-4 rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-3"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          color={check.level === "error" ? "red" : "orange"}
+                          size="2xsmall"
+                        >
+                          {check.level === "error" ? "Blocking" : "Review"}
+                        </Badge>
+                        <Text className="font-medium">{check.title}</Text>
+                      </div>
+                      <Text size="small" className="text-ui-fg-subtle">
+                        {check.detail}
+                      </Text>
+                      {check.action && (
+                        <Text size="small" className="text-ui-fg-base">
+                          → {check.action}
+                        </Text>
+                      )}
+                    </div>
+                    {check.tab && (
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => setActiveTab(check.tab!)}
+                      >
+                        Fix
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Container>
+        </Tabs.Content>
 
         {/* ============================================================ */}
         {/* TAB 1: CORE ENGINE                                           */}
@@ -337,6 +502,41 @@ const ShippingOrchestrator = () => {
                   Used when a product has no weight defined
                 </Text>
               </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <Label>Fallback Slab Rate</Label>
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Charged when the courier API cannot be reached. Turn this
+                    off and an outage makes delivery options unavailable
+                    instead of quoting an estimate.
+                  </Text>
+                </div>
+                <Switch
+                  checked={settings.fallback_enabled !== false}
+                  onCheckedChange={(v) => updateSetting("fallback_enabled", v)}
+                />
+              </div>
+
+              {settings.fallback_enabled !== false && (
+                <div className="flex flex-col gap-2">
+                  <Label>Fallback Rate per 500g</Label>
+                  <Input
+                    type="number"
+                    value={settings.fallback_rate_per_500g ?? 0}
+                    onChange={(e) =>
+                      updateSetting(
+                        "fallback_rate_per_500g",
+                        Number(e.target.value)
+                      )
+                    }
+                  />
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Also used as the only rate source when the provider is set
+                    to Manual Weight Slabs.
+                  </Text>
+                </div>
+              )}
             </Container>
 
             {/* API Settings */}

@@ -250,6 +250,38 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "fallback_enabled": {
+          "name": "fallback_enabled",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "fallback_rate_per_500g": {
+          "name": "fallback_rate_per_500g",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "45",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
         "absorb_split_shipment_cost": {
           "name": "absorb_split_shipment_cost",
           "type": "boolean",

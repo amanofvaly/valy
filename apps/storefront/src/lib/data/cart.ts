@@ -15,6 +15,8 @@ import {
 } from "./cookies"
 import { getRegion } from "./regions"
 import { getLocale } from "./locale-actions"
+import { retrieveCustomer } from "./customer"
+import compareAddresses from "@lib/util/compare-addresses"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -23,8 +25,12 @@ import { getLocale } from "./locale-actions"
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
+  // `+shipping_methods.data` carries the carrier and delivery estimate recorded
+  // when the option was chosen. Without it the saved delivery step can only show
+  // the method's name and price, losing the promise the customer actually
+  // accepted.
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data"
 
   if (!id) {
     return null
@@ -34,10 +40,6 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("carts")),
-  }
-
   return await sdk.client
     .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
       method: "GET",
@@ -45,8 +47,12 @@ export async function retrieveCart(cartId?: string, fields?: string) {
         fields,
       },
       headers,
-      next,
-      cache: "force-cache",
+      // Deliberately uncached. A cart is per-shopper mutable state that the
+      // backend also rewrites on its own — re-pricing shipping, dropping a
+      // method whose option no longer applies — none of which revalidates a
+      // storefront cache tag. Caching it renders totals and delivery details
+      // that were true a while ago.
+      cache: "no-store",
     })
     .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
     .catch(() => null)
@@ -380,6 +386,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         phone: formData.get("billing_address.phone"),
       }
     await updateCart(data)
+
+    if (formData.get("save_address") === "on") {
+      await saveCheckoutAddressToAccount(data.shipping_address)
+    }
   } catch (e: any) {
     return e.message
   }
@@ -387,6 +397,64 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
   redirect(
     `/${formData.get("shipping_address.country_code")}/checkout?step=delivery`
   )
+}
+
+/**
+ * Copies the address just used at checkout into the customer's address book.
+ *
+ * Checkout writes to the cart, which is a different record from the account's
+ * address list — so without this an address entered at checkout is never
+ * offered again on the next order.
+ *
+ * Saving is best-effort on purpose: a customer who ticked a convenience box
+ * should never have their checkout fail because the address book write did.
+ */
+async function saveCheckoutAddressToAccount(
+  address: Record<string, unknown>
+): Promise<void> {
+  try {
+    const customer = await retrieveCustomer()
+    if (!customer) {
+      return
+    }
+
+    // Do not accumulate duplicates when the customer checks out repeatedly
+    // with the same address.
+    const alreadySaved = (customer.addresses ?? []).some((saved) =>
+      compareAddresses(saved, address)
+    )
+    if (alreadySaved) {
+      return
+    }
+
+    const headers = {
+      ...(await getAuthHeaders()),
+    }
+
+    await sdk.store.customer.createAddress(
+      {
+        first_name: (address.first_name as string) || "",
+        last_name: (address.last_name as string) || "",
+        company: (address.company as string) || "",
+        address_1: (address.address_1 as string) || "",
+        address_2: (address.address_2 as string) || "",
+        city: (address.city as string) || "",
+        postal_code: (address.postal_code as string) || "",
+        province: (address.province as string) || "",
+        country_code: (address.country_code as string) || "",
+        phone: (address.phone as string) || "",
+        // First saved address becomes the default so it is preselected next time.
+        is_default_shipping: (customer.addresses ?? []).length === 0,
+      },
+      {},
+      headers
+    )
+
+    const customerCacheTag = await getCacheTag("customers")
+    revalidateTag(customerCacheTag)
+  } catch {
+    // Swallowed deliberately — see the note above.
+  }
 }
 
 /**

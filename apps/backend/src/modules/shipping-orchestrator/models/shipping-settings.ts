@@ -10,6 +10,14 @@ export const ShippingOrchestratorSettings = model.define("shipping_settings", {
   volumetric_divisor: model.number().default(5000),
   fallback_weight_grams: model.number().default(500),
 
+  // --- Pillar 1: Fallback slab ---
+  // Used when the live carrier API is unreachable, and as the sole rate source
+  // when active_provider is "manual_slabs". When disabled, a carrier outage
+  // makes the option unavailable with a stated reason rather than silently
+  // quoting a made-up price.
+  fallback_enabled: model.boolean().default(true),
+  fallback_rate_per_500g: model.number().default(45),
+
   // --- Pillar 2: Multi-Warehouse ---
   absorb_split_shipment_cost: model.boolean().default(true),
 

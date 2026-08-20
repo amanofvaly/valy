@@ -41,7 +41,10 @@ export default async function OrderCompletedTemplate({
             Summary
           </Heading>
           <Items order={order} />
-          <CartTotals totals={order} />
+          <CartTotals
+            totals={order}
+            shippingLabel={order.shipping_methods?.at(-1)?.name}
+          />
           <ShippingDetails order={order} />
           <PaymentDetails order={order} />
           <Help />

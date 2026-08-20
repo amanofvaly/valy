@@ -18,7 +18,10 @@ const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => {
           In your Cart
         </Heading>
         <Divider className="my-6" />
-        <CartTotals totals={cart} />
+        <CartTotals
+          totals={cart}
+          shippingLabel={cart.shipping_methods?.at(-1)?.name}
+        />
         <ItemsPreviewTemplate cart={cart} />
         <div className="my-6">
           <DiscountCode cart={cart} />

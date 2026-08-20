@@ -1,3 +1,4 @@
+import compareAddresses from "@lib/util/compare-addresses"
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@modules/common/components/ui"
 import Checkbox from "@modules/common/components/checkbox"
@@ -32,6 +33,8 @@ const ShippingAddress = ({
     email: cart?.email || "",
   })
 
+  const [saveAddress, setSaveAddress] = useState(false)
+
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),
     [cart?.region]
@@ -45,6 +48,24 @@ const ShippingAddress = ({
       ),
     [customer?.addresses, countriesInRegion]
   )
+
+  // Suppress the offer once the typed address matches one already in the book,
+  // including right after the customer picked it from the saved-address list.
+  const isAddressAlreadySaved = useMemo(() => {
+    const typed = {
+      first_name: formData["shipping_address.first_name"],
+      last_name: formData["shipping_address.last_name"],
+      address_1: formData["shipping_address.address_1"],
+      company: formData["shipping_address.company"],
+      postal_code: formData["shipping_address.postal_code"],
+      city: formData["shipping_address.city"],
+      country_code: formData["shipping_address.country_code"],
+      province: formData["shipping_address.province"],
+      phone: formData["shipping_address.phone"],
+    }
+
+    return !!customer?.addresses?.some((a) => compareAddresses(a, typed))
+  }, [customer?.addresses, formData])
 
   const setFormAddress = (
     address?: HttpTypes.StoreCartAddress,
@@ -192,7 +213,7 @@ const ShippingAddress = ({
           data-testid="shipping-province-input"
         />
       </div>
-      <div className="my-8">
+      <div className="my-8 flex flex-col gap-4">
         <Checkbox
           label="Billing address same as shipping address"
           name="same_as_billing"
@@ -200,6 +221,18 @@ const ShippingAddress = ({
           onChange={onChange}
           data-testid="billing-address-checkbox"
         />
+        {/* Only offered to signed-in customers — there is no address book to
+            save into otherwise — and only when this address is not already
+            one of their saved ones. */}
+        {customer && !isAddressAlreadySaved && (
+          <Checkbox
+            label="Save this address to my account"
+            name="save_address"
+            checked={saveAddress}
+            onChange={() => setSaveAddress((v) => !v)}
+            data-testid="save-address-checkbox"
+          />
+        )}
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Input

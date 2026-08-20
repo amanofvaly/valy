@@ -9,7 +9,10 @@ import {
   MedusaError,
   Modules,
 } from "@medusajs/framework/utils"
-import { SHIPPING_ORCHESTRATOR_PROVIDER_ID } from "../modules/shipping-orchestrator"
+import {
+  SHIPPING_ORCHESTRATOR_PROVIDER_ID,
+  rulesForTier,
+} from "../modules/shipping-orchestrator"
 
 // ====================================================================
 // Input
@@ -141,6 +144,19 @@ const ensureFulfillmentSetStep = createStep(
 // Step: ensure three tiered shipping options exist
 // ====================================================================
 
+/** Rules come back with ids and timestamps; updates take the bare shape. */
+const stripRule = (r: any) => ({
+  attribute: r.attribute,
+  operator: r.operator,
+  value: r.value,
+})
+
+/** Rules the option is missing, compared by attribute. */
+const missingRules = (option: any, expected: { attribute: string }[]) => {
+  const present = new Set((option.rules ?? []).map((r: any) => r.attribute))
+  return expected.filter((r) => !present.has(r.attribute))
+}
+
 const ensureShippingOptionsStep = createStep(
   "ensure-shipping-options",
   async (
@@ -153,16 +169,35 @@ const ensureShippingOptionsStep = createStep(
   ) => {
     const fulfillmentService = container.resolve(Modules.FULFILLMENT) as any
 
-    const existing = await fulfillmentService.listShippingOptions({
-      service_zone_id: input.service_zone_id,
-    })
+    const existing = await fulfillmentService.listShippingOptions(
+      { service_zone_id: input.service_zone_id },
+      { relations: ["rules"] }
+    )
 
     const created: any[] = []
+    let ruled = 0
+
     for (const tier of TIERS) {
+      const gates = rulesForTier(tier.code)
+
       const already = existing.find(
         (o: any) => o.data?.tier === tier.code && o.metadata?.owned_by === OWNED_BY
       )
-      if (already) continue
+
+      if (already) {
+        // Backfill gating rules on options provisioned before they existed.
+        // Without them the option is listed unconditionally and has to be
+        // hidden client-side after a failed price call — which is what produced
+        // the flicker of a disabled option on every interaction.
+        const missing = missingRules(already, gates)
+        if (missing.length) {
+          await fulfillmentService.updateShippingOptions(already.id, {
+            rules: [...(already.rules ?? []).map(stripRule), ...missing],
+          })
+          ruled++
+        }
+        continue
+      }
 
       const opt = await fulfillmentService.createShippingOptions({
         name: tier.label,
@@ -177,11 +212,12 @@ const ensureShippingOptionsStep = createStep(
         },
         data: { tier: tier.code },
         metadata: { owned_by: OWNED_BY, tier: tier.code },
+        rules: gates,
       })
       created.push(opt)
     }
 
-    return new StepResponse({ created_count: created.length })
+    return new StepResponse({ created_count: created.length, ruled_count: ruled })
   }
 )
 

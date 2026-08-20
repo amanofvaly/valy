@@ -3,6 +3,11 @@ import { Radio, RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
+import {
+  formatDeliveryEstimate,
+  getShippingAvailability,
+  ShippingAvailability,
+} from "@lib/util/shipping-availability"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -56,7 +61,7 @@ const Shipping: React.FC<ShippingProps> = ({
   const [showPickupOptions, setShowPickupOptions] =
     useState<string>(PICKUP_OPTION_OFF)
   const [calculatedPricesMap, setCalculatedPricesMap] = useState<
-    Record<string, number>
+    Record<string, ShippingAvailability>
   >({})
   const [error, setError] = useState<string | null>(null)
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(
@@ -70,7 +75,13 @@ const Shipping: React.FC<ShippingProps> = ({
   const isOpen = searchParams.get("step") === "delivery"
 
   const _shippingMethods = availableShippingMethods?.filter(
-    (sm) => (sm as unknown as { service_zone?: { fulfillment_set?: { type?: string; location?: { address: HttpTypes.StoreCartAddress } } } }).service_zone?.fulfillment_set?.type !== "pickup"
+    (sm) =>
+      (sm as unknown as { service_zone?: { fulfillment_set?: { type?: string; location?: { address: HttpTypes.StoreCartAddress } } } }).service_zone?.fulfillment_set?.type !== "pickup" &&
+      // An option whose fulfillment provider is no longer registered can never
+      // be fulfilled, so it is pure noise for the customer. The admin health
+      // check is what surfaces it to the merchant.
+      (sm as unknown as { provider?: { is_enabled?: boolean } }).provider
+        ?.is_enabled !== false
   )
 
   const _pickupMethods = availableShippingMethods?.filter(
@@ -79,29 +90,52 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const hasPickupOptions = !!_pickupMethods?.length
 
+  // An option is rendered when we have an affirmative price for it — never
+  // before. Rendering everything and then removing what fails is what put a
+  // Local Delivery row on screen for a frame before it vanished: a promise made
+  // and withdrawn. Nothing here is speculative, so nothing has to be retracted.
+  const selectableShippingMethods = _shippingMethods?.filter(
+    (option) => getShippingAvailability(option, calculatedPricesMap).available
+  )
+
+  // Still waiting on a quote for at least one option we have not resolved yet.
+  const isResolving =
+    isLoadingPrices &&
+    !!_shippingMethods?.some(
+      (o) => o.price_type === "calculated" && !calculatedPricesMap[o.id]
+    )
+
+  // When nothing is deliverable, say why in the customer's terms. An address we
+  // cannot price against is their problem to fix; anything else is ours.
+  const blockingReason = _shippingMethods
+    ?.map((o) => getShippingAvailability(o, calculatedPricesMap))
+    .find(
+      (a): a is Extract<ShippingAvailability, { available: false }> =>
+        !a.available && a.reason === "address_incomplete"
+    )
+
   useEffect(() => {
-    setIsLoadingPrices(true)
+    const calculated =
+      _shippingMethods?.filter((sm) => sm.price_type === "calculated") ?? []
 
-    if (_shippingMethods?.length) {
-      const promises = _shippingMethods
-        .filter((sm) => sm.price_type === "calculated")
-        .map((sm) => calculatePriceForShippingOption(sm.id, cart.id))
+    // Nothing to price — do not leave the UI stuck on a spinner.
+    if (!calculated.length) {
+      setCalculatedPricesMap({})
+      setIsLoadingPrices(false)
+    } else {
+      setIsLoadingPrices(true)
 
-      if (promises.length) {
-        Promise.allSettled(promises).then((res) => {
-          const pricesMap: Record<string, number> = {}
-          res
-            .filter((r) => r.status === "fulfilled")
-            .forEach((p) => {
-              if (p.value?.id) {
-                pricesMap[p.value.id] = p.value.amount ?? 0
-              }
-            })
-
+      Promise.all(
+        calculated.map((sm) => calculatePriceForShippingOption(sm.id, cart.id))
+      )
+        .then((results) => {
+          const pricesMap: Record<string, ShippingAvailability> = {}
+          results.forEach((r) => {
+            pricesMap[r.id] = r.availability
+          })
           setCalculatedPricesMap(pricesMap)
-          setIsLoadingPrices(false)
         })
-      }
+        .finally(() => setIsLoadingPrices(false))
     }
 
     if (_pickupMethods?.find((m) => m.id === shippingMethodId)) {
@@ -140,7 +174,16 @@ const Shipping: React.FC<ShippingProps> = ({
       .catch((err) => {
         setShippingMethodId(currentId)
 
-        setError(err.message)
+        // Core's own wording for an unpriced option ("Shipping options with IDs
+        // so_… do not have a price") is an internal detail. We now prevent
+        // selecting those, so if one slips through, say something a customer
+        // can act on.
+        const raw = String(err?.message ?? "")
+        setError(
+          raw.includes("do not have a price")
+            ? "This delivery option is not available for your address. Please choose another."
+            : raw || "We could not set that delivery option. Please try again."
+        )
       })
       .finally(() => {
         setIsLoading(false)
@@ -243,25 +286,25 @@ const Shipping: React.FC<ShippingProps> = ({
                     }
                   }}
                 >
-                  {_shippingMethods?.map((option) => {
-                    const isDisabled =
-                      option.price_type === "calculated" &&
-                      !isLoadingPrices &&
-                      typeof calculatedPricesMap[option.id] !== "number"
+                  {selectableShippingMethods?.map((option) => {
+                    const availability = getShippingAvailability(
+                      option,
+                      calculatedPricesMap
+                    )
+                    // Unreachable by construction — the list only holds
+                    // available options — but keeps the amount type-safe.
+                    if (!availability.available) return null
 
                     return (
                       <Radio
                         key={option.id}
                         value={option.id}
                         data-testid="delivery-option-radio"
-                        disabled={isDisabled}
                         className={clx(
                           "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
                           {
                             "border-ui-border-interactive":
                               option.id === shippingMethodId,
-                            "hover:shadow-brders-none cursor-not-allowed":
-                              isDisabled,
                           }
                         )}
                       >
@@ -269,31 +312,73 @@ const Shipping: React.FC<ShippingProps> = ({
                           <MedusaRadio
                             checked={option.id === shippingMethodId}
                           />
-                          <span className="text-base-regular">
-                            {option.name}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-base-regular">
+                              {option.name}
+                            </span>
+                            {/* Without this the tiers are two names and two
+                                prices, and the extra cost buys nothing the
+                                customer can see. */}
+                            {(availability.courierName ||
+                              formatDeliveryEstimate(
+                                availability.estimatedDays
+                              )) && (
+                              <span
+                                className="text-small-regular text-ui-fg-subtle"
+                                data-testid="delivery-option-detail"
+                              >
+                                {[
+                                  formatDeliveryEstimate(
+                                    availability.estimatedDays
+                                  ),
+                                  availability.courierName,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <span className="justify-self-end text-ui-fg-base">
-                          {option.price_type === "flat" ? (
-                            convertToLocale({
-                              amount: option.amount!,
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : calculatedPricesMap[option.id] ? (
-                            convertToLocale({
-                              amount: calculatedPricesMap[option.id],
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : isLoadingPrices ? (
-                            <Loader />
-                          ) : (
-                            "-"
-                          )}
+                          {convertToLocale({
+                            amount: availability.amount,
+                            currency_code: cart?.currency_code,
+                          })}
                         </span>
                       </Radio>
                     )
                   })}
                 </RadioGroup>
+
+                {isResolving && !selectableShippingMethods?.length && (
+                  <div
+                    className="flex items-center gap-x-2 py-4 text-ui-fg-subtle"
+                    data-testid="delivery-options-loading"
+                  >
+                    <Loader />
+                    <Text className="txt-small">
+                      Checking delivery options for your address…
+                    </Text>
+                  </div>
+                )}
+
+                {!isResolving && !selectableShippingMethods?.length && (
+                  <div
+                    className="rounded-rounded border border-ui-border-base bg-ui-bg-subtle px-8 py-4"
+                    data-testid="no-delivery-options-message"
+                  >
+                    <Text className="text-ui-fg-base">
+                      {blockingReason
+                        ? "We need your delivery address first."
+                        : "We cannot deliver to this address right now."}
+                    </Text>
+                    <Text className="txt-small text-ui-fg-subtle mt-1">
+                      {blockingReason
+                        ? blockingReason.message
+                        : "Try a different delivery address, or contact us and we will sort it out for you."}
+                    </Text>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -388,16 +473,41 @@ const Shipping: React.FC<ShippingProps> = ({
           <div className="text-small-regular">
             {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
               <div className="flex flex-col w-1/3">
-                <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Method
-                </Text>
-                <Text className="txt-medium text-ui-fg-subtle">
+                {/* The chosen method is its own heading. A "Method" label above
+                    it only restates what the value already says. */}
+                <Text className="txt-medium-plus text-ui-fg-base">
                   {cart.shipping_methods!.at(-1)!.name}{" "}
                   {convertToLocale({
                     amount: cart.shipping_methods!.at(-1)!.amount!,
                     currency_code: cart?.currency_code,
                   })}
                 </Text>
+                {/* The carrier and estimate are part of what was chosen, so the
+                    saved state shows the same promise the option did — read
+                    from the method itself, not recomputed. */}
+                {(() => {
+                  const methodData = cart.shipping_methods!.at(-1)!.data as
+                    | {
+                        courier_name?: string
+                        estimated_delivery_days?: number
+                      }
+                    | null
+                  const detail = [
+                    formatDeliveryEstimate(methodData?.estimated_delivery_days),
+                    methodData?.courier_name,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+
+                  return detail ? (
+                    <Text
+                      className="txt-small text-ui-fg-muted"
+                      data-testid="delivery-option-detail"
+                    >
+                      {detail}
+                    </Text>
+                  ) : null
+                })()}
               </div>
             )}
           </div>
