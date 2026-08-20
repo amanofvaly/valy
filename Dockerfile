@@ -14,7 +14,7 @@ COPY apps/backend ./apps/backend
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 # Build the backend
-RUN pnpm run build --filter=backend...
+RUN pnpm run build --filter=@dtc/backend...
 
 FROM base AS runner
 WORKDIR /app
