@@ -1,9 +1,9 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
 
-import { listCollections } from "@lib/data/collections"
-import { getRegion } from "@lib/data/regions"
 import AssuranceStrip from "@modules/home/components/assurance-strip"
-import FeaturedProducts from "@modules/home/components/featured-products"
+import FeaturedProductsSection from "@modules/home/components/featured-products/section"
+import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import BuildProcess from "@modules/home/components/build-process"
 import BuildDesk from "@modules/home/components/build-desk"
 import Configurations from "@modules/home/components/configurations"
@@ -25,12 +25,6 @@ export default async function Home(props: {
 }) {
   const { countryCode } = await props.params
 
-  const region = await getRegion(countryCode)
-
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
-
   return (
     <>
       <Hero />
@@ -42,11 +36,18 @@ export default async function Home(props: {
       <BuildProcess />
       <OwnerNotes />
       <Faq />
-      {region && collections?.length > 0 && (
-        <ul className="flex flex-col">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      )}
+      {/* The only part of this page that needs the API. Everything above renders
+          immediately; this streams in behind its skeleton rather than holding
+          the whole page back. */}
+      <Suspense
+        fallback={
+          <div className="content-container py-12">
+            <SkeletonProductGrid numberOfProducts={4} />
+          </div>
+        }
+      >
+        <FeaturedProductsSection countryCode={countryCode} />
+      </Suspense>
       <BuildDesk />
     </>
   )
