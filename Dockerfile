@@ -33,4 +33,9 @@ EXPOSE 9000
 # Safe here because exactly one container serves this app. With more than
 # one replica this has to move into its own step that runs before them,
 # or they race each other applying the same migration.
-CMD ["sh", "-c", "npx medusa db:migrate && npm run start"]
+# --execute-safe-links is not optional here. When a link is removed from the
+# code, db:migrate stops and asks which tables to drop. Inside a container
+# nobody can answer, so the deploy hangs at the prompt and never serves.
+# "safe" also means a deploy never drops a table on its own: destructive
+# changes belong in a migration you can read and roll back.
+CMD ["sh", "-c", "npx medusa db:migrate --execute-safe-links && npm run start"]
