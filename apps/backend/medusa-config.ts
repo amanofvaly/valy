@@ -16,6 +16,28 @@ module.exports = defineConfig({
   },
   modules: [
     {
+      resolve: "@medusajs/file",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/file-local",
+            id: "local",
+            options: {
+              // Uploads land in `<cwd>/static`, which in production is a volume
+              // mounted from the NAS. Without that mount the container's own
+              // filesystem holds them and every deploy throws them away.
+              //
+              // backend_url is baked into the URL stored with each image, so a
+              // wrong value here is a data problem rather than a config one:
+              // the default is localhost:9000, which no customer's browser can
+              // reach, and fixing it later means rewriting rows.
+              backend_url: `${process.env.BACKEND_URL ?? "http://localhost:9000"}/static`,
+            },
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/india-gst",
     },
     {

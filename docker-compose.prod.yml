@@ -28,7 +28,14 @@ services:
       - redis
     ports:
       - "9000:9000"
+    volumes:
+      # Product images. Without this they live in the container's own writable
+      # layer, and watchtower replaces that container on every deploy — the
+      # files vanish while the database keeps pointing at them.
+      - ./uploads:/app/apps/backend/.medusa/server/static
     environment:
+      # Baked into every stored image URL by the local file provider.
+      - BACKEND_URL=${BACKEND_URL:-https://api.valy.in}
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-medusa}?sslmode=disable
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
