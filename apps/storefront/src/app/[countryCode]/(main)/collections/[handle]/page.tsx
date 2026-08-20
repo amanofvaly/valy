@@ -8,6 +8,17 @@ import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 
+// A handle created after the last build has no prebuilt page. Without
+// dynamicParams its URL 404s until the storefront is redeployed, which would
+// mean rebuilding the frontend every time a product is published.
+//
+// revalidate is the floor, not the mechanism: the backend calls
+// /api/revalidate when catalogue data changes, and this bounds how long a page
+// can stay stale if that call is ever missed.
+export const dynamicParams = true
+export const revalidate = 300
+
+
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
   searchParams: Promise<

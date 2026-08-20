@@ -5,6 +5,17 @@ import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 
+// A handle created after the last build has no prebuilt page. Without
+// dynamicParams its URL 404s until the storefront is redeployed, which would
+// mean rebuilding the frontend every time a product is published.
+//
+// revalidate is the floor, not the mechanism: the backend calls
+// /api/revalidate when catalogue data changes, and this bounds how long a page
+// can stay stale if that call is ever missed.
+export const dynamicParams = true
+export const revalidate = 300
+
+
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
   searchParams: Promise<{ v_id?: string }>

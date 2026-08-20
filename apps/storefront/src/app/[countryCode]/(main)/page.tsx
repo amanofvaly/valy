@@ -14,6 +14,11 @@ import OwnerNotes from "@modules/home/components/owner-notes"
 import SoftwareStack from "@modules/home/components/software-stack"
 import UseCases from "@modules/home/components/use-cases"
 
+// Backed by the same catalogue cache the backend invalidates via
+// /api/revalidate; this bounds staleness if that call is missed.
+export const revalidate = 300
+
+
 export const metadata: Metadata = {
   title: "Valy Homelabs — Homelab servers built and burned in for India",
   description:

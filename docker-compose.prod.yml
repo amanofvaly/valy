@@ -73,6 +73,10 @@ services:
       - AUTH_CORS=${AUTH_CORS}
       # Readable timestamps in `docker logs`; the default is UTC.
       - TZ=${TZ:-Asia/Kolkata}
+      # Where to tell the storefront its catalogue cache is stale. Unset means
+      # no storefront to notify, and the subscriber stays quiet.
+      - STOREFRONT_URL=${STOREFRONT_URL:-}
+      - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
 
   cloudflared:
     image: cloudflare/cloudflared:latest
