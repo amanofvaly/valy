@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: valy-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-medusa}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:alpine
+    container_name: valy-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  medusa:
+    image: ghcr.io/amanofvaly/valy-backend:latest
+    container_name: valy-medusa
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "9000:9000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-medusa}?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-supersecret}
+      - COOKIE_SECRET=${COOKIE_SECRET:-supersecret}
+      - MEDUSA_ADMIN_ONBOARDING_TYPE=default
+      - STORE_CORS=${STORE_CORS}
+      - ADMIN_CORS=${ADMIN_CORS}
+      - AUTH_CORS=${AUTH_CORS}
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: valy-cloudflared
+    restart: always
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    depends_on:
+      - medusa
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: valy-watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 valy-medusa
