@@ -19,6 +19,7 @@ type MobileActionsProps = {
   inStock?: boolean
   handleAddToCart: () => void
   isAdding?: boolean
+  isAdded?: boolean
   show: boolean
   optionsDisabled: boolean
 }
@@ -31,6 +32,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   inStock,
   handleAddToCart,
   isAdding,
+  isAdded,
   show,
   optionsDisabled,
 }) => {
@@ -118,7 +120,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
               </Button>}
               <Button
                 onClick={handleAddToCart}
-                disabled={!inStock || !variant}
+                disabled={!inStock || !variant || isAdded}
                 className="w-full"
                 isLoading={isAdding}
                 data-testid="mobile-cart-button"
@@ -127,6 +129,8 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   ? "Select variant"
                   : !inStock
                   ? "Out of stock"
+                  : isAdded
+                  ? "Added!"
                   : "Add to cart"}
               </Button>
             </div>
