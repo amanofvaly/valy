@@ -11,20 +11,28 @@ export const metadata: Metadata = {
 }
 
 export default async function Checkout() {
-  const cart = await retrieveCart()
+  // The cart and the customer do not depend on each other.
+  const [cart, customer] = await Promise.all([
+    retrieveCart(),
+    retrieveCustomer(),
+  ])
 
   if (!cart) {
     return notFound()
   }
 
-  const customer = await retrieveCustomer()
-
   return (
-    <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
-      <PaymentWrapper cart={cart}>
-        <CheckoutForm cart={cart} customer={customer} />
-      </PaymentWrapper>
-      <CheckoutSummary cart={cart} />
+    <div className="container-page grid grid-cols-1 gap-10 py-8 lg:grid-cols-[1fr_380px] lg:gap-16 lg:py-12">
+      <div className="order-2 lg:order-1">
+        <PaymentWrapper cart={cart}>
+          <CheckoutForm cart={cart} customer={customer} />
+        </PaymentWrapper>
+      </div>
+
+      {/* First on a phone, so the total is visible before the form. */}
+      <div className="order-1 lg:order-2">
+        <CheckoutSummary cart={cart} />
+      </div>
     </div>
   )
 }

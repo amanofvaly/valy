@@ -26,9 +26,9 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
 
   return (
     <div>
-      <h2 className="text-base-semi">Order Summary</h2>
-      <div className="text-small-regular text-ui-fg-base my-2">
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
+      <h2 className="text-sm font-semibold">Order Summary</h2>
+      <div className="text-xs text-ink my-2">
+        <div className="flex items-center justify-between text-sm text-ink mb-2">
           <span>Subtotal</span>
           <span>{getAmount(goods)}</span>
         </div>
@@ -56,13 +56,13 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
             </div>
           )}
         </div>
-        <div className="h-px w-full border-b border-gray-200 border-dashed my-4" />
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
+        <div className="h-px w-full border-b border-line border-dashed my-4" />
+        <div className="flex items-center justify-between text-sm text-ink mb-2">
           <span>Total</span>
           <span>{getAmount(order.total)}</span>
         </div>
         {taxInclusive && !!order.tax_total && (
-          <div className="flex justify-end text-ui-fg-muted">
+          <div className="flex justify-end text-muted">
             <span>Inclusive of {getAmount(order.tax_total)} GST</span>
           </div>
         )}

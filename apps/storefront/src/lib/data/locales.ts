@@ -1,7 +1,7 @@
-"use server"
+import "server-only"
 
 import { sdk } from "@lib/config"
-import { getCacheOptions } from "./cookies"
+import { cache } from "react"
 
 export type Locale = {
   code: string
@@ -9,20 +9,16 @@ export type Locale = {
 }
 
 /**
- * Fetches available locales from the backend.
- * Returns null if the endpoint returns 404 (locales not configured).
+ * Available locales. Returns null when the backend has no `/store/locales`
+ * route, so the language select can hide itself rather than render empty.
  */
-export const listLocales = async (): Promise<Locale[] | null> => {
-  const next = {
-    ...(await getCacheOptions("locales")),
-  }
-
-  return sdk.client
-    .fetch<{ locales: Locale[] }>(`/store/locales`, {
-      method: "GET",
-      next,
-      cache: "no-store",
-    })
-    .then(({ locales }) => locales)
-    .catch(() => null)
-}
+export const listLocales = cache(
+  async (): Promise<Locale[] | null> =>
+    sdk.client
+      .fetch<{ locales: Locale[] }>(`/store/locales`, {
+        method: "GET",
+        cache: "no-store",
+      })
+      .then(({ locales }) => locales)
+      .catch(() => null)
+)

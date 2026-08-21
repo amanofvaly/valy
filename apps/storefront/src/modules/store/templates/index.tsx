@@ -1,12 +1,16 @@
-import { Suspense } from "react"
-
 import { OptionValueIds } from "@lib/util/product-option-filters"
-import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
+import CategoryIndex, {
+  CategoryIndexFallback,
+} from "@modules/store/components/category-index"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { Suspense } from "react"
+import BrowsePage from "./browse-page"
 
-import PaginatedProducts from "./paginated-products"
-
+/**
+ * Everything Valy sells, in one list: machines, the parts that go in them, and
+ * the work we do to them. Most visitors arrive at a category instead; this is
+ * the page for someone who wants to see the whole thing.
+ */
 const StoreTemplate = ({
   sortBy,
   page,
@@ -17,31 +21,25 @@ const StoreTemplate = ({
   page?: string
   countryCode: string
   optionValueIds?: OptionValueIds
-}) => {
-  const pageNumber = page ? parseInt(page) : 1
-  const sort = sortBy || "created_at"
-
-  return (
-    <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
-      data-testid="category-container"
-    >
-      <RefinementList sortBy={sort} />
-      <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1 data-testid="store-page-title">All products</h1>
-        </div>
-        <Suspense fallback={<SkeletonProductGrid />}>
-          <PaginatedProducts
-            sortBy={sort}
-            page={pageNumber}
-            countryCode={countryCode}
-            optionValueIds={optionValueIds}
-          />
-        </Suspense>
-      </div>
-    </div>
-  )
-}
+}) => (
+  <BrowsePage
+    title="Everything we sell"
+    description="Five machines, the drives and memory and cards that fit them, and the setup work that means the thing arrives finished. Prices include GST."
+    sortBy={sortBy}
+    page={page}
+    countryCode={countryCode}
+    optionValueIds={optionValueIds}
+    titleTestId="store-page-title"
+    hideCategoryRail
+  >
+    {/*
+     * The table of contents. Streamed, because it needs the catalogue and the
+     * heading above it does not.
+     */}
+    <Suspense fallback={<CategoryIndexFallback />}>
+      <CategoryIndex />
+    </Suspense>
+  </BrowsePage>
+)
 
 export default StoreTemplate

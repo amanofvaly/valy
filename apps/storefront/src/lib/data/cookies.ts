@@ -18,36 +18,18 @@ export const getAuthHeaders = async (): Promise<
   }
 }
 
-export const getCacheTag = async (tag: string): Promise<string> => {
-  try {
-    const cookies = await nextCookies()
-    const cacheId = cookies.get("_medusa_cache_id")?.value
-
-    if (!cacheId) {
-      return ""
-    }
-
-    return `${tag}-${cacheId}`
-  } catch {
-    return ""
-  }
-}
-
-export const getCacheOptions = async (
-  tag: string
-): Promise<{ tags: string[] } | Record<string, never>> => {
-  if (typeof window !== "undefined") {
-    return {}
-  }
-
-  const cacheTag = await getCacheTag(tag)
-
-  if (!cacheTag) {
-    return {}
-  }
-
-  return { tags: [`${cacheTag}`] }
-}
+/*
+ * `getCacheTag` and `getCacheOptions` used to live here. They appended
+ * `_medusa_cache_id` — a UUID the middleware minted per browser — to every
+ * cache tag, so the tag was `products-3f9a...` for one visitor and
+ * `products-c81e...` for the next. No webhook could name a tag it could not
+ * know, entries never expired, and Vercel restored them across deploys. They
+ * are gone along with the 28 `revalidateTag` calls that named them, of which
+ * only nine ever matched a tag any read had registered.
+ *
+ * Catalogue data is now read live on the request that needs it. There is no
+ * data cache left to invalidate.
+ */
 
 export const setAuthToken = async (token: string) => {
   const cookies = await nextCookies()

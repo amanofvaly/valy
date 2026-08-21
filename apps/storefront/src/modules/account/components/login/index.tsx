@@ -1,74 +1,89 @@
-import { login } from "@lib/data/customer"
+"use client"
+
+import { login } from "@lib/data/customer-actions"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import { useActionState } from "react"
 
-type Props = {
+/**
+ * Sign in.
+ *
+ * The old copy offered "an enhanced shopping experience", which is not a
+ * reason. The reasons are that the address fills itself in and the orders stay
+ * findable, so those are what it says.
+ */
+const Login = ({
+  setCurrentView,
+}: {
   setCurrentView: (view: LOGIN_VIEW) => void
-}
-
-const Login = ({ setCurrentView }: Props) => {
+}) => {
   const [message, formAction] = useActionState(login, null)
 
   return (
-    <div
-      className="max-w-sm w-full flex flex-col items-center"
-      data-testid="login-page"
-    >
-      <h1 className="text-large-semi uppercase mb-6">Welcome back</h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-8">
-        Sign in to access an enhanced shopping experience.
-      </p>
+    <div className="flex w-full max-w-sm flex-col gap-6" data-testid="login-page">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          Sign in
+        </h1>
+        <p className="text-sm leading-6 text-muted">
+          Your orders, your saved addresses, and the test sheet for every
+          machine you have bought.
+        </p>
+      </div>
+
       {message?.state === "verification_required" && (
-        <div
-          className="w-full mb-6 text-center text-base-regular text-ui-fg-base bg-ui-bg-subtle border border-ui-border-base rounded-rounded p-4"
+        <p
+          className="rounded border border-line bg-surface p-3 text-sm leading-6 text-ink"
           data-testid="login-verification-message"
         >
           We sent a verification link to <strong>{message.email}</strong>.
-          Please verify your email, then sign in.
-        </div>
+          Verify your email, then sign in.
+        </p>
       )}
-      <form className="w-full" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            title="Enter a valid email address."
-            autoComplete="email"
-            required
-            data-testid="email-input"
-          />
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            data-testid="password-input"
-          />
-        </div>
+
+      <form className="flex flex-col gap-4" action={formAction}>
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          title="Enter a valid email address."
+          autoComplete="email"
+          required
+          data-testid="email-input"
+        />
+        <Input
+          label="Password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          data-testid="password-input"
+        />
+
         <ErrorMessage
           error={message?.state === "error" ? message.error : null}
           data-testid="login-error-message"
         />
-        <SubmitButton data-testid="sign-in-button" className="w-full mt-6">
+
+        <SubmitButton size="large" data-testid="sign-in-button" className="w-full">
           Sign in
         </SubmitButton>
       </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Not a member?{" "}
+
+      <p className="text-sm text-muted">
+        No account yet?{" "}
         <button
+          type="button"
           onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-          className="underline"
+          className="pressable rounded text-accent hover:text-accent-strong"
           data-testid="register-button"
         >
-          Join us
+          Create one
         </button>
-        .
-      </span>
+        . You can also check out without one.
+      </p>
     </div>
   )
 }

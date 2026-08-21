@@ -19,31 +19,44 @@ const nextConfig = {
      *
      * Next 15 defaults `dynamic` to 0, so a dynamic page is never reused on
      * back-navigation — pressing back refetches from the server, shows the
-     * loading skeleton again, and loses your place in a product list. Thirty
+     * loading state again, and loses your place in a product list. Thirty
      * seconds means going back replays the page you were just on.
      *
      * The freshness cost is bounded by that number and applies only to a page
      * the visitor already had open, so the worst case is seeing what they saw
-     * moments ago.
+     * moments ago. This is the one place caching is deliberate.
      */
     staleTimes: {
       dynamic: 30,
       static: 180,
     },
+
+    /**
+     * Cross-document view transitions, so a navigation reads as motion rather
+     * than a cut. Strictly an enhancement: `globals.css` defines the animation
+     * only inside a `prefers-reduced-motion: no-preference` query, and a
+     * browser without the API simply navigates.
+     */
+    viewTransition: true,
   },
   logging: {
     fetches: {
       fullUrl: true,
     },
   },
+  /**
+   * Both suppressions are gone. A refactor of this size without type checking
+   * buries its own mistakes, and a lint rule that never fails the build is a
+   * rule nobody is following.
+   */
   eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+    dirs: ["src"],
   },
   images: {
-    unoptimized: true,
+    // Photography is the largest thing on most of these pages. Unoptimized
+    // means every visitor downloads the full-resolution file at whatever size
+    // the layout happens to render it.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "http",
@@ -60,6 +73,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "*.s3.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "medusa-public-images.s3.eu-west-1.amazonaws.com",
       },
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [

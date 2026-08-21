@@ -1,21 +1,20 @@
+import { getCategoryByHandle } from "@lib/data/categories"
+import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import CategoryTemplate from "@modules/categories/templates"
+import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCategoryByHandle, listCategories } from "@lib/data/categories"
-import { listRegions } from "@lib/data/regions"
-import { HttpTypes, StoreRegion } from "@medusajs/types"
-import CategoryTemplate from "@modules/categories/templates"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { parseOptionValueIds } from "@lib/util/product-option-filters"
-
-// A handle created after the last build has no prebuilt page; dynamicParams
-// lets its URL render on demand instead of 404ing until a redeploy.
-//
-// Deliberately no `revalidate`. It makes the page ISR, and ISR renders with no
-// request attached, so the cookies() call inside getAuthHeaders() throws
-// DYNAMIC_SERVER_USAGE and every render 500s. Catalogue data is read per
-// request instead of being cached and invalidated.
-export const dynamicParams = true
+/**
+ * A category page.
+ *
+ * Dynamic, and reading live. `generateStaticParams` used to sit here building a
+ * list of handles for a prerender that never happened — the route is dynamic
+ * regardless, because the catalogue is read per request.
+ *
+ * `getCategoryByHandle` is wrapped in `React.cache`, so the two calls below —
+ * one for the title, one for the page — are one request to the backend.
+ */
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -28,75 +27,30 @@ type Props = {
   >
 }
 
-// Prebuilding these paths is an optimisation, not a requirement: dynamicParams
-// above means an unlisted handle still renders on demand. A backend that is
-// slow, restarting or briefly unreachable during a build should therefore cost
-// a few prerendered pages, not the entire deploy — which is what an unguarded
-// throw here does.
-export async function generateStaticParams() {
-  try {
-    const product_categories = await listCategories()
-
-    if (!product_categories) {
-      return []
-    }
-
-    const countryCodes = await listRegions().then((regions: StoreRegion[]) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-    )
-
-    const categoryHandles = product_categories.map(
-      (category: HttpTypes.StoreProductCategory) => category.handle
-    )
-
-    const staticParams = countryCodes
-      ?.map((countryCode: string | undefined) =>
-        categoryHandles.map((handle: string) => ({
-          countryCode,
-          category: [handle],
-        }))
-      )
-      .flat()
-
-    return staticParams
-  } catch (error) {
-    console.error(
-      `Failed to generate category paths; they will render on demand. ${
-        error instanceof Error ? error.message : error
-      }`
-    )
-    return []
-  }
-}
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params
-  try {
-    const productCategory = await getCategoryByHandle(params.category)
+  const { category } = await props.params
+  const productCategory = await getCategoryByHandle(category)
 
-    const title = productCategory.name + " | Valy Homelabs"
-
-    const description = productCategory.description ?? `${title} category.`
-
-    return {
-      title: `${title} | Valy Homelabs`,
-      description,
-      alternates: {
-        canonical: `${params.category.join("/")}`,
-      },
-    }
-  } catch {
+  if (!productCategory) {
     notFound()
+  }
+
+  return {
+    title: productCategory.name,
+    description:
+      productCategory.description ??
+      `${productCategory.name} from Valy, built and supported in India.`,
+    alternates: { canonical: `/categories/${category.join("/")}` },
   }
 }
 
 export default async function CategoryPage(props: Props) {
-  const searchParams = await props.searchParams
-  const params = await props.params
-  const { sortBy, page } = searchParams
-  const optionValueIds = parseOptionValueIds(searchParams)
+  const [{ category, countryCode }, searchParams] = await Promise.all([
+    props.params,
+    props.searchParams,
+  ])
 
-  const productCategory = await getCategoryByHandle(params.category)
+  const productCategory = await getCategoryByHandle(category)
 
   if (!productCategory) {
     notFound()
@@ -105,10 +59,10 @@ export default async function CategoryPage(props: Props) {
   return (
     <CategoryTemplate
       category={productCategory}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
+      sortBy={searchParams.sortBy}
+      page={searchParams.page}
+      countryCode={countryCode}
+      optionValueIds={parseOptionValueIds(searchParams)}
     />
   )
 }

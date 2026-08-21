@@ -18,9 +18,7 @@ type TotalsLike = {
   items?: { is_tax_inclusive?: boolean | null }[] | null
   item_total?: number | null
   item_subtotal?: number | null
-  original_item_total?: number | null
   shipping_total?: number | null
-  original_shipping_total?: number | null
   discount_total?: number | null
   tax_total?: number | null
   total?: number | null
@@ -42,10 +40,6 @@ export const isTaxInclusiveCart = (cart?: TotalsLike | null): boolean =>
  */
 export const goodsTotal = (cart?: TotalsLike | null): number =>
   (isTaxInclusiveCart(cart) ? cart?.item_total : cart?.item_subtotal) ?? 0
-
-/** Goods before any discount, for the struck-through "was" figure. */
-export const goodsTotalBeforeDiscount = (cart?: TotalsLike | null): number =>
-  cart?.original_item_total ?? goodsTotal(cart)
 
 /**
  * Shipping in the same basis as the goods, so the rows in one table can be

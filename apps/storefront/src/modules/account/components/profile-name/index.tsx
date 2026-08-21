@@ -5,8 +5,9 @@ import React, { useEffect, useActionState } from "react";
 import Input from "@modules/common/components/input"
 
 import AccountInfo from "../account-info"
+import NotSet from "../account-info/not-set"
 import { HttpTypes } from "@medusajs/types"
-import { updateCustomer } from "@lib/data/customer"
+import { updateCustomer } from "@lib/data/customer-actions"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -49,7 +50,11 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
     <form action={formAction} className="w-full overflow-visible">
       <AccountInfo
         label="Name"
-        currentInfo={`${customer.first_name} ${customer.last_name}`}
+        currentInfo={
+          [customer.first_name, customer.last_name].filter(Boolean).join(" ") || (
+            <NotSet />
+          )
+        }
         isSuccess={successState}
         isError={!!state?.error}
         clearState={clearState}

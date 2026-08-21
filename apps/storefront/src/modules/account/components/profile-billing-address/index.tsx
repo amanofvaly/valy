@@ -5,9 +5,10 @@ import React, { useActionState, useEffect, useMemo } from "react"
 import Input from "@modules/common/components/input"
 import NativeSelect from "@modules/common/components/native-select"
 
-import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
+import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer-actions"
 import { HttpTypes } from "@medusajs/types"
 import AccountInfo from "../account-info"
+import NotSet from "../account-info/not-set"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -63,7 +64,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
   const currentInfo = useMemo(() => {
     if (!billingAddress) {
-      return "No billing address"
+      return <NotSet>No billing address yet</NotSet>
     }
 
     const country =
@@ -71,21 +72,36 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         (country) => country?.value === billingAddress.country_code
       )?.label || billingAddress.country_code?.toUpperCase()
 
+    /*
+     * Built as a list of lines and then filtered, rather than a fixed set of
+     * spans. A saved address is often missing the company or the second line,
+     * and the previous version rendered those as empty rows — plus a bare
+     * ", " whenever the postal code and city were both absent.
+     */
+    const lines = [
+      [billingAddress.first_name, billingAddress.last_name]
+        .filter(Boolean)
+        .join(" "),
+      billingAddress.company,
+      [billingAddress.address_1, billingAddress.address_2]
+        .filter(Boolean)
+        .join(", "),
+      [billingAddress.postal_code, billingAddress.city]
+        .filter(Boolean)
+        .join(" "),
+      country,
+    ].filter((line): line is string => !!line && line.trim().length > 0)
+
+    if (!lines.length) {
+      return <NotSet>No billing address yet</NotSet>
+    }
+
     return (
-      <div className="flex flex-col font-semibold" data-testid="current-info">
-        <span>
-          {billingAddress.first_name} {billingAddress.last_name}
-        </span>
-        <span>{billingAddress.company}</span>
-        <span>
-          {billingAddress.address_1}
-          {billingAddress.address_2 ? `, ${billingAddress.address_2}` : ""}
-        </span>
-        <span>
-          {billingAddress.postal_code}, {billingAddress.city}
-        </span>
-        <span>{country}</span>
-      </div>
+      <span className="flex flex-col text-sm text-ink" data-testid="current-info">
+        {lines.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
+      </span>
     )
   }, [billingAddress, regionOptions])
 

@@ -30,7 +30,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label="First name"
           name="billing_address.first_name"
@@ -49,6 +49,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-last-name-input"
         />
+        <div className="sm:col-span-2">
         <Input
           label="Address"
           name="billing_address.address_1"
@@ -58,6 +59,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-address-input"
         />
+        </div>
         <Input
           label="Company"
           name="billing_address.company"
@@ -67,7 +69,8 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           data-testid="billing-company-input"
         />
         <Input
-          label="GSTIN (Optional)"
+          label="GSTIN"
+          hint="Optional. Billing GSTIN wins if you enter both."
           name="billing_address.gstin"
           value={formData["billing_address.gstin"]}
           onChange={handleChange}

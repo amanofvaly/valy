@@ -2,42 +2,153 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* -------------------------------------------------------------------------- */
+/*  Tokens                                                                     */
+/*                                                                             */
+/*  The single source of colour, spacing rhythm and elevation for the site.     */
+/*  `tailwind.config.js` maps these into `theme` (not `extend`), so the only    */
+/*  colours Tailwind can emit are the ones named here — a stray zinc or gray    */
+/*  fails to compile rather than quietly reintroducing a fourth palette.        */
+/*                                                                             */
+/*  Values are unwrapped RGB channels, not hex, so Tailwind's alpha modifiers   */
+/*  work: `bg-ink/90` compiles to `rgb(var(--ink) / 0.9)`. With a hex value it   */
+/*  compiles to something invalid, and the element renders transparent — which  */
+/*  is a failure that looks like a missing element rather than a broken colour. */
+/*  In hand-written CSS below, read them back as `rgb(var(--token))`.            */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --ink: 21 24 28;
+  --paper: 255 255 255;
+  --surface: 245 246 247;
+  --surface-strong: 236 238 240;
+  --line: 226 228 231;
+  --line-strong: 203 207 212;
+  --muted: 102 108 117;
+  --accent: 18 80 143;
+  --accent-strong: 14 63 114;
+  --accent-wash: 238 243 249;
+  --signal: 15 122 82;
+  --signal-wash: 234 245 240;
+  --warn: 138 90 0;
+  --warn-wash: 253 245 230;
+  --danger: 155 34 38;
+  --danger-wash: 251 239 240;
+
+  /* Focus is one ring everywhere, so keyboard position is never ambiguous. */
+  --focus-ring: 0 0 0 2px rgb(var(--paper)), 0 0 0 4px rgb(var(--accent));
+}
+
+@layer base {
+  /*
+   * The Medusa preset used to set a default border colour on `*`. It is gone,
+   * so re-establish one: Tailwind's own default is `currentColor`, which would
+   * make every `border` in the app take the text colour.
+   */
+  *,
+  ::before,
+  ::after {
+    border-color: rgb(var(--line));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-feature-settings: "cv05" 1, "ss03" 1;
+  }
+
+  /*
+   * Prices, capacities and order numbers are compared down a column far more
+   * often than they are read in a sentence.
+   */
+  .tabular,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: rgb(var(--accent-wash));
+    color: rgb(var(--ink));
+  }
+
+  /*
+   * Anyone who has asked their system for less motion gets none of the
+   * transitions and view transitions this site otherwise leans on.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * One page gutter. 1280px keeps a 12-column grid at a readable measure on a
+   * 1440 screen without the content drifting to the far edges.
+   */
+  .container-page {
+    @apply mx-auto w-full max-w-[1280px] px-5 sm:px-8;
+  }
+
+  .container-prose {
+    @apply mx-auto w-full max-w-[68ch] px-5 sm:px-8;
+  }
+
+  /*
+   * Hairline. Used instead of `border` in dense tables so the rule sits on the
+   * device pixel grid at any DPR.
+   */
+  .rule {
+    @apply border-0 border-b border-line;
+  }
+}
+
 @layer utilities {
-  /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  .no-scrollbar::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  input:focus ~ label,
-  input:not(:placeholder-shown) ~ label {
-    @apply -translate-y-2 text-xsmall-regular;
+  /*
+   * A press state that works on a touchscreen, where `hover:` does nothing.
+   * Applied by the Button and by every hand-rolled interactive surface.
+   */
+  .pressable {
+    @apply transition-[transform,background-color,border-color,color] duration-100 ease-out;
+    @apply active:scale-[0.985];
   }
 
-  input:focus ~ label {
-    @apply left-0;
+  .pressable-tint {
+    @apply pressable active:bg-surface-strong;
   }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   textarea:-webkit-autofill,
-  textarea:-webkit-autofill:hover,
-  textarea:-webkit-autofill:focus,
-  select:-webkit-autofill,
-  select:-webkit-autofill:hover,
-  select:-webkit-autofill:focus {
-    border: 1px solid #212121;
-    -webkit-text-fill-color: #212121;
-    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+  select:-webkit-autofill {
+    -webkit-text-fill-color: rgb(var(--ink));
+    -webkit-box-shadow: 0 0 0 1000px rgb(var(--paper)) inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -49,64 +160,31 @@
   }
 }
 
-@layer components {
-  .content-container {
-    @apply max-w-[1440px] w-full mx-auto px-6;
+/* -------------------------------------------------------------------------- */
+/*  View transitions                                                           */
+/*                                                                             */
+/*  An enhancement, not a dependency: with the flag off or the API missing,     */
+/*  navigation is an ordinary cut and nothing below applies.                    */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-fade-out 90ms ease-out both;
   }
 
-  .contrast-btn {
-    @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
+  ::view-transition-new(root) {
+    animation: vt-fade-in 140ms ease-out both;
   }
+}
 
-  .text-xsmall-regular {
-    @apply text-[10px] leading-4 font-normal;
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
   }
+}
 
-  .text-small-regular {
-    @apply text-xs leading-5 font-normal;
-  }
-
-  .text-small-semi {
-    @apply text-xs leading-5 font-semibold;
-  }
-
-  .text-base-regular {
-    @apply text-sm leading-6 font-normal;
-  }
-
-  .text-base-semi {
-    @apply text-sm leading-6 font-semibold;
-  }
-
-  .text-large-regular {
-    @apply text-base leading-6 font-normal;
-  }
-
-  .text-large-semi {
-    @apply text-base leading-6 font-semibold;
-  }
-
-  .text-xl-regular {
-    @apply text-2xl leading-[36px] font-normal;
-  }
-
-  .text-xl-semi {
-    @apply text-2xl leading-[36px] font-semibold;
-  }
-
-  .text-2xl-regular {
-    @apply text-[30px] leading-[48px] font-normal;
-  }
-
-  .text-2xl-semi {
-    @apply text-[30px] leading-[48px] font-semibold;
-  }
-
-  .text-3xl-regular {
-    @apply text-[32px] leading-[44px] font-normal;
-  }
-
-  .text-3xl-semi {
-    @apply text-[32px] leading-[44px] font-semibold;
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
   }
 }

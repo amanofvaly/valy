@@ -1,9 +1,22 @@
-import { Dialog, Transition } from "@headlessui/react"
-import { clx } from "@modules/common/components/ui"
-import React, { Fragment } from "react"
+"use client"
 
 import { ModalProvider, useModal } from "@lib/context/modal-context"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { cn, IconButton } from "@modules/common/components/ui"
 import X from "@modules/common/icons/x"
+import React from "react"
+
+/**
+ * The modal, rebuilt on the same Radix Dialog the sheet uses.
+ *
+ * The Headless UI version had a backdrop with `bg-opacity-75` and no colour, so
+ * it dimmed nothing — the page behind stayed at full contrast under a blur. It
+ * also kept its own transitions, its own panel sizing and its own close button,
+ * none of which matched the sheet doing the same job three files away.
+ *
+ * The compound API (`Modal.Title`, `.Body`, `.Footer`) is unchanged so its call
+ * sites do not move.
+ */
 
 type ModalProps = {
   isOpen: boolean
@@ -11,7 +24,7 @@ type ModalProps = {
   size?: "small" | "medium" | "large"
   search?: boolean
   children: React.ReactNode
-  'data-testid'?: string
+  "data-testid"?: string
 }
 
 const Modal = ({
@@ -20,95 +33,65 @@ const Modal = ({
   size = "medium",
   search = false,
   children,
-  'data-testid': dataTestId
-}: ModalProps) => {
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[75]" onClose={close}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-opacity-75 backdrop-blur-md  h-screen" />
-        </Transition.Child>
+  "data-testid": dataTestId,
+}: ModalProps) => (
+  <DialogPrimitive.Root open={isOpen} onOpenChange={(o) => !o && close()}>
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-[75] bg-ink/35 backdrop-blur-[2px] data-[state=open]:animate-overlay-in" />
 
-        <div className="fixed inset-0 overflow-y-hidden">
-          <div
-            className={clx(
-              "flex min-h-full h-full justify-center p-4 text-center",
-              {
-                "items-center": !search,
-                "items-start": search,
-              }
-            )}
-          >
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel
-                data-testid={dataTestId}
-                className={clx(
-                  "flex flex-col justify-start w-full transform p-5 text-left align-middle transition-all max-h-[75vh] h-fit",
-                  {
-                    "max-w-md": size === "small",
-                    "max-w-xl": size === "medium",
-                    "max-w-3xl": size === "large",
-                    "bg-transparent shadow-none": search,
-                    "bg-white shadow-xl border rounded-rounded": !search,
-                  }
-                )}
-              >
-                <ModalProvider close={close}>{children}</ModalProvider>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
-  )
-}
+      <DialogPrimitive.Content
+        data-testid={dataTestId}
+        className={cn(
+          "fixed left-1/2 z-[75] flex max-h-[85vh] w-[calc(100%-2rem)] -translate-x-1/2 flex-col",
+          "overflow-y-auto focus:outline-none data-[state=open]:animate-pop-in",
+          search ? "top-24" : "top-1/2 -translate-y-1/2",
+          size === "small" && "max-w-md",
+          size === "medium" && "max-w-xl",
+          size === "large" && "max-w-3xl",
+          search
+            ? "bg-transparent"
+            : "rounded-lg border border-line bg-paper p-5 shadow-overlay"
+        )}
+      >
+        <ModalProvider close={close}>{children}</ModalProvider>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  </DialogPrimitive.Root>
+)
 
 const Title: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { close } = useModal()
 
   return (
-    <Dialog.Title className="flex items-center justify-between">
-      <div className="text-large-semi">{children}</div>
-      <div>
-        <button onClick={close} data-testid="close-modal-button">
-          <X size={20} />
-        </button>
-      </div>
-    </Dialog.Title>
+    <div className="mb-4 flex items-start justify-between gap-4">
+      <DialogPrimitive.Title className="text-lg font-semibold text-ink">
+        {children}
+      </DialogPrimitive.Title>
+      <IconButton
+        aria-label="Close"
+        onClick={close}
+        data-testid="close-modal-button"
+        className="-mr-2 -mt-1"
+      >
+        <X size={20} />
+      </IconButton>
+    </div>
   )
 }
 
-const Description: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <Dialog.Description className="flex text-small-regular text-ui-fg-base items-center justify-center pt-2 pb-4 h-full">
-      {children}
-    </Dialog.Description>
-  )
-}
+const Description: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <DialogPrimitive.Description className="mb-4 text-sm leading-6 text-muted">
+    {children}
+  </DialogPrimitive.Description>
+)
 
-const Body: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="flex justify-center">{children}</div>
-}
+const Body: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex-1">{children}</div>
+)
 
-const Footer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="flex items-center justify-end gap-x-4">{children}</div>
-}
+const Footer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="mt-6 flex items-center justify-end gap-3">{children}</div>
+)
 
 Modal.Title = Title
 Modal.Description = Description

@@ -17,15 +17,19 @@ export default async function CheckoutForm({
     return null
   }
 
-  const shippingMethods = await listCartShippingMethods(cart.id)
-  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
+  // Unrelated reads. Serialised, they cost two round trips before the first
+  // field of the address form can render.
+  const [shippingMethods, paymentMethods] = await Promise.all([
+    listCartShippingMethods(cart.id),
+    listCartPaymentMethods(cart.region?.id ?? ""),
+  ])
 
   if (!shippingMethods || !paymentMethods) {
     return null
   }
 
   return (
-    <div className="w-full grid grid-cols-1 gap-y-8">
+    <div className="flex w-full flex-col gap-8">
       <Addresses cart={cart} customer={customer} />
 
       <Shipping cart={cart} availableShippingMethods={shippingMethods} />

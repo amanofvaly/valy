@@ -1,27 +1,33 @@
-const Radio = ({ checked, 'data-testid': dataTestId }: { checked: boolean, 'data-testid'?: string }) => {
-  return (
-    <>
-      <button
-        type="button"
-        role="radio"
-        aria-checked="true"
-        data-state={checked ? "checked" : "unchecked"}
-        className="group relative flex h-5 w-5 items-center justify-center outline-none"
-        data-testid={dataTestId || 'radio-button'}
-      >
-        <div className="shadow-borders-base group-hover:shadow-borders-strong-with-shadow bg-ui-bg-base group-data-[state=checked]:bg-ui-bg-interactive group-data-[state=checked]:shadow-borders-interactive group-focus:!shadow-borders-interactive-with-focus group-disabled:!bg-ui-bg-disabled group-disabled:!shadow-borders-base flex h-[14px] w-[14px] items-center justify-center rounded-full transition-all">
-          {checked && (
-            <span
-              data-state={checked ? "checked" : "unchecked"}
-              className="group flex items-center justify-center"
-            >
-              <div className="bg-ui-bg-base shadow-details-contrast-on-bg-interactive group-disabled:bg-ui-fg-disabled rounded-full group-disabled:shadow-none h-1.5 w-1.5"></div>
-            </span>
-          )}
-        </div>
-      </button>
-    </>
-  )
-}
+import { cn } from "@lib/util/cn"
+
+/**
+ * The radio dot for a whole-row choice — a delivery option, a payment method —
+ * where the click target is the row and this is only the mark.
+ *
+ * Presentational on purpose: the row that contains it owns the real radio
+ * semantics, so this must not also claim `role="radio"`. It used to, with a
+ * hardcoded `aria-checked="true"` on every instance, which told a screen reader
+ * that all of them were selected.
+ */
+const Radio = ({
+  checked,
+  disabled,
+  "data-testid": dataTestId,
+}: {
+  checked: boolean
+  disabled?: boolean
+  "data-testid"?: string
+}) => (
+  <span
+    aria-hidden="true"
+    data-state={checked ? "checked" : "unchecked"}
+    data-testid={dataTestId || "radio-button"}
+    className={cn(
+      "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition-colors",
+      checked ? "border-[5px] border-accent" : "border-line-strong bg-paper",
+      disabled && "opacity-45"
+    )}
+  />
+)
 
 export default Radio

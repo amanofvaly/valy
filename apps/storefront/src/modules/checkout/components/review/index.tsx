@@ -1,19 +1,29 @@
 "use client"
 
-import { Heading, Text, clx } from "@modules/common/components/ui"
-
-import PaymentButton from "../payment-button"
-import { useSearchParams } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
+import Step from "@modules/checkout/components/step"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useSearchParams } from "next/navigation"
+import PaymentButton from "../payment-button"
 
+/**
+ * The last step.
+ *
+ * The consent line used to reference "Medusa Store's Privacy Policy" — stock
+ * copy from the starter, on the screen where someone agrees to terms before
+ * paying. It now names this store's own policies and links to them, because a
+ * consent statement that points at a document the customer cannot read is not
+ * consent.
+ */
 const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
   const searchParams = useSearchParams()
-
   const isOpen = searchParams.get("step") === "review"
 
-  const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards && ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])?.length > 0 && cart?.total === 0
-  )
+  const paidByGiftcard =
+    !!(cart as unknown as Record<string, unknown>)?.gift_cards &&
+    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
+      ?.length > 0 &&
+    cart?.total === 0
 
   const previousStepsCompleted =
     cart.shipping_address &&
@@ -21,36 +31,32 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
     (cart.payment_collection || paidByGiftcard)
 
   return (
-    <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
-          className={clx(
-            "flex flex-row text-3xl-regular gap-x-2 items-baseline",
-            {
-              "opacity-50 pointer-events-none select-none": !isOpen,
-            }
-          )}
-        >
-          Review
-        </Heading>
-      </div>
+    <Step index={4} title="Review" step="review" enabled={false}>
       {isOpen && previousStepsCompleted && (
-        <>
-          <div className="flex items-start gap-x-1 w-full mb-6">
-            <div className="w-full">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                By clicking the Place Order button, you confirm that you have
-                read, understand and accept our Terms of Use, Terms of Sale and
-                Returns Policy and acknowledge that you have read Medusa
-                Store&apos;s Privacy Policy.
-              </Text>
-            </div>
-          </div>
+        <div className="flex flex-col gap-4">
+          <p className="max-w-prose text-sm leading-6 text-muted">
+            Placing the order confirms you have read and accept our{" "}
+            <LocalizedClientLink
+              href="/terms"
+              className="text-accent hover:text-accent-strong"
+            >
+              terms of sale
+            </LocalizedClientLink>
+            , including the seven-day return window and the three-year warranty,
+            and our{" "}
+            <LocalizedClientLink
+              href="/privacy"
+              className="text-accent hover:text-accent-strong"
+            >
+              privacy policy
+            </LocalizedClientLink>
+            .
+          </p>
+
           <PaymentButton cart={cart} data-testid="submit-order-button" />
-        </>
+        </div>
       )}
-    </div>
+    </Step>
   )
 }
 

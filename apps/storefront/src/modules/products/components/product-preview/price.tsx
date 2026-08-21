@@ -1,29 +1,36 @@
-import { Text, clx } from "@modules/common/components/ui"
+import { cn } from "@lib/util/cn"
 import { VariantPrice } from "types/global"
 
-export default async function PreviewPrice({ price }: { price: VariantPrice }) {
+/**
+ * A price in a grid. Monospaced and tabular so a column of them lines up at the
+ * decimal, which is the only way a shopper can compare four cards at a glance.
+ */
+export default function PreviewPrice({ price }: { price: VariantPrice }) {
   if (!price) {
     return null
   }
 
+  const onSale = price.price_type === "sale"
+
   return (
     <>
-      {price.price_type === "sale" && (
-        <Text
-          className="line-through text-ui-fg-muted"
+      {onSale && (
+        <span
+          className="font-mono text-xs tabular text-muted line-through"
           data-testid="original-price"
         >
           {price.original_price}
-        </Text>
+        </span>
       )}
-      <Text
-        className={clx("text-ui-fg-muted", {
-          "text-ui-fg-interactive": price.price_type === "sale",
-        })}
+      <span
+        className={cn(
+          "font-mono text-sm font-medium tabular",
+          onSale ? "text-danger" : "text-ink"
+        )}
         data-testid="price"
       >
         {price.calculated_price}
-      </Text>
+      </span>
     </>
   )
 }

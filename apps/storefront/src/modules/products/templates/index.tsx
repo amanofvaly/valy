@@ -1,16 +1,18 @@
-import React, { Suspense } from "react"
-
-import ImageGallery from "@modules/products/components/image-gallery"
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
-import ProductTabs from "@modules/products/components/product-tabs"
-import RelatedProducts from "@modules/products/components/related-products"
-import ProductActions from "@modules/products/components/product-actions"
-import ProductInfo from "@modules/products/templates/product-info"
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import { notFound } from "next/navigation"
+import { productKind } from "@lib/util/specs"
 import { HttpTypes } from "@medusajs/types"
+import { notFound } from "next/navigation"
+import MachineTemplate from "./machine"
+import PartTemplate from "./part"
+import ServiceTemplate from "./service"
 
-
+/**
+ * Three templates, chosen by `product.type`.
+ *
+ * A machine, a drive and an installation service are not the same kind of thing
+ * and do not answer the same questions, so they do not share a layout. An
+ * unset type falls through to the part template, which is the simplest one
+ * that still shows a specification and a price.
+ */
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
@@ -18,49 +20,35 @@ type ProductTemplateProps = {
   images: HttpTypes.StoreProductImage[]
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate = ({
   product,
-  region,
   countryCode,
   images,
-}) => {
-  if (!product || !product.id) {
+}: ProductTemplateProps) => {
+  if (!product?.id) {
     return notFound()
   }
 
-  return (
-    <>
-      <div
-        className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"
-        data-testid="product-container"
-      >
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-6">
-          <ProductInfo product={product} />
-          <ProductTabs product={product} />
-        </div>
-        <div className="block w-full relative">
-          <ImageGallery images={images} />
-        </div>
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-12">
-          <ProductOnboardingCta />
-          {/* Rendered straight from the product the page already fetched. This
-              used to refetch behind a Suspense boundary to get a live price
-              while the page itself was cached; nothing is cached now, so the
-              second request only delayed the most important element on the
-              page. */}
-          <ProductActions product={product} region={region} />
-        </div>
-      </div>
-      <div
-        className="content-container my-16 small:my-32"
-        data-testid="related-products-container"
-      >
-        <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
-        </Suspense>
-      </div>
-    </>
-  )
+  switch (productKind(product)) {
+    case "machine":
+      return (
+        <MachineTemplate
+          product={product}
+          countryCode={countryCode}
+          images={images}
+        />
+      )
+    case "service":
+      return <ServiceTemplate product={product} />
+    default:
+      return (
+        <PartTemplate
+          product={product}
+          countryCode={countryCode}
+          images={images}
+        />
+      )
+  }
 }
 
 export default ProductTemplate

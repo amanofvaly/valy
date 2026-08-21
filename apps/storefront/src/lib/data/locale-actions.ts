@@ -1,9 +1,9 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { cookies as nextCookies } from "next/headers"
-import { getAuthHeaders, getCacheTag, getCartId } from "./cookies"
+import { getAuthHeaders, getCartId } from "./cookies"
 
 const LOCALE_COOKIE_NAME = "_medusa_locale"
 
@@ -47,28 +47,12 @@ export const updateLocale = async (localeCode: string): Promise<string> => {
     }
 
     await sdk.store.cart.update(cartId, { locale: localeCode }, {}, headers)
-
-    const cartCacheTag = await getCacheTag("carts")
-    if (cartCacheTag) {
-      revalidateTag(cartCacheTag)
-    }
   }
 
-  // Revalidate relevant caches to refresh content
-  const productsCacheTag = await getCacheTag("products")
-  if (productsCacheTag) {
-    revalidateTag(productsCacheTag)
-  }
-
-  const categoriesCacheTag = await getCacheTag("categories")
-  if (categoriesCacheTag) {
-    revalidateTag(categoriesCacheTag)
-  }
-
-  const collectionsCacheTag = await getCacheTag("collections")
-  if (collectionsCacheTag) {
-    revalidateTag(collectionsCacheTag)
-  }
+  // Everything on screen is translated by the backend against this header, so
+  // the whole tree is what needs redrawing. There is no data cache to clear —
+  // this refreshes the Next router cache the visitor is holding.
+  revalidatePath("/[countryCode]", "layout")
 
   return localeCode
 }

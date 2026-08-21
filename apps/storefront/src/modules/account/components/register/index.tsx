@@ -1,43 +1,53 @@
 "use client"
 
-import { useActionState } from "react"
-import Input from "@modules/common/components/input"
+import { signup } from "@lib/data/customer-actions"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
+import Input from "@modules/common/components/input"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { signup } from "@lib/data/customer"
+import { useActionState } from "react"
 
-type Props = {
+/**
+ * Create an account.
+ *
+ * The consent line linked to `/content/privacy-policy`, which does not exist.
+ * It points at the real page now.
+ */
+const Register = ({
+  setCurrentView,
+}: {
   setCurrentView: (view: LOGIN_VIEW) => void
-}
-
-const Register = ({ setCurrentView }: Props) => {
+}) => {
   const [message, formAction] = useActionState(signup, null)
 
   return (
     <div
-      className="max-w-sm flex flex-col items-center"
+      className="flex w-full max-w-sm flex-col gap-6"
       data-testid="register-page"
     >
-      <h1 className="text-large-semi uppercase mb-6">
-        Become a Valy Homelabs Member
-      </h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-4">
-        Create your Valy Homelabs Member profile, and get access to an enhanced
-        shopping experience.
-      </p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          Create an account
+        </h1>
+        <p className="text-sm leading-6 text-muted">
+          So your orders, invoices and test sheets stay in one place. Not
+          required to buy anything.
+        </p>
+      </div>
+
       {message?.state === "verification_required" && (
-        <div
-          className="w-full mb-4 text-center text-base-regular text-ui-fg-base bg-ui-bg-subtle border border-ui-border-base rounded-rounded p-4"
+        <p
+          className="rounded border border-line bg-surface p-3 text-sm leading-6 text-ink"
           data-testid="register-verification-message"
         >
-          We sent a verification link to <strong>{message.email}</strong>.
-          Please check your inbox to verify your email, then sign in.
-        </div>
+          We sent a verification link to <strong>{message.email}</strong>. Check
+          your inbox to verify your email, then sign in.
+        </p>
       )}
-      <form className="w-full flex flex-col" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
+
+      <form className="flex flex-col gap-4" action={formAction}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="First name"
             name="first_name"
@@ -52,65 +62,71 @@ const Register = ({ setCurrentView }: Props) => {
             autoComplete="family-name"
             data-testid="last-name-input"
           />
-          <Input
-            label="Email"
-            name="email"
-            required
-            type="email"
-            autoComplete="email"
-            data-testid="email-input"
-          />
-          <Input
-            label="Phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            data-testid="phone-input"
-          />
-          <Input
-            label="Password"
-            name="password"
-            required
-            type="password"
-            autoComplete="new-password"
-            data-testid="password-input"
-          />
         </div>
+        <Input
+          label="Email"
+          name="email"
+          required
+          type="email"
+          autoComplete="email"
+          data-testid="email-input"
+        />
+        <Input
+          label="Phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          hint="Only used for the delivery, by the courier."
+          data-testid="phone-input"
+        />
+        <Input
+          label="Password"
+          name="password"
+          required
+          type="password"
+          autoComplete="new-password"
+          data-testid="password-input"
+        />
+
         <ErrorMessage
           error={message?.state === "error" ? message.error : null}
           data-testid="register-error"
         />
-        <span className="text-center text-ui-fg-base text-small-regular mt-6">
-          By creating an account, you agree to Valy Homelabs&apos;s{" "}
+
+        <p className="text-xs leading-5 text-muted">
+          Creating an account means you accept our{" "}
           <LocalizedClientLink
-            href="/content/privacy-policy"
-            className="underline"
+            href="/privacy"
+            className="text-accent hover:text-accent-strong"
           >
-            Privacy Policy
+            privacy policy
           </LocalizedClientLink>{" "}
           and{" "}
           <LocalizedClientLink
-            href="/content/terms-of-use"
-            className="underline"
+            href="/terms"
+            className="text-accent hover:text-accent-strong"
           >
-            Terms of Use
+            terms of sale
           </LocalizedClientLink>
           .
-        </span>
-        <SubmitButton className="w-full mt-6" data-testid="register-button">
-          Join
+        </p>
+
+        <SubmitButton size="large" className="w-full" data-testid="register-button">
+          Create account
         </SubmitButton>
       </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Already a member?{" "}
+
+      <p className="text-sm text-muted">
+        Already have one?{" "}
         <button
+          type="button"
           onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
-          className="underline"
+          className="pressable rounded text-accent hover:text-accent-strong"
         >
           Sign in
         </button>
         .
-      </span>
+      </p>
     </div>
   )
 }

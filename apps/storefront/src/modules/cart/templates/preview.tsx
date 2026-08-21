@@ -1,50 +1,36 @@
 "use client"
 
-import repeat from "@lib/util/repeat"
-import { HttpTypes } from "@medusajs/types"
-import { Table, clx } from "@modules/common/components/ui"
-
 import Item from "@modules/cart/components/item"
-import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
+import { cn } from "@lib/util/cn"
+import { HttpTypes } from "@medusajs/types"
 
-type ItemsTemplateProps = {
-  cart: HttpTypes.StoreCart
-}
-
-const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
-  const items = cart.items
-  const hasOverflow = items && items.length > 4
+/**
+ * The read-only item list in the checkout summary. Same line-item component as
+ * the cart, in its `preview` form: no quantity control, because changing what
+ * you are buying halfway through paying for it is not a thing to make easy.
+ */
+const ItemsPreviewTemplate = ({ cart }: { cart: HttpTypes.StoreCart }) => {
+  const items = [...(cart.items ?? [])].sort((a, b) =>
+    (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+  )
 
   return (
-    <div
-      className={clx({
-        "pl-[1px] overflow-y-scroll overflow-x-hidden no-scrollbar max-h-[420px]":
-          hasOverflow,
-      })}
+    <ul
+      className={cn(
+        "divide-y divide-line border-y border-line",
+        items.length > 4 && "no-scrollbar max-h-[420px] overflow-y-auto"
+      )}
+      data-testid="items-table"
     >
-      <Table>
-        <Table.Body data-testid="items-table">
-          {items
-            ? items
-                .sort((a, b) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                })
-                .map((item) => {
-                  return (
-                    <Item
-                      key={item.id}
-                      item={item}
-                      type="preview"
-                      currencyCode={cart.currency_code}
-                    />
-                  )
-                })
-            : repeat(5).map((i) => {
-                return <SkeletonLineItem key={i} />
-              })}
-        </Table.Body>
-      </Table>
-    </div>
+      {items.map((item) => (
+        <Item
+          key={item.id}
+          item={item}
+          type="preview"
+          currencyCode={cart.currency_code}
+        />
+      ))}
+    </ul>
   )
 }
 

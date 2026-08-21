@@ -1,43 +1,56 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
-import MedusaCTA from "@modules/layout/components/medusa-cta"
 
+/**
+ * Checkout runs outside the main shell on purpose: no nav, no footer, no
+ * catalogue links. The only way out is back to the cart, which is the one
+ * navigation someone in the middle of paying actually wants.
+ */
 export default function CheckoutLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="w-full bg-white relative small:min-h-screen">
-      <div className="h-16 bg-white border-b ">
-        <nav className="flex h-full items-center content-container justify-between">
+    <div className="relative flex min-h-screen w-full flex-col bg-paper">
+      <header className="sticky top-0 z-40 border-b border-line bg-paper">
+        <nav className="container-page flex h-14 items-center justify-between sm:h-16">
           <LocalizedClientLink
             href="/cart"
-            className="text-small-semi text-ui-fg-base flex items-center gap-x-2 uppercase flex-1 basis-0"
+            className="pressable-tint -ml-2 flex flex-1 basis-0 items-center gap-1.5 rounded px-2 py-2 text-sm text-muted hover:text-ink"
             data-testid="back-to-cart-link"
           >
             <ChevronDown className="rotate-90" size={16} />
-            <span className="mt-px hidden small:block txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base ">
-              Back to shopping cart
-            </span>
-            <span className="mt-px block small:hidden txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base">
-              Back
-            </span>
+            <span className="hidden sm:block">Back to cart</span>
+            <span className="sm:hidden">Back</span>
           </LocalizedClientLink>
+
           <LocalizedClientLink
             href="/"
-            className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+            className="pressable rounded px-1 text-lg font-semibold tracking-tight text-ink"
             data-testid="store-link"
           >
-            Valy Homelabs
+            Valy
           </LocalizedClientLink>
-          <div className="flex-1 basis-0" />
+
+          <div className="flex flex-1 basis-0 justify-end">
+            <span className="hidden text-2xs text-muted sm:inline">
+              Secure checkout
+            </span>
+          </div>
         </nav>
+      </header>
+
+      <div className="relative flex-1" data-testid="checkout-container">
+        {children}
       </div>
-      <div className="relative" data-testid="checkout-container">{children}</div>
-      <div className="py-4 w-full flex items-center justify-center">
-        <MedusaCTA />
-      </div>
+
+      <footer className="border-t border-line py-5">
+        <p className="container-page text-2xs text-muted">
+          Prices include GST. A tax invoice is raised against your GSTIN if you
+          add one.
+        </p>
+      </footer>
     </div>
   )
 }

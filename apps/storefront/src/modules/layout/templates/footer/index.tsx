@@ -1,157 +1,152 @@
-import { listCategories } from "@lib/data/categories";
-import { listCollections } from "@lib/data/collections";
-import { Text, clx } from "@modules/common/components/ui";
+import { listCategories } from "@lib/data/categories"
+import { listCollections } from "@lib/data/collections"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import MedusaCTA from "@modules/layout/components/medusa-cta";
+/**
+ * The footer.
+ *
+ * Categories and collections are read live so a new part category appears here
+ * the moment it is published, without a redeploy. Both reads are unrelated, so
+ * they go out together rather than one after the other.
+ */
+
+const LEARN_LINKS = [
+  { href: "/compatibility", label: "What fits what" },
+  { href: "/getting-started", label: "Getting started" },
+  { href: "/getting-started#raid", label: "RAID calculator" },
+  { href: "/getting-started#capacity", label: "How much space do I need" },
+]
+
+const COMPANY_LINKS = [
+  { href: "/store", label: "Everything we sell" },
+  { href: "/account", label: "Your orders" },
+  { href: "/terms", label: "Terms of sale" },
+  { href: "/privacy", label: "Privacy" },
+]
 
 export default async function Footer() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  });
-  const productCategories = await listCategories();
+  const [{ collections }, categories] = await Promise.all([
+    listCollections(),
+    listCategories(),
+  ])
+
+  const topLevel = categories.filter((c) => !c.parent_category_id)
 
   return (
-    <footer className="border-t border-ui-border-base w-full">
-      <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div>
-            <LocalizedClientLink
-              href="/"
-              className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
-            >
-              Valy Homelabs
-            </LocalizedClientLink>
-          </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
-            {productCategories && productCategories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Categories
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {productCategories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return;
-                    }
-
-                    const children =
-                      c.category_children?.map((child) => ({
-                        name: child.name,
-                        handle: child.handle,
-                        id: child.id,
-                      })) || null;
-
-                    return (
-                      <li
-                        className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                        key={c.id}
-                      >
-                        <LocalizedClientLink
-                          className={clx(
-                            "hover:text-ui-fg-base",
-                            children && "txt-small-plus"
-                          )}
-                          href={`/categories/${c.handle}`}
-                          data-testid="category-link"
-                        >
-                          {c.name}
-                        </LocalizedClientLink>
-                        {children && (
-                          <ul className="grid grid-cols-1 ml-3 gap-2">
-                            {children &&
-                              children.map((child) => (
-                                <li key={child.id}>
-                                  <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
-                                    href={`/categories/${child.handle}`}
-                                    data-testid="category-link"
-                                  >
-                                    {child.name}
-                                  </LocalizedClientLink>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Collections
-                </span>
-                <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    }
-                  )}
-                >
-                  {collections?.slice(0, 6).map((c) => (
-                    <li key={c.id}>
-                      <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
-                        href={`/collections/${c.handle}`}
-                      >
-                        {c.title}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex flex-col gap-y-2">
-              <span className="txt-small-plus txt-ui-fg-base">Medusa</span>
-              <ul className="grid grid-cols-1 gap-y-2 text-ui-fg-subtle txt-small">
-                <li>
-                  <a
-                    href="https://github.com/medusajs"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    GitHub
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://docs.medusajs.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Documentation
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://github.com/medusajs/dtc-starter"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Source code
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
+    <footer className="mt-20 border-t border-line bg-surface">
+      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-10 py-14 sm:grid-cols-3 lg:grid-cols-5 lg:py-16">
+        <div className="col-span-2 flex flex-col gap-3 sm:col-span-3 lg:col-span-1">
+          <LocalizedClientLink
+            href="/"
+            className="text-lg font-semibold tracking-tight text-ink"
+          >
+            Valy
+          </LocalizedClientLink>
+          <p className="max-w-xs text-sm leading-6 text-muted">
+            Homelab servers built in Bengaluru, so the photographs and the films
+            and the work stay on hardware you own.
+          </p>
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
-          <Text className="txt-compact-small">
-            © {new Date().getFullYear()} Valy Homelabs. All rights reserved.
-          </Text>
-          <MedusaCTA />
+
+        {!!topLevel.length && (
+          <FooterColumn title="Catalogue" testId="footer-categories">
+            {topLevel.map((category) => (
+              <FooterLink
+                key={category.id}
+                href={`/categories/${category.handle}`}
+                data-testid="category-link"
+              >
+                {category.name}
+              </FooterLink>
+            ))}
+          </FooterColumn>
+        )}
+
+        {!!collections.length && (
+          <FooterColumn title="Where to start">
+            {collections.map((collection) => (
+              <FooterLink
+                key={collection.id}
+                href={`/collections/${collection.handle}`}
+              >
+                {collection.title}
+              </FooterLink>
+            ))}
+          </FooterColumn>
+        )}
+
+        <FooterColumn title="Learn">
+          {LEARN_LINKS.map((link) => (
+            <FooterLink key={link.href} href={link.href}>
+              {link.label}
+            </FooterLink>
+          ))}
+        </FooterColumn>
+
+        <FooterColumn title="Valy">
+          {COMPANY_LINKS.map((link) => (
+            <FooterLink key={link.href} href={link.href}>
+              {link.label}
+            </FooterLink>
+          ))}
+        </FooterColumn>
+      </div>
+
+      {/*
+       * The four promises, restated where someone checks them: at the point of
+       * deciding whether this is a real company. Wording matches the assurance
+       * strip on the homepage because both are commitments, not marketing.
+       */}
+      <div className="border-t border-line">
+        <div className="container-page flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-2xs text-muted">
+            <li>GST invoice on every order</li>
+            <li>48-hour burn-in before dispatch</li>
+            <li>3-year warranty, serviced in India</li>
+            <li>7-day returns</li>
+          </ul>
+          <p className="text-2xs text-muted">
+            © {new Date().getFullYear()} Valy, Bengaluru
+          </p>
         </div>
       </div>
     </footer>
-  );
+  )
 }
+
+const FooterColumn = ({
+  title,
+  testId,
+  children,
+}: {
+  title: string
+  testId?: string
+  children: React.ReactNode
+}) => (
+  <div className="flex flex-col gap-3">
+    <h2 className="text-xs font-medium text-ink">{title}</h2>
+    <ul className="flex flex-col gap-2.5" data-testid={testId}>
+      {children}
+    </ul>
+  </div>
+)
+
+const FooterLink = ({
+  href,
+  children,
+  ...props
+}: {
+  href: string
+  children: React.ReactNode
+  [x: string]: unknown
+}) => (
+  <li>
+    <LocalizedClientLink
+      href={href}
+      className="text-sm text-muted hover:text-ink"
+      {...props}
+    >
+      {children}
+    </LocalizedClientLink>
+  </li>
+)

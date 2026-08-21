@@ -1,72 +1,93 @@
 import { convertToLocale } from "@lib/util/money"
+import { formatDeliveryEstimate } from "@lib/util/shipping-availability"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@modules/common/components/ui"
 
-import Divider from "@modules/common/components/divider"
+/**
+ * Where it is going and how.
+ *
+ * The carrier and estimate are read from `shipping_methods.data` — the promise
+ * that was accepted at checkout — rather than being recomputed from today's
+ * rates, which could quote something different from what the customer agreed to.
+ */
+const ShippingDetails = ({ order }: { order: HttpTypes.StoreOrder }) => {
+  const method = order.shipping_methods?.at(-1)
+  const methodData = method?.data as
+    | { courier_name?: string; estimated_delivery_days?: number }
+    | null
 
-type ShippingDetailsProps = {
-  order: HttpTypes.StoreOrder
-}
+  const promise = [
+    formatDeliveryEstimate(methodData?.estimated_delivery_days),
+    methodData?.courier_name,
+  ]
+    .filter(Boolean)
+    .join(" · ")
 
-const ShippingDetails = ({ order }: ShippingDetailsProps) => {
   return (
-    <div>
-      <Heading level="h2" className="flex flex-row text-3xl-regular my-6">
+    <section aria-labelledby="delivery-details">
+      <h2 id="delivery-details" className="mb-3 text-lg font-semibold text-ink">
         Delivery
-      </Heading>
-      <div className="flex items-start gap-x-8">
+      </h2>
+
+      <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-3">
         <div
-          className="flex flex-col w-1/3"
+          className="flex flex-col gap-0.5"
           data-testid="shipping-address-summary"
         >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">
-            Shipping Address
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
+          <dt className="text-xs font-medium text-ink">Address</dt>
+          <dd className="text-muted">
             {order.shipping_address?.first_name}{" "}
             {order.shipping_address?.last_name}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.address_1}{" "}
-            {order.shipping_address?.address_2}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.postal_code},{" "}
-            {order.shipping_address?.city}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
+            <br />
+            {order.shipping_address?.address_1}
+            {order.shipping_address?.address_2 && (
+              <>
+                <br />
+                {order.shipping_address.address_2}
+              </>
+            )}
+            <br />
+            {order.shipping_address?.city}{" "}
+            {order.shipping_address?.postal_code}
+            <br />
             {order.shipping_address?.country_code?.toUpperCase()}
-          </Text>
+          </dd>
         </div>
 
         <div
-          className="flex flex-col w-1/3 "
+          className="flex flex-col gap-0.5"
           data-testid="shipping-contact-summary"
         >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">Contact</Text>
-          <Text className="txt-medium text-ui-fg-subtle">
+          <dt className="text-xs font-medium text-ink">Contact</dt>
+          <dd className="text-muted">
             {order.shipping_address?.phone}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">{order.email}</Text>
+            <br />
+            {order.email}
+          </dd>
         </div>
 
         <div
-          className="flex flex-col w-1/3"
+          className="flex flex-col gap-0.5"
           data-testid="shipping-method-summary"
         >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">Method</Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {(order.shipping_methods?.[0] as { name?: string })?.name} (
-            {convertToLocale({
-              amount: order.shipping_methods?.[0].total ?? 0,
-              currency_code: order.currency_code,
-            })}
-            )
-          </Text>
+          <dt className="text-xs font-medium text-ink">Method</dt>
+          <dd className="text-muted">
+            {method?.name}{" "}
+            <span className="font-mono tabular">
+              {convertToLocale({
+                amount: method?.total ?? 0,
+                currency_code: order.currency_code,
+              })}
+            </span>
+            {promise && (
+              <>
+                <br />
+                <span data-testid="delivery-option-detail">{promise}</span>
+              </>
+            )}
+          </dd>
         </div>
-      </div>
-      <Divider className="mt-8" />
-    </div>
+      </dl>
+    </section>
   )
 }
 

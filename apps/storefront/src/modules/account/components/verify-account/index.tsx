@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@modules/common/components/ui"
-import { confirmEmailVerification } from "@lib/data/customer"
+import { confirmEmailVerification } from "@lib/data/customer-actions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 type VerificationState = "verifying" | "success" | "error"
@@ -37,17 +37,17 @@ const VerifyAccount = () => {
       className="max-w-sm w-full flex flex-col items-center text-center gap-y-4"
       data-testid="verify-account-page"
     >
-      <h1 className="text-large-semi uppercase">Email verification</h1>
+      <h1 className="text-base font-semibold uppercase">Email verification</h1>
 
       {state === "verifying" && (
-        <p className="text-base-regular text-ui-fg-base">
+        <p className="text-sm text-ink">
           Verifying your email...
         </p>
       )}
 
       {state === "success" && (
         <>
-          <p className="text-base-regular text-ui-fg-base">
+          <p className="text-sm text-ink">
             Your email is verified. You can now sign in to your account.
           </p>
           <LocalizedClientLink href="/account">
@@ -58,7 +58,7 @@ const VerifyAccount = () => {
 
       {state === "error" && (
         <>
-          <p className="text-base-regular text-ui-fg-base">
+          <p className="text-sm text-ink">
             This verification link is invalid or has expired. Sign in to receive
             a new verification email.
           </p>

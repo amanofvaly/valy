@@ -1,5 +1,5 @@
-import { Radio as RadioGroupOption } from "@headlessui/react"
-import { Text, clx } from "@modules/common/components/ui"
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { clx } from "@modules/common/components/ui"
 import React, { useContext, useMemo, type JSX } from "react"
 
 import Radio from "@modules/common/components/radio"
@@ -29,37 +29,36 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
   const isDevelopment = process.env.NODE_ENV === "development"
 
   return (
-    <RadioGroupOption
+    <RadioGroupPrimitive.Item
       key={paymentProviderId}
       value={paymentProviderId}
       disabled={disabled}
       className={clx(
-        "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
-        {
-          "border-ui-border-interactive":
-            selectedPaymentOptionId === paymentProviderId,
-        }
+        "pressable flex w-full flex-col gap-2 rounded-lg border px-4 py-3.5 text-left",
+        selectedPaymentOptionId === paymentProviderId
+          ? "border-accent bg-accent-wash"
+          : "border-line hover:border-line-strong"
       )}
     >
-      <div className="flex items-center justify-between ">
-        <div className="flex items-center gap-x-4">
+      <span className="flex w-full items-center justify-between gap-3">
+        <span className="flex items-center gap-3">
           <Radio checked={selectedPaymentOptionId === paymentProviderId} />
-          <Text className="text-base-regular">
+          <span className="text-sm text-ink">
             {paymentInfoMap[paymentProviderId]?.title || paymentProviderId}
-          </Text>
+          </span>
           {isManual(paymentProviderId) && isDevelopment && (
-            <PaymentTest className="hidden small:block" />
+            <PaymentTest className="hidden sm:block" />
           )}
-        </div>
-        <span className="justify-self-end text-ui-fg-base">
+        </span>
+        <span className="text-muted">
           {paymentInfoMap[paymentProviderId]?.icon}
         </span>
-      </div>
+      </span>
       {isManual(paymentProviderId) && isDevelopment && (
-        <PaymentTest className="small:hidden text-[10px]" />
+        <PaymentTest className="text-2xs sm:hidden" />
       )}
       {children}
-    </RadioGroupOption>
+    </RadioGroupPrimitive.Item>
   )
 }
 
@@ -84,15 +83,18 @@ export const StripeCardContainer = ({
     return {
       style: {
         base: {
-          fontFamily: "Inter, sans-serif",
-          color: "#424270",
+          fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+          fontSize: "15px",
+          color: "#15181c",
           "::placeholder": {
-            color: "rgb(107 114 128)",
+            color: "#666c75",
           },
         },
       },
       classes: {
-        base: "pt-3 pb-1 block w-full h-11 px-4 mt-0 bg-ui-bg-field border rounded-md appearance-none focus:outline-none focus:ring-0 focus:shadow-borders-interactive-with-active border-ui-border-base hover:bg-ui-bg-field-hover transition-all duration-300 ease-in-out",
+        base: "block h-11 w-full rounded border border-line bg-paper px-3 pt-3.5 hover:border-line-strong focus:border-accent focus:outline-none",
+        focus: "border-accent",
+        invalid: "border-danger",
       },
     }
   }, [])
@@ -106,10 +108,10 @@ export const StripeCardContainer = ({
     >
       {selectedPaymentOptionId === paymentProviderId &&
         (stripeReady ? (
-          <div className="my-4 transition-all duration-150 ease-in-out">
-            <Text className="txt-medium-plus text-ui-fg-base mb-1">
-              Enter your card details:
-            </Text>
+          <span className="mt-2 block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">
+              Card details
+            </span>
             <CardElement
               options={useOptions as StripeCardElementOptions}
               onChange={(e) => {
@@ -120,7 +122,7 @@ export const StripeCardContainer = ({
                 setCardComplete(e.complete)
               }}
             />
-          </div>
+          </span>
         ) : (
           <SkeletonCardDetails />
         ))}

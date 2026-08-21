@@ -1,15 +1,18 @@
-import { Container } from "@modules/common/components/ui"
-
-const SkeletonProductPreview = () => {
+/**
+ * One card's worth of loading state, matched to `ProductPreview`'s real
+ * measurements: a square image frame, a title line, a subtitle line, a spec
+ * line and a price.
+ */
+export default function SkeletonProductPreview() {
   return (
-    <div className="animate-pulse">
-      <Container className="aspect-[9/16] w-full bg-gray-100 bg-ui-bg-subtle" />
-      <div className="flex justify-between text-base-regular mt-2">
-        <div className="w-2/5 h-6 bg-gray-100"></div>
-        <div className="w-1/5 h-6 bg-gray-100"></div>
+    <div className="flex animate-pulse flex-col gap-3">
+      <div className="aspect-square w-full rounded-lg border border-line bg-surface" />
+      <div className="flex flex-col gap-2">
+        <div className="h-3.5 w-3/4 rounded bg-surface" />
+        <div className="h-3 w-full rounded bg-surface" />
+        <div className="h-2.5 w-2/3 rounded bg-surface" />
+        <div className="mt-1 h-3.5 w-20 rounded bg-surface" />
       </div>
     </div>
   )
 }
-
-export default SkeletonProductPreview

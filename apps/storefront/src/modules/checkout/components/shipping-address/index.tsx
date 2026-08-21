@@ -1,6 +1,5 @@
 import compareAddresses from "@lib/util/compare-addresses"
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@modules/common/components/ui"
 import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
@@ -119,9 +118,11 @@ const ShippingAddress = ({
   return (
     <>
       {customer && (addressesInRegion?.length || 0) > 0 && (
-        <Container className="mb-6 flex flex-col gap-y-4 p-5">
-          <p className="text-small-regular">
-            {`Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
+        <div className="mb-6 flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-muted">
+            {customer.first_name
+              ? `Hi ${customer.first_name}, use one of your saved addresses?`
+              : "Use one of your saved addresses?"}
           </p>
           <AddressSelect
             addresses={customer.addresses}
@@ -132,9 +133,12 @@ const ShippingAddress = ({
             }
             onSelect={setFormAddress}
           />
-        </Container>
+        </div>
       )}
-      <div className="grid grid-cols-2 gap-4">
+
+      {/* One column on a phone: two 160px-wide fields side by side is how you
+          get a postal code input that cannot show a postal code. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label="First name"
           name="shipping_address.first_name"
@@ -153,15 +157,17 @@ const ShippingAddress = ({
           required
           data-testid="shipping-last-name-input"
         />
-        <Input
-          label="Address"
-          name="shipping_address.address_1"
-          autoComplete="address-line1"
-          value={formData["shipping_address.address_1"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-address-input"
-        />
+        <div className="sm:col-span-2">
+          <Input
+            label="Address"
+            name="shipping_address.address_1"
+            autoComplete="address-line1"
+            value={formData["shipping_address.address_1"]}
+            onChange={handleChange}
+            required
+            data-testid="shipping-address-input"
+          />
+        </div>
         <Input
           label="Company"
           name="shipping_address.company"
@@ -171,10 +177,11 @@ const ShippingAddress = ({
           data-testid="shipping-company-input"
         />
         <Input
-          label="GSTIN (Optional)"
+          label="GSTIN"
           name="shipping_address.gstin"
           value={formData["shipping_address.gstin"]}
           onChange={handleChange}
+          hint="Optional. Add it and the invoice is raised against your business so input credit works."
           data-testid="shipping-gstin-input"
         />
         <Input
@@ -213,7 +220,7 @@ const ShippingAddress = ({
           data-testid="shipping-province-input"
         />
       </div>
-      <div className="my-8 flex flex-col gap-4">
+      <div className="my-6 flex flex-col gap-3">
         <Checkbox
           label="Billing address same as shipping address"
           name="same_as_billing"
@@ -234,7 +241,7 @@ const ShippingAddress = ({
           />
         )}
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label="Email"
           name="email"

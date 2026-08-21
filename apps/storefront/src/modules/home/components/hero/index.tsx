@@ -1,98 +1,84 @@
-import Image from "next/image"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { Button } from "@modules/common/components/ui"
 
-import CtaLink from "@modules/home/components/cta-link"
-import Faceplate from "@modules/home/components/faceplate"
-import { homeMedia } from "@modules/home/media"
+/**
+ * The argument, stated once.
+ *
+ * The subject is custody: whether the photographs and the films and the work
+ * live on hardware someone owns or on hardware someone rents. Said plainly to a
+ * person who has never run a server, without talking down to the person who
+ * has.
+ *
+ * No photograph. There are none of a Valy machine yet, and a stock image of a
+ * datacentre would be arguing for exactly the thing this page argues against.
+ * The figures do the work a picture would.
+ */
 
-const readout = [
-  { label: "Idle draw", value: "34", unit: "W" },
-  { label: "Noise at 1 m", value: "24", unit: "dB(A)" },
-  { label: "Burn-in", value: "48", unit: "h" },
-  { label: "Warranty", value: "3", unit: "yr" },
+/** Every number here is a commitment repeated elsewhere on the site. */
+const FACTS = [
+  { value: "19", unit: "dB(A)", label: "The quietest one, at a metre" },
+  { value: "48", unit: "hours", label: "On the bench before it ships" },
+  { value: "3", unit: "years", label: "Warranty, serviced in India" },
+  { value: "7", unit: "days", label: "To send it back" },
 ]
 
-const Hero = () => {
-  return (
-    <section className="relative overflow-hidden bg-zinc-950">
-      <div className="content-container grid grid-cols-1 items-center gap-y-14 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-x-16 lg:py-24">
-        <div className="flex flex-col gap-8">
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400">
-            Assembled in Bengaluru · Ships pan-India
-          </span>
+const Hero = () => (
+  <section className="bg-paper">
+    <div className="container-page grid grid-cols-1 gap-12 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-28">
+      <div className="flex flex-col gap-7">
+        <p className="font-mono text-2xs uppercase tracking-[0.14em] text-muted">
+          Built in Bengaluru, shipped across India
+        </p>
 
-          <h1 className="max-w-xl font-display text-4xl leading-[1.05] tracking-tight text-white [font-stretch:112%] sm:text-5xl lg:text-6xl">
-            A server that lives in your house.
-            <span className="block text-zinc-500">
-              Not in someone else&apos;s cloud.
-            </span>
-          </h1>
+        <h1 className="max-w-[15ch] text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-6xl">
+          Keep your own files.
+        </h1>
 
-          <p className="max-w-lg text-base leading-7 text-zinc-400">
-            Valy builds homelab machines for Indian homes and studios: NAS boxes
-            for the family archive, Plex and Jellyfin servers that transcode 4K
-            without stuttering, Proxmox nodes for the work you would rather not
-            rent by the hour. Every unit runs 48 hours on the bench before it
-            ships.
+        <div className="flex max-w-prose flex-col gap-4 text-base leading-7 text-muted">
+          <p>
+            Every photograph you have taken since 2011 is sitting on a hard
+            drive in a building you will never visit, rented by the month,
+            priced by someone else. It works well, right up until the billing
+            fails or the terms change or you want it all back at once.
           </p>
-
-          <div className="flex flex-col gap-3 xsmall:flex-row xsmall:items-center">
-            <CtaLink href="/store" tone="dark">
-              Shop all builds
-            </CtaLink>
-            <CtaLink href="#configurations" variant="outline" tone="dark">
-              Compare configurations
-            </CtaLink>
-          </div>
-
-          <dl className="grid grid-cols-2 border-t border-zinc-800 sm:grid-cols-4">
-            {readout.map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col gap-1 border-b border-r border-zinc-800 py-4 pr-4 last:border-r-0 sm:border-b-0"
-              >
-                <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                  {item.label}
-                </dt>
-                <dd className="font-display text-2xl text-white">
-                  {item.value}
-                  <span className="ml-1 font-mono text-xs text-amber-400">
-                    {item.unit}
-                  </span>
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <p>
+            A Valy machine is the other option: a small, quiet server that sits
+            in a cupboard in your house and holds the same files. It arrives
+            with the operating system installed, the storage built and the apps
+            running, so the first evening is spent copying photographs across
+            rather than reading forum posts.
+          </p>
         </div>
 
-        <Faceplate
-          code="VLY-C4 · Core 4-bay"
-          status="Built to order"
-          className="w-full shadow-elevation-card-hover"
-        >
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src={homeMedia.rack}
-              alt="Rack of running servers photographed from the front"
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 45vw"
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-3">
-              <p className="font-mono text-[11px] uppercase leading-5 tracking-[0.16em] text-zinc-300">
-                Intel i5-12500T · 32 GB
-                <br />4 x 3.5&quot; hot-swap · 2.5 GbE
-              </p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-amber-400">
-                TrueNAS / Proxmox preloaded
-              </p>
-            </div>
-          </div>
-        </Faceplate>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button asChild size="large">
+            <LocalizedClientLink href="/categories/machines">
+              See the five machines
+            </LocalizedClientLink>
+          </Button>
+          <Button asChild variant="secondary" size="large">
+            <LocalizedClientLink href="/getting-started">
+              Start from nothing
+            </LocalizedClientLink>
+          </Button>
+        </div>
       </div>
-    </section>
-  )
-}
+
+      <dl className="grid grid-cols-2 gap-px self-start overflow-hidden rounded-lg border border-line bg-line">
+        {FACTS.map((fact) => (
+          <div key={fact.label} className="flex flex-col gap-1 bg-paper p-5">
+            <dd className="flex items-baseline gap-1.5">
+              <span className="font-mono text-3xl font-medium tabular text-ink">
+                {fact.value}
+              </span>
+              <span className="font-mono text-xs text-muted">{fact.unit}</span>
+            </dd>
+            <dt className="text-xs leading-5 text-muted">{fact.label}</dt>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+)
 
 export default Hero

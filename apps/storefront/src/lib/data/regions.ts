@@ -1,59 +1,56 @@
-"use server"
+import "server-only"
 
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { cache } from "react"
 
-export const listRegions = async () => {
-  const next = {
-    ...(await getCacheOptions("regions")),
+/**
+ * Regions, read live.
+ *
+ * A module-level `Map` used to hold these for the life of the process with
+ * nothing able to invalidate it, so a region edited in admin stayed wrong until
+ * the instance recycled. `React.cache` replaces it: identical calls collapse to
+ * one fetch *within a single request* — which is what stops the layout, the
+ * page and `generateMetadata` each asking separately — and nothing at all
+ * survives between requests, so every visitor reads current data.
+ */
+
+export const listRegions = cache(
+  async (): Promise<HttpTypes.StoreRegion[]> =>
+    sdk.client
+      .fetch<{ regions: HttpTypes.StoreRegion[] }>(`/store/regions`, {
+        method: "GET",
+        cache: "no-store",
+      })
+      .then(({ regions }) => regions)
+      .catch(() => [])
+)
+
+export const retrieveRegion = cache(
+  async (id: string): Promise<HttpTypes.StoreRegion | null> =>
+    sdk.client
+      .fetch<{ region: HttpTypes.StoreRegion }>(`/store/regions/${id}`, {
+        method: "GET",
+        cache: "no-store",
+      })
+      .then(({ region }) => region)
+      .catch(() => null)
+)
+
+export const getRegion = cache(
+  async (countryCode: string): Promise<HttpTypes.StoreRegion | null> => {
+    const regions = await listRegions()
+
+    if (!regions.length) {
+      return null
+    }
+
+    const wanted = countryCode?.toLowerCase()
+
+    const match = regions.find((region) =>
+      region.countries?.some((c) => c?.iso_2?.toLowerCase() === wanted)
+    )
+
+    return match ?? null
   }
-
-  return await sdk.client
-    .fetch<{ regions: HttpTypes.StoreRegion[] }>(`/store/regions`, {
-      method: "GET",
-      next,
-      cache: "no-store",
-    })
-    .then(({ regions }) => regions)
-}
-
-export const retrieveRegion = async (id: string) => {
-  const next = {
-    ...(await getCacheOptions(["regions", id].join("-"))),
-  }
-
-  return await sdk.client
-    .fetch<{ region: HttpTypes.StoreRegion }>(`/store/regions/${id}`, {
-      method: "GET",
-      next,
-      cache: "no-store",
-    })
-    .then(({ region }) => region)
-}
-
-const regionMap = new Map<string, HttpTypes.StoreRegion>()
-
-export const getRegion = async (countryCode: string) => {
-  if (regionMap.has(countryCode)) {
-    return regionMap.get(countryCode)
-  }
-
-  const regions = await listRegions()
-
-  if (!regions) {
-    return null
-  }
-
-  regions.forEach((region) => {
-    region.countries?.forEach((c) => {
-      regionMap.set(c?.iso_2 ?? "", region)
-    })
-  })
-
-  const region = countryCode
-    ? regionMap.get(countryCode)
-    : regionMap.get("us")
-
-  return region
-}
+)

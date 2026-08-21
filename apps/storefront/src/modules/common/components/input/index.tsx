@@ -1,75 +1,97 @@
-import { Label } from "@modules/common/components/ui"
-import React, { useEffect, useImperativeHandle, useState } from "react"
+"use client"
 
 import Eye from "@modules/common/icons/eye"
 import EyeOff from "@modules/common/icons/eye-off"
+import { inputClasses, Label, cn } from "@modules/common/components/ui"
+import React, { useState } from "react"
+
+/**
+ * The form input used across checkout and the account.
+ *
+ * It was a floating-label field whose label only moved because of a global
+ * `input:focus ~ label` rule in `globals.css`, which every call site then had to
+ * fight with `!transform-none`. That rule is gone, so the label is simply above
+ * the field: it is readable while typing, it does not overlap autofilled text,
+ * and it needs no coordination with a stylesheet three directories away.
+ *
+ * `topLabel` predates `label` and did the same job. Both are accepted so the
+ * eleven call sites do not need editing; `label` is the one to use.
+ */
 
 type InputProps = Omit<
-  Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
-  "placeholder"
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "size" | "placeholder"
 > & {
   label: string
-  errors?: Record<string, unknown>
-  touched?: Record<string, unknown>
   name: string
   topLabel?: string
+  hint?: string
+  errors?: Record<string, unknown>
+  touched?: Record<string, unknown>
+  ref?: React.Ref<HTMLInputElement>
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ type, name, label, touched: _touched, required, topLabel, ...props }, ref) => {
-    const inputRef = React.useRef<HTMLInputElement>(null)
-    const [showPassword, setShowPassword] = useState(false)
-    const [inputType, setInputType] = useState(type)
+const Input = ({
+  type,
+  name,
+  label,
+  topLabel,
+  hint,
+  required,
+  className,
+  id,
+  errors: _errors,
+  touched: _touched,
+  ref,
+  ...props
+}: InputProps) => {
+  const [showPassword, setShowPassword] = useState(false)
+  const inputId = id ?? name
+  const isPassword = type === "password"
 
-    useEffect(() => {
-      if (type === "password" && showPassword) {
-        setInputType("text")
-      }
-
-      if (type === "password" && !showPassword) {
-        setInputType("password")
-      }
-    }, [type, showPassword])
-
-    useImperativeHandle(ref, () => inputRef.current!)
-
-    return (
-      <div className="flex flex-col w-full">
-        {topLabel && (
-          <Label className="mb-2 txt-compact-medium-plus">{topLabel}</Label>
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <Label htmlFor={inputId}>
+        {topLabel ?? label}
+        {required && (
+          <span className="ml-0.5 text-danger" aria-hidden="true">
+            *
+          </span>
         )}
-        <div className="flex relative z-0 w-full txt-compact-medium">
-          <input
-            type={inputType}
-            name={name}
-            placeholder=" "
-            required={required}
-            className="pt-4 pb-1 block w-full h-11 px-4 mt-0 bg-ui-bg-field border rounded-md appearance-none focus:outline-none focus:ring-0 focus:shadow-borders-interactive-with-active border-ui-border-base hover:bg-ui-bg-field-hover"
-            {...props}
-            ref={inputRef}
-          />
-          <label
-            htmlFor={name}
-            onClick={() => inputRef.current?.focus()}
-            className="flex items-center justify-center mx-3 px-1 transition-all absolute duration-300 top-3 -z-1 origin-0 text-ui-fg-subtle"
+      </Label>
+
+      <div className="relative">
+        <input
+          ref={ref}
+          id={inputId}
+          name={name}
+          type={isPassword && showPassword ? "text" : type}
+          required={required}
+          aria-describedby={hint ? `${inputId}-hint` : undefined}
+          className={cn(inputClasses, isPassword && "pr-11", className)}
+          {...props}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="pressable absolute right-1 top-1 grid h-9 w-9 place-items-center rounded text-muted hover:text-ink"
           >
-            {label}
-            {required && <span className="text-rose-500">*</span>}
-          </label>
-          {type === "password" && (
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-ui-fg-subtle px-4 focus:outline-none transition-all duration-150 outline-none focus:text-ui-fg-base absolute right-0 top-3"
-            >
-              {showPassword ? <Eye /> : <EyeOff />}
-            </button>
-          )}
-        </div>
+            {showPassword ? <Eye /> : <EyeOff />}
+          </button>
+        )}
       </div>
-    )
-  }
-)
+
+      {hint && (
+        <p id={`${inputId}-hint`} className="text-xs leading-5 text-muted">
+          {hint}
+        </p>
+      )}
+    </div>
+  )
+}
 
 Input.displayName = "Input"
 

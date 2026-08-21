@@ -1,38 +1,63 @@
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@modules/common/components/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { Badge } from "@modules/common/components/ui"
 
-type ProductInfoProps = {
-  product: HttpTypes.StoreProduct
-}
+/**
+ * The heading block, shared by all three product templates: where this thing
+ * sits in the catalogue, what it is called, and the one sentence explaining why
+ * it exists.
+ */
+const ProductInfo = ({ product }: { product: HttpTypes.StoreProduct }) => {
+  const category = product.categories?.[0]
 
-const ProductInfo = ({ product }: ProductInfoProps) => {
   return (
-    <div id="product-info">
-      <div className="flex flex-col gap-y-4 lg:max-w-[500px] mx-auto">
+    <div className="flex flex-col gap-3" id="product-info">
+      <nav aria-label="Breadcrumb">
+        <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+          <li className="flex items-center gap-1.5">
+            <LocalizedClientLink href="/store" className="hover:text-ink">
+              Store
+            </LocalizedClientLink>
+            <span aria-hidden="true">/</span>
+          </li>
+          {category && (
+            <li className="flex items-center gap-1.5">
+              <LocalizedClientLink
+                href={`/categories/${category.handle}`}
+                className="hover:text-ink"
+              >
+                {category.name}
+              </LocalizedClientLink>
+              <span aria-hidden="true">/</span>
+            </li>
+          )}
+          <li aria-current="page">{product.title}</li>
+        </ol>
+      </nav>
+
+      <div className="flex flex-wrap items-center gap-2">
         {product.collection && (
-          <LocalizedClientLink
-            href={`/collections/${product.collection.handle}`}
-            className="text-medium text-ui-fg-muted hover:text-ui-fg-subtle"
-          >
-            {product.collection.title}
+          <LocalizedClientLink href={`/collections/${product.collection.handle}`}>
+            <Badge color="blue">{product.collection.title}</Badge>
           </LocalizedClientLink>
         )}
-        <Heading
-          level="h2"
-          className="text-3xl leading-10 text-ui-fg-base"
-          data-testid="product-title"
-        >
-          {product.title}
-        </Heading>
-
-        <Text
-          className="text-medium text-ui-fg-subtle whitespace-pre-line"
-          data-testid="product-description"
-        >
-          {product.description}
-        </Text>
+        {(product.tags ?? []).slice(0, 3).map((tag) => (
+          <Badge key={tag.id}>{tag.value}</Badge>
+        ))}
       </div>
+
+      <h1
+        className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
+        data-testid="product-title"
+      >
+        {product.title}
+      </h1>
+
+      {product.subtitle && (
+        <p className="max-w-prose text-lg leading-7 text-muted">
+          {product.subtitle}
+        </p>
+      )}
     </div>
   )
 }

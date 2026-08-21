@@ -1,66 +1,29 @@
+import { getProductByHandle } from "@lib/data/products"
+import { getRegion } from "@lib/data/regions"
+import { HttpTypes } from "@medusajs/types"
+import ProductTemplate from "@modules/products/templates"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { listProducts } from "@lib/data/products"
-import { getRegion, listRegions } from "@lib/data/regions"
-import ProductTemplate from "@modules/products/templates"
-import { HttpTypes } from "@medusajs/types"
 
-// A handle created after the last build has no prebuilt page; dynamicParams
-// lets its URL render on demand instead of 404ing until a redeploy.
-//
-// Deliberately no `revalidate`. It makes the page ISR, and ISR renders with no
-// request attached, so the cookies() call inside getAuthHeaders() throws
-// DYNAMIC_SERVER_USAGE and every render 500s. Catalogue data is read per
-// request instead of being cached and invalidated.
-export const dynamicParams = true
+/**
+ * A product page.
+ *
+ * `getProductByHandle` is wrapped in `React.cache`, so the fetch below happens
+ * once per page view rather than twice. This route used to cost two identical
+ * round trips — roughly 200ms of production latency — because `generateMetadata`
+ * and the page body each fetched the product separately.
+ */
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
   searchParams: Promise<{ v_id?: string }>
 }
 
-export async function generateStaticParams() {
-  try {
-    const countryCodes = await listRegions().then((regions) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-    )
-
-    if (!countryCodes) {
-      return []
-    }
-
-    const promises = countryCodes.map(async (country) => {
-      const { response } = await listProducts({
-        countryCode: country,
-        queryParams: { limit: 100, fields: "handle" },
-      })
-
-      return {
-        country,
-        products: response.products,
-      }
-    })
-
-    const countryProducts = await Promise.all(promises)
-
-    return countryProducts
-      .flatMap((countryData) =>
-        countryData.products.map((product) => ({
-          countryCode: countryData.country,
-          handle: product.handle,
-        }))
-      )
-      .filter((param) => param.handle)
-  } catch (error) {
-    console.error(
-      `Failed to generate static paths for product pages: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }.`
-    )
-    return []
-  }
-}
-
+/**
+ * The variant-scoped image mechanism. A configured machine shows the machine
+ * that was configured, not a generic one — which matters more, not less, now
+ * that the configurator is the centre of the machine template.
+ */
 function getImagesForVariant(
   product: HttpTypes.StoreProduct,
   selectedVariantId?: string
@@ -69,72 +32,64 @@ function getImagesForVariant(
     return product.images
   }
 
-  const variant = product.variants!.find((v) => v.id === selectedVariantId)
-  if (!variant || !variant.images?.length) {
+  const variant = product.variants.find((v) => v.id === selectedVariantId)
+
+  if (!variant?.images?.length) {
     return product.images
   }
 
-  const imageIdsMap = new Map(variant.images!.map((i) => [i.id, true]))
-  return product.images?.filter((i) => imageIdsMap.has(i.id)) ?? null
+  const variantImageIds = new Set(variant.images.map((i) => i.id))
+
+  return product.images?.filter((i) => variantImageIds.has(i.id)) ?? null
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params
-  const { handle } = params
-  const region = await getRegion(params.countryCode)
-
-  if (!region) {
-    notFound()
-  }
-
-  const product = await listProducts({
-    countryCode: params.countryCode,
-    queryParams: { handle },
-  }).then(({ response }) => response.products[0])
+  const { handle, countryCode } = await props.params
+  const product = await getProductByHandle(handle, countryCode)
 
   if (!product) {
     notFound()
   }
 
+  const description =
+    product.subtitle ||
+    product.description?.split("\n")[0] ||
+    `${product.title} from Valy.`
+
   return {
-    title: `${product.title} | Valy Homelabs`,
-    description: `${product.title}`,
+    title: product.title,
+    description,
+    alternates: { canonical: `/products/${handle}` },
     openGraph: {
-      title: `${product.title} | Valy Homelabs`,
-      description: `${product.title}`,
+      title: product.title,
+      description,
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }
 }
 
 export default async function ProductPage(props: Props) {
-  const params = await props.params
-  const region = await getRegion(params.countryCode)
-  const searchParams = await props.searchParams
+  const [{ handle, countryCode }, searchParams] = await Promise.all([
+    props.params,
+    props.searchParams,
+  ])
 
-  const selectedVariantId = searchParams.v_id
+  // Unrelated to each other, so they go out together.
+  const [product, region] = await Promise.all([
+    getProductByHandle(handle, countryCode),
+    getRegion(countryCode),
+  ])
 
-  if (!region) {
+  if (!product || !region) {
     notFound()
   }
-
-  const pricedProduct = await listProducts({
-    countryCode: params.countryCode,
-    queryParams: { handle: params.handle },
-  }).then(({ response }) => response.products[0])
-
-  if (!pricedProduct) {
-    notFound()
-  }
-
-  const images = getImagesForVariant(pricedProduct, selectedVariantId)
 
   return (
     <ProductTemplate
-      product={pricedProduct}
+      product={product}
       region={region}
-      countryCode={params.countryCode}
-      images={images ?? []}
+      countryCode={countryCode}
+      images={getImagesForVariant(product, searchParams.v_id) ?? []}
     />
   )
 }

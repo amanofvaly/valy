@@ -1,34 +1,36 @@
-import { Heading } from "@modules/common/components/ui"
-
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
-import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
-import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
-const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => {
-  return (
-    <div className="sticky top-0 flex flex-col-reverse small:flex-col gap-y-8 py-8 small:py-0 ">
-      <div className="w-full bg-white flex flex-col">
-        <Divider className="my-6 small:hidden" />
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular items-baseline"
-        >
-          In your Cart
-        </Heading>
-        <Divider className="my-6" />
+/**
+ * The order summary beside checkout.
+ *
+ * On a phone it comes first and collapses to the total, because someone filling
+ * in an address does not need eleven line items above the first field — but the
+ * figure they are about to pay must never be hidden from them.
+ */
+const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => (
+  <aside className="lg:sticky lg:top-24 lg:self-start">
+    <details
+      open
+      className="rounded-lg border border-line lg:open:[&>summary]:hidden"
+    >
+      <summary className="flex cursor-pointer items-center justify-between gap-3 p-4 text-sm text-ink lg:hidden">
+        Order summary
+      </summary>
+
+      <div className="flex flex-col gap-5 p-5 pt-0 lg:pt-5">
+        <h2 className="text-base font-medium text-ink">Order summary</h2>
+
+        <ItemsPreviewTemplate cart={cart} />
+
         <CartTotals
           totals={cart}
           shippingLabel={cart.shipping_methods?.at(-1)?.name}
         />
-        <ItemsPreviewTemplate cart={cart} />
-        <div className="my-6">
-          <DiscountCode cart={cart} />
-        </div>
       </div>
-    </div>
-  )
-}
+    </details>
+  </aside>
+)
 
 export default CheckoutSummary

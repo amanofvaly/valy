@@ -1,56 +1,72 @@
+import { convertToLocale } from "@lib/util/money"
+import { headlineSpecs } from "@lib/util/specs"
 import { HttpTypes } from "@medusajs/types"
-import { Table, Text } from "@modules/common/components/ui"
-
-import LineItemOptions from "@modules/common/components/line-item-options"
-import LineItemPrice from "@modules/common/components/line-item-price"
-import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
+import { SpecInline } from "@modules/common/components/spec-block"
 import Thumbnail from "@modules/products/components/thumbnail"
 
-type ItemProps = {
+/**
+ * One line of an order.
+ *
+ * Carries the same specification line as the cart and the product card, which
+ * matters most here: this is the page a customer keeps, and eighteen months
+ * later "6 x 12TB / 32GB, 24 dB(A)" is what tells them what they own.
+ */
+const Item = ({
+  item,
+  currencyCode,
+}: {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
   currencyCode: string
-}
+}) => {
+  const specs = headlineSpecs(item.variant?.product?.metadata, 2)
+  const total = item.total ?? 0
 
-const Item = ({ item, currencyCode }: ItemProps) => {
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
-        <div className="flex w-16">
-          <Thumbnail thumbnail={item.thumbnail} size="square" />
-        </div>
-      </Table.Cell>
+    <li
+      className="grid grid-cols-[64px_1fr_auto] items-start gap-4 py-4"
+      data-testid="product-row"
+    >
+      <Thumbnail
+        thumbnail={item.thumbnail}
+        title={item.product_title ?? undefined}
+        metadata={item.variant?.product?.metadata}
+        size="full"
+        compactPlate
+      />
 
-      <Table.Cell className="text-left">
-        <Text
-          className="txt-medium-plus text-ui-fg-base"
-          data-testid="product-name"
-        >
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-sm font-medium text-ink" data-testid="product-name">
           {item.product_title}
-        </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
-      </Table.Cell>
+        </p>
+        {item.variant?.title && (
+          <p
+            className="font-mono text-2xs tabular text-muted"
+            data-testid="product-variant"
+          >
+            {item.variant.title}
+          </p>
+        )}
+        <SpecInline rows={specs} />
+      </div>
 
-      <Table.Cell className="!pr-0">
-        <span className="!pr-0 flex flex-col items-end h-full justify-center">
-          <span className="flex gap-x-1 ">
-            <Text className="text-ui-fg-muted">
-              <span data-testid="product-quantity">{item.quantity}</span>x{" "}
-            </Text>
-            <LineItemUnitPrice
-              item={item}
-              style="tight"
-              currencyCode={currencyCode}
-            />
-          </span>
-
-          <LineItemPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
+      <div className="flex flex-col items-end gap-0.5">
+        <span
+          className="font-mono text-sm tabular text-ink"
+          data-testid="product-price"
+        >
+          {convertToLocale({ amount: total, currency_code: currencyCode })}
         </span>
-      </Table.Cell>
-    </Table.Row>
+        <span className="font-mono text-2xs tabular text-muted">
+          <span data-testid="product-quantity">{item.quantity}</span> ×{" "}
+          <span data-testid="product-unit-price">
+            {convertToLocale({
+              amount: total / item.quantity,
+              currency_code: currencyCode,
+            })}
+          </span>
+        </span>
+      </div>
+    </li>
   )
 }
 

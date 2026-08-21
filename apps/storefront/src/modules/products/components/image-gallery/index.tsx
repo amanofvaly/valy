@@ -1,39 +1,70 @@
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@modules/common/components/ui"
+import { ProductMetadata } from "@lib/util/specs"
+import { SpecPlate } from "@modules/products/components/thumbnail"
 import Image from "next/image"
 
+/**
+ * The product's photographs, or the plate that stands in for them.
+ *
+ * Which images arrive here depends on the configured variant — the `v_id`
+ * search param drives `getImagesForVariant` on the server — so the gallery
+ * shows the machine that is actually being configured rather than a generic
+ * one.
+ */
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
+  title?: string
+  metadata?: ProductMetadata
 }
 
-const ImageGallery = ({ images }: ImageGalleryProps) => {
-  return (
-    <div className="flex items-start relative">
-      <div className="flex flex-col flex-1 small:mx-16 gap-y-4">
-        {images.map((image, index) => {
-          return (
-            <Container
-              key={image.id}
-              className="relative aspect-[29/34] w-full overflow-hidden bg-ui-bg-subtle"
-              id={image.id}
-            >
-              {!!image.url && (
-                <Image
-                  src={image.url}
-                  priority={index <= 2 ? true : false}
-                  className="absolute inset-0 rounded-rounded"
-                  alt={`Product image ${index + 1}`}
-                  fill
-                  sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
-                  style={{
-                    objectFit: "cover",
-                  }}
-                />
-              )}
-            </Container>
-          )
-        })}
+const ImageGallery = ({ images, title, metadata }: ImageGalleryProps) => {
+  if (!images.length) {
+    return (
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-line">
+        <SpecPlate title={title} metadata={metadata} />
       </div>
+    )
+  }
+
+  const [lead, ...rest] = images
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-line bg-surface"
+        id={lead.id}
+      >
+        {!!lead.url && (
+          <Image
+            src={lead.url}
+            priority
+            alt={title ? `${title}` : "Product photograph"}
+            fill
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            className="object-cover object-center"
+          />
+        )}
+      </div>
+
+      {rest.length > 0 && (
+        <ul className="grid grid-cols-3 gap-3">
+          {rest.map((image, index) => (
+            <li key={image.id}>
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-line bg-surface">
+                {!!image.url && (
+                  <Image
+                    src={image.url}
+                    alt={`${title ?? "Product"}, view ${index + 2}`}
+                    fill
+                    sizes="(max-width: 1024px) 33vw, 18vw"
+                    className="object-cover object-center"
+                  />
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

@@ -1,39 +1,68 @@
-import React from "react"
-
-import UnderlineLink from "@modules/common/components/interactive-link"
-
-import AccountNav from "../components/account-nav"
 import { HttpTypes } from "@medusajs/types"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import React from "react"
+import AccountNav from "../components/account-nav"
 
-interface AccountLayoutProps {
+/**
+ * The account shell.
+ *
+ * Signed out, this renders the sign-in and registration forms; signed in, a nav
+ * rail beside the page. Those are different layouts and it now says so, rather
+ * than always emitting a two-column grid — with the nav absent, `{customer &&
+ * <AccountNav/>}` collapsed to nothing and the *content* became the grid's
+ * first child, so the sign-in form was rendered into the 220px nav column.
+ *
+ * The old footer here pointed at `/customer-service`, a route that does not
+ * exist. It now points at the two pages that answer the questions someone in
+ * their account actually has, plus a real address to write to.
+ */
+const AccountLayout: React.FC<{
   customer: HttpTypes.StoreCustomer | null
   children: React.ReactNode
-}
+}> = ({ customer, children }) => {
+  if (!customer) {
+    // The forms centre themselves; there is nothing to sit beside them.
+    return (
+      <div className="container-page py-12 lg:py-20" data-testid="account-page">
+        {children}
+      </div>
+    )
+  }
 
-const AccountLayout: React.FC<AccountLayoutProps> = ({
-  customer,
-  children,
-}) => {
   return (
-    <div className="flex-1 small:py-12" data-testid="account-page">
-      <div className="flex-1 content-container h-full max-w-5xl mx-auto bg-white flex flex-col">
-        <div className="grid grid-cols-1  small:grid-cols-[240px_1fr] py-12">
-          <div>{customer && <AccountNav customer={customer} />}</div>
-          <div className="flex-1">{children}</div>
+    <div className="container-page py-8 lg:py-12" data-testid="account-page">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr] lg:gap-14">
+        <AccountNav customer={customer} />
+        <div className="min-w-0">{children}</div>
+      </div>
+
+      <div className="mt-14 flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-medium text-ink">Need a hand?</h2>
+          <p className="max-w-prose text-sm leading-6 text-muted">
+            Drive replacement, adding a bay, or anything the machine is doing
+            that it should not be.
+          </p>
         </div>
-        <div className="flex flex-col small:flex-row items-end justify-between small:border-t border-gray-200 py-12 gap-8">
-          <div>
-            <h3 className="text-xl-semi mb-4">Got questions?</h3>
-            <span className="txt-medium">
-              You can find frequently asked questions and answers on our
-              customer service page.
-            </span>
-          </div>
-          <div>
-            <UnderlineLink href="/customer-service">
-              Customer Service
-            </UnderlineLink>
-          </div>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          <LocalizedClientLink
+            href="/compatibility"
+            className="text-accent hover:text-accent-strong"
+          >
+            What fits what
+          </LocalizedClientLink>
+          <LocalizedClientLink
+            href="/getting-started"
+            className="text-accent hover:text-accent-strong"
+          >
+            Getting started
+          </LocalizedClientLink>
+          <a
+            href="mailto:hello@valy.in"
+            className="text-accent hover:text-accent-strong"
+          >
+            hello@valy.in
+          </a>
         </div>
       </div>
     </div>

@@ -1,9 +1,20 @@
-import { Disclosure } from "@headlessui/react"
-import { Badge, Button, clx } from "@modules/common/components/ui"
-import { useEffect } from "react"
+"use client"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
+import { cn } from "@lib/util/cn"
+import { Button } from "@modules/common/components/ui"
+import { useEffect } from "react"
 import { useFormStatus } from "react-dom"
+
+/**
+ * One editable field on the profile page.
+ *
+ * This used three separate Headless UI `Disclosure`s purely as animated boxes —
+ * none of them was ever opened by its own button, and each rendered a
+ * permanently-mounted panel collapsed to `max-h-0`, which keeps its contents in
+ * the accessibility tree and reachable by tab while invisible. Success and error
+ * messages are now conditionally rendered and announced.
+ */
 
 type AccountInfoProps = {
   label: string
@@ -13,7 +24,7 @@ type AccountInfoProps = {
   errorMessage?: string
   clearState: () => void
   children?: React.ReactNode
-  'data-testid'?: string
+  "data-testid"?: string
 }
 
 const AccountInfo = ({
@@ -22,12 +33,11 @@ const AccountInfo = ({
   isSuccess,
   isError,
   clearState,
-  errorMessage = "An error occurred, please try again",
+  errorMessage = "That did not save. Please try again.",
   children,
-  'data-testid': dataTestid
+  "data-testid": dataTestid,
 }: AccountInfoProps) => {
   const { state, close, toggle } = useToggleState()
-
   const { pending } = useFormStatus()
 
   const handleToggle = () => {
@@ -42,96 +52,68 @@ const AccountInfo = ({
   }, [isSuccess, close])
 
   return (
-    <div className="text-small-regular" data-testid={dataTestid}>
-      <div className="flex items-end justify-between">
-        <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">{label}</span>
-          <div className="flex items-center flex-1 basis-0 justify-end gap-x-4">
-            {typeof currentInfo === "string" ? (
-              <span className="font-semibold" data-testid="current-info">{currentInfo}</span>
-            ) : (
-              currentInfo
-            )}
-          </div>
+    <div
+      className="flex flex-col gap-3 border-b border-line py-5"
+      data-testid={dataTestid}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-xs text-muted">{label}</span>
+          {typeof currentInfo === "string" ? (
+            <span className="text-sm text-ink" data-testid="current-info">
+              {currentInfo}
+            </span>
+          ) : (
+            currentInfo
+          )}
         </div>
-        <div>
+
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={handleToggle}
+          type={state ? "reset" : "button"}
+          data-testid="edit-button"
+          data-active={state}
+          className="shrink-0"
+        >
+          {state ? "Cancel" : "Edit"}
+        </Button>
+      </div>
+
+      {isSuccess && (
+        <p
+          role="status"
+          className="rounded border border-signal bg-signal-wash px-3 py-2 text-xs text-signal"
+          data-testid="success-message"
+        >
+          {label} updated.
+        </p>
+      )}
+
+      {isError && (
+        <p
+          role="alert"
+          className="rounded border border-danger bg-danger-wash px-3 py-2 text-xs text-danger"
+          data-testid="error-message"
+        >
+          {errorMessage}
+        </p>
+      )}
+
+      <div className={cn("flex-col gap-4 pt-1", state ? "flex" : "hidden")}>
+        {children}
+        <div className="flex justify-end">
           <Button
-            variant="secondary"
-            className="w-[100px] min-h-[25px] py-1"
-            onClick={handleToggle}
-            type={state ? "reset" : "button"}
-            data-testid="edit-button"
-            data-active={state}
+            isLoading={pending}
+            type="submit"
+            data-testid="save-button"
+            className="w-full sm:w-auto"
           >
-            {state ? "Cancel" : "Edit"}
+            Save changes
           </Button>
         </div>
       </div>
-
-      {/* Success state */}
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
-            {
-              "max-h-[1000px] opacity-100": isSuccess,
-              "max-h-0 opacity-0": !isSuccess,
-            }
-          )}
-          data-testid="success-message"
-        >
-          <Badge className="p-2 my-4" color="green">
-            <span>{label} updated succesfully</span>
-          </Badge>
-        </Disclosure.Panel>
-      </Disclosure>
-
-      {/* Error state  */}
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
-            {
-              "max-h-[1000px] opacity-100": isError,
-              "max-h-0 opacity-0": !isError,
-            }
-          )}
-          data-testid="error-message"
-        >
-          <Badge className="p-2 my-4" color="red">
-            <span>{errorMessage}</span>
-          </Badge>
-        </Disclosure.Panel>
-      </Disclosure>
-
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-visible",
-            {
-              "max-h-[1000px] opacity-100": state,
-              "max-h-0 opacity-0": !state,
-            }
-          )}
-        >
-          <div className="flex flex-col gap-y-2 py-4">
-            <div>{children}</div>
-            <div className="flex items-center justify-end mt-2">
-              <Button
-                isLoading={pending}
-                className="w-full small:max-w-[140px]"
-                type="submit"
-                data-testid="save-button"
-              >
-                Save changes
-              </Button>
-            </div>
-          </div>
-        </Disclosure.Panel>
-      </Disclosure>
     </div>
   )
 }

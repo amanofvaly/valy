@@ -1,51 +1,136 @@
-const path = require("path")
-
+/**
+ * The site's one style layer.
+ *
+ * `@medusajs/ui-preset` is gone. It supplied `ui-*` colours and a `txt-*` type
+ * scale drawn for components that were removed from this codebase, so the
+ * tokens outlived the things they described. Colour, type and radius are
+ * declared here and nowhere else, and `theme` replaces rather than extends —
+ * so `bg-zinc-900` is a build error now, not a silent fourth palette.
+ */
 module.exports = {
   darkMode: "class",
-  presets: [require("@medusajs/ui-preset")],
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./src/pages/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
     "./src/modules/**/*.{js,ts,jsx,tsx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    colors: {
+      transparent: "transparent",
+      current: "currentColor",
+      inherit: "inherit",
+      white: "#ffffff",
+      black: "#000000",
+
+      ink: "rgb(var(--ink) / <alpha-value>)",
+      paper: "rgb(var(--paper) / <alpha-value>)",
+      surface: {
+        DEFAULT: "rgb(var(--surface) / <alpha-value>)",
+        strong: "rgb(var(--surface-strong) / <alpha-value>)",
+      },
+      line: {
+        DEFAULT: "rgb(var(--line) / <alpha-value>)",
+        strong: "rgb(var(--line-strong) / <alpha-value>)",
+      },
+      muted: "rgb(var(--muted) / <alpha-value>)",
+      accent: {
+        DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+        strong: "rgb(var(--accent-strong) / <alpha-value>)",
+        wash: "rgb(var(--accent-wash) / <alpha-value>)",
+      },
+      signal: {
+        DEFAULT: "rgb(var(--signal) / <alpha-value>)",
+        wash: "rgb(var(--signal-wash) / <alpha-value>)",
+      },
+      warn: {
+        DEFAULT: "rgb(var(--warn) / <alpha-value>)",
+        wash: "rgb(var(--warn-wash) / <alpha-value>)",
+      },
+      danger: {
+        DEFAULT: "rgb(var(--danger) / <alpha-value>)",
+        wash: "rgb(var(--danger-wash) / <alpha-value>)",
+      },
+    },
+
+    /**
+     * One modular scale, replacing the preset's `txt-*` and globals.css's
+     * `text-*-regular` sets. Sizes are in px because this is interface type,
+     * not an article, and it should not resize with the user's root font in a
+     * way that breaks a spec table's alignment.
+     */
+    fontSize: {
+      "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.02em" }],
+      xs: ["0.75rem", { lineHeight: "1.125rem" }],
+      sm: ["0.8125rem", { lineHeight: "1.25rem" }],
+      base: ["0.9375rem", { lineHeight: "1.5rem" }],
+      lg: ["1.0625rem", { lineHeight: "1.625rem" }],
+      xl: ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em" }],
+      "2xl": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em" }],
+      "3xl": ["1.875rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em" }],
+      "4xl": ["2.375rem", { lineHeight: "2.625rem", letterSpacing: "-0.022em" }],
+      "5xl": ["3rem", { lineHeight: "3.25rem", letterSpacing: "-0.025em" }],
+      "6xl": ["3.75rem", { lineHeight: "3.875rem", letterSpacing: "-0.028em" }],
+      "7xl": ["4.5rem", { lineHeight: "4.625rem", letterSpacing: "-0.03em" }],
+    },
+
+    fontFamily: {
+      /**
+       * Inter, loaded by `next/font` in `src/app/layout.tsx`. The preset used to
+       * hardcode `font-family: Inter` inside 34 `txt-*` classes while nothing
+       * ever fetched the file, so every page outside the homepage rendered in
+       * the system fallback.
+       */
+      sans: [
+        "var(--font-sans)",
+        "ui-sans-serif",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif",
+      ],
+      /** Data only: capacities, wattage, dB(A), prices, order numbers, SKUs. */
+      mono: [
+        "var(--font-mono)",
+        "ui-monospace",
+        "SFMono-Regular",
+        "Menlo",
+        "Consolas",
+        "monospace",
+      ],
+    },
+
+    borderRadius: {
+      none: "0px",
+      sm: "2px",
+      DEFAULT: "4px",
+      md: "6px",
+      lg: "10px",
+      xl: "16px",
+      full: "9999px",
+    },
+
+    boxShadow: {
+      none: "none",
+      /** A card lifts by its border weight, not by a drop shadow. */
+      sm: "0 1px 2px rgb(21 24 28 / 0.04)",
+      DEFAULT: "0 1px 3px rgb(21 24 28 / 0.06), 0 1px 2px rgb(21 24 28 / 0.04)",
+      md: "0 4px 12px rgb(21 24 28 / 0.07)",
+      lg: "0 12px 32px rgb(21 24 28 / 0.10)",
+      /** Overlays only — sheets, dropdowns, dialogs. */
+      overlay: "0 16px 48px rgb(21 24 28 / 0.14)",
+      focus: "var(--focus-ring)",
+    },
+
     extend: {
-      transitionProperty: {
-        width: "width margin",
-        height: "height",
-        bg: "background-color",
-        display: "display opacity",
-        visibility: "visibility",
-        padding: "padding-top padding-right padding-bottom padding-left",
-      },
-      colors: {
-        grey: {
-          0: "#FFFFFF",
-          5: "#F9FAFB",
-          10: "#F3F4F6",
-          20: "#E5E7EB",
-          30: "#D1D5DB",
-          40: "#9CA3AF",
-          50: "#6B7280",
-          60: "#4B5563",
-          70: "#374151",
-          80: "#1F2937",
-          90: "#111827",
-        },
-      },
-      borderRadius: {
-        none: "0px",
-        soft: "2px",
-        base: "4px",
-        rounded: "8px",
-        large: "16px",
-        circle: "9999px",
-      },
-      maxWidth: {
-        "8xl": "100rem",
-      },
       screens: {
+        /**
+         * The starter's own scale, where `small` means 1024px. Kept only
+         * because 74 files still spell breakpoints this way; everything
+         * written since the overhaul uses Tailwind's `sm`/`md`/`lg`.
+         */
         "2xsmall": "320px",
         xsmall: "512px",
         small: "1024px",
@@ -54,122 +139,64 @@ module.exports = {
         xlarge: "1680px",
         "2xlarge": "1920px",
       },
-      fontSize: {
-        "3xl": "2rem",
-      },
-      fontFamily: {
-        sans: [
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica Neue",
-          "Ubuntu",
-          "sans-serif",
-        ],
-        // Loaded by next/font/google in src/app/layout.tsx.
-        display: [
-          "var(--font-display)",
-          "Archivo",
-          "Helvetica Neue",
-          "Arial",
-          "sans-serif",
-        ],
-        mono: [
-          "var(--font-mono)",
-          "IBM Plex Mono",
-          "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "monospace",
-        ],
+      maxWidth: {
+        page: "1280px",
+        prose: "68ch",
       },
       keyframes: {
-        ring: {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
+        "accordion-open": {
+          from: { height: "0", opacity: "0" },
+          to: { height: "var(--radix-accordion-content-height)", opacity: "1" },
         },
-        "fade-in-right": {
-          "0%": {
-            opacity: "0",
-            transform: "translateX(10px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateX(0)",
-          },
+        "accordion-close": {
+          from: { height: "var(--radix-accordion-content-height)", opacity: "1" },
+          to: { height: "0", opacity: "0" },
         },
-        "fade-in-top": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(-10px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
+        "overlay-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
         },
-        "fade-out-top": {
-          "0%": {
-            height: "100%",
-          },
-          "99%": {
-            height: "0",
-          },
-          "100%": {
-            visibility: "hidden",
-          },
+        "sheet-in-right": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
         },
-        "accordion-slide-up": {
-          "0%": {
-            height: "var(--radix-accordion-content-height)",
-            opacity: "1",
-          },
-          "100%": {
-            height: "0",
-            opacity: "0",
-          },
+        "sheet-in-left": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
         },
-        "accordion-slide-down": {
-          "0%": {
-            "min-height": "0",
-            "max-height": "0",
-            opacity: "0",
-          },
-          "100%": {
-            "min-height": "var(--radix-accordion-content-height)",
-            "max-height": "none",
-            opacity: "1",
-          },
+        "sheet-in-bottom": {
+          from: { transform: "translateY(100%)" },
+          to: { transform: "translateY(0)" },
         },
-        enter: {
-          "0%": { transform: "scale(0.9)", opacity: 0 },
-          "100%": { transform: "scale(1)", opacity: 1 },
+        "pop-in": {
+          from: { opacity: "0", transform: "translateY(-4px) scale(0.98)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
-        leave: {
-          "0%": { transform: "scale(1)", opacity: 1 },
-          "100%": { transform: "scale(0.9)", opacity: 0 },
+        /** The only looping animation in the app: a pending indicator. */
+        spin: {
+          to: { transform: "rotate(360deg)" },
         },
-        "slide-in": {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(0)" },
+        /**
+         * Holds a pending indicator invisible for its first 150ms. Most
+         * navigations finish inside that window because the destination was
+         * prefetched, and a spinner that appears and vanishes in 80ms reads as
+         * a stutter rather than as feedback.
+         */
+        "pending-appear": {
+          "0%, 50%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
       },
       animation: {
-        ring: "ring 2.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-        "fade-in-right":
-          "fade-in-right 0.3s cubic-bezier(0.5, 0, 0.5, 1) forwards",
-        "fade-in-top": "fade-in-top 0.2s cubic-bezier(0.5, 0, 0.5, 1) forwards",
-        "fade-out-top":
-          "fade-out-top 0.2s cubic-bezier(0.5, 0, 0.5, 1) forwards",
-        "accordion-open":
-          "accordion-slide-down 300ms cubic-bezier(0.87, 0, 0.13, 1) forwards",
-        "accordion-close":
-          "accordion-slide-up 300ms cubic-bezier(0.87, 0, 0.13, 1) forwards",
-        enter: "enter 200ms ease-out",
-        "slide-in": "slide-in 1.2s cubic-bezier(.41,.73,.51,1.02)",
-        leave: "leave 150ms ease-in forwards",
+        "accordion-open": "accordion-open 220ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "accordion-close": "accordion-close 180ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "overlay-in": "overlay-in 150ms ease-out",
+        "sheet-in-right": "sheet-in-right 260ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "sheet-in-left": "sheet-in-left 260ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "sheet-in-bottom": "sheet-in-bottom 260ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "pop-in": "pop-in 130ms cubic-bezier(0.32, 0.72, 0, 1)",
+        spin: "spin 700ms linear infinite",
+        "pending-appear": "pending-appear 300ms ease-out both",
       },
     },
   },

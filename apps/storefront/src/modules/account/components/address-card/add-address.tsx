@@ -4,7 +4,7 @@ import { Plus } from "@medusajs/icons"
 import { Button, Heading } from "@modules/common/components/ui"
 import { useActionState, useEffect, useState } from "react"
 
-import { addCustomerAddress } from "@lib/data/customer"
+import { addCustomerAddress } from "@lib/data/customer-actions"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { HttpTypes } from "@medusajs/types"
 import CountrySelect from "@modules/checkout/components/country-select"
@@ -47,12 +47,15 @@ const AddAddress = ({
   return (
     <>
       <button
-        className="border border-ui-border-base rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between"
+        type="button"
+        className="pressable flex min-h-[180px] w-full flex-col items-start justify-between rounded-lg border border-dashed border-line-strong p-5 text-left hover:border-ink active:bg-surface"
         onClick={open}
         data-testid="add-address-button"
       >
-        <span className="text-base-semi">New address</span>
-        <Plus />
+        <span className="text-sm font-medium text-ink">Add an address</span>
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-surface text-muted">
+          <Plus />
+        </span>
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
@@ -135,7 +138,7 @@ const AddAddress = ({
             </div>
             {formState.error && (
               <div
-                className="text-rose-500 text-small-regular py-2"
+                className="text-danger text-xs py-2"
                 data-testid="address-error"
               >
                 {formState.error}

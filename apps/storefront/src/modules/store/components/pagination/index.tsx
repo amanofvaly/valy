@@ -1,114 +1,136 @@
 "use client"
 
-import { clx } from "@modules/common/components/ui"
+import { cn } from "@lib/util/cn"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useTransition } from "react"
 
+/**
+ * Pagination.
+ *
+ * Navigates inside a transition, so the page you are looking at stays on screen
+ * while the next one loads rather than being replaced by a skeleton — the same
+ * rule the filters follow.
+ */
 export function Pagination({
   page,
   totalPages,
-  'data-testid': dataTestid
+  "data-testid": dataTestid,
 }: {
   page: number
   totalPages: number
-  'data-testid'?: string
+  "data-testid"?: string
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
-  // Helper function to generate an array of numbers within a range
-  const arrayRange = (start: number, stop: number) =>
-    Array.from({ length: stop - start + 1 }, (_, index) => start + index)
+  const goTo = (nextPage: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("page", String(nextPage))
 
-  // Function to handle page changes
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams)
-    params.set("page", newPage.toString())
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
-  // Function to render a page button
-  const renderPageButton = (
-    p: number,
-    label: string | number,
-    isCurrent: boolean
-  ) => (
-    <button
-      key={p}
-      className={clx("txt-xlarge-plus text-ui-fg-muted", {
-        "text-ui-fg-base hover:text-ui-fg-subtle": isCurrent,
-      })}
-      disabled={isCurrent}
-      onClick={() => handlePageChange(p)}
-    >
-      {label}
-    </button>
-  )
-
-  // Function to render ellipsis
-  const renderEllipsis = (key: string) => (
-    <span
-      key={key}
-      className="txt-xlarge-plus text-ui-fg-muted items-center cursor-default"
-    >
-      ...
-    </span>
-  )
-
-  // Function to render page buttons based on the current page and total pages
-  const renderPageButtons = () => {
-    const buttons = []
-
-    if (totalPages <= 7) {
-      // Show all pages
-      buttons.push(
-        ...arrayRange(1, totalPages).map((p) =>
-          renderPageButton(p, p, p === page)
-        )
-      )
-    } else {
-      // Handle different cases for displaying pages and ellipses
-      if (page <= 4) {
-        // Show 1, 2, 3, 4, 5, ..., lastpage
-        buttons.push(
-          ...arrayRange(1, 5).map((p) => renderPageButton(p, p, p === page))
-        )
-        buttons.push(renderEllipsis("ellipsis1"))
-        buttons.push(
-          renderPageButton(totalPages, totalPages, totalPages === page)
-        )
-      } else if (page >= totalPages - 3) {
-        // Show 1, ..., lastpage - 4, lastpage - 3, lastpage - 2, lastpage - 1, lastpage
-        buttons.push(renderPageButton(1, 1, 1 === page))
-        buttons.push(renderEllipsis("ellipsis2"))
-        buttons.push(
-          ...arrayRange(totalPages - 4, totalPages).map((p) =>
-            renderPageButton(p, p, p === page)
-          )
-        )
-      } else {
-        // Show 1, ..., page - 1, page, page + 1, ..., lastpage
-        buttons.push(renderPageButton(1, 1, 1 === page))
-        buttons.push(renderEllipsis("ellipsis3"))
-        buttons.push(
-          ...arrayRange(page - 1, page + 1).map((p) =>
-            renderPageButton(p, p, p === page)
-          )
-        )
-        buttons.push(renderEllipsis("ellipsis4"))
-        buttons.push(
-          renderPageButton(totalPages, totalPages, totalPages === page)
-        )
-      }
-    }
-
-    return buttons
+  if (totalPages <= 1) {
+    return null
   }
 
-  // Render the component
+  const pages = pageWindow(page, totalPages)
+
   return (
-    <div className="flex justify-center w-full mt-12">
-      <div className="flex gap-3 items-end" data-testid={dataTestid}>{renderPageButtons()}</div>
-    </div>
+    <nav
+      className="mt-12 flex items-center justify-center gap-1"
+      aria-label="Pagination"
+      data-testid={dataTestid}
+    >
+      <PageButton
+        disabled={page <= 1 || isPending}
+        onClick={() => goTo(page - 1)}
+        label="Previous page"
+      >
+        Previous
+      </PageButton>
+
+      <ol className="flex items-center gap-1">
+        {pages.map((entry, i) =>
+          entry === "gap" ? (
+            <li
+              key={`gap-${i}`}
+              aria-hidden="true"
+              className="px-1 text-sm text-muted"
+            >
+              &hellip;
+            </li>
+          ) : (
+            <li key={entry}>
+              <button
+                type="button"
+                onClick={() => goTo(entry)}
+                aria-current={entry === page ? "page" : undefined}
+                disabled={entry === page}
+                className={cn(
+                  "pressable h-9 min-w-9 rounded px-2 font-mono text-sm tabular",
+                  entry === page
+                    ? "bg-ink text-paper"
+                    : "text-muted hover:bg-surface hover:text-ink active:bg-surface-strong"
+                )}
+              >
+                {entry}
+              </button>
+            </li>
+          )
+        )}
+      </ol>
+
+      <PageButton
+        disabled={page >= totalPages || isPending}
+        onClick={() => goTo(page + 1)}
+        label="Next page"
+      >
+        Next
+      </PageButton>
+    </nav>
   )
+}
+
+const PageButton = ({
+  disabled,
+  onClick,
+  label,
+  children,
+}: {
+  disabled: boolean
+  onClick: () => void
+  label: string
+  children: React.ReactNode
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={label}
+    className="pressable h-9 rounded px-3 text-sm text-muted hover:bg-surface hover:text-ink active:bg-surface-strong disabled:pointer-events-none disabled:opacity-40"
+  >
+    {children}
+  </button>
+)
+
+/** 1 … 4 5 6 … 20 — never more than seven controls, whatever the total. */
+const pageWindow = (page: number, total: number): (number | "gap")[] => {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  if (page <= 4) {
+    return [1, 2, 3, 4, 5, "gap", total]
+  }
+
+  if (page >= total - 3) {
+    return [1, "gap", total - 4, total - 3, total - 2, total - 1, total]
+  }
+
+  return [1, "gap", page - 1, page, page + 1, "gap", total]
 }

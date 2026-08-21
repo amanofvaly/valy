@@ -1,11 +1,5 @@
 "use client"
 
-import { Button, Text } from "@modules/common/components/ui"
-
-import Divider from "@modules/common/components/divider"
-import DiscountCode from "@modules/checkout/components/discount-code"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { HttpTypes } from "@medusajs/types"
 import {
   goodsTotal,
   hasDeliveryDetails,
@@ -13,34 +7,10 @@ import {
   shippingTotal,
 } from "@lib/util/cart-totals"
 import { convertToLocale } from "@lib/util/money"
-
-type SummaryProps = {
-  cart: HttpTypes.StoreCart
-}
-
-function getCheckoutStep(cart: HttpTypes.StoreCart) {
-  if (!cart?.shipping_address?.address_1 || !cart.email) {
-    return "address"
-  } else if (cart?.shipping_methods?.length === 0) {
-    return "delivery"
-  } else {
-    return "payment"
-  }
-}
-
-/** One-line destination, enough to recognise which address this is. */
-function formatDestination(address?: HttpTypes.StoreCartAddress | null) {
-  if (!address) return ""
-
-  return [
-    address.address_1,
-    address.city,
-    address.postal_code,
-    address.country_code?.toUpperCase(),
-  ]
-    .filter(Boolean)
-    .join(", ")
-}
+import { HttpTypes } from "@medusajs/types"
+import DiscountCode from "@modules/checkout/components/discount-code"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { Button, Divider } from "@modules/common/components/ui"
 
 /**
  * The cart page summary.
@@ -53,11 +23,46 @@ function formatDestination(address?: HttpTypes.StoreCartAddress | null) {
  * When the customer already set them at checkout and came back, all the figures
  * are real, so the whole picture is shown — including the address that produced
  * the shipping charge, which is what makes the number explicable.
+ *
+ * Every figure here is gross, matching the line items above it, because a
+ * tax-inclusive store's "subtotal" that quietly strips GST out of a ₹42,000
+ * price is not a number anyone asked to see.
  */
+
+type SummaryProps = {
+  cart: HttpTypes.StoreCart
+}
+
+function getCheckoutStep(cart: HttpTypes.StoreCart) {
+  if (!cart?.shipping_address?.address_1 || !cart.email) {
+    return "address"
+  }
+  if (cart?.shipping_methods?.length === 0) {
+    return "delivery"
+  }
+  return "payment"
+}
+
+/** One-line destination, enough to recognise which address this is. */
+function formatDestination(address?: HttpTypes.StoreCartAddress | null) {
+  if (!address) {
+    return ""
+  }
+
+  return [
+    address.address_1,
+    address.city,
+    address.postal_code,
+    address.country_code?.toUpperCase(),
+  ]
+    .filter(Boolean)
+    .join(", ")
+}
+
 const Summary = ({ cart }: SummaryProps) => {
   const step = getCheckoutStep(cart)
-
   const currency_code = cart.currency_code
+
   const goods = goodsTotal(cart)
   const taxInclusive = isTaxInclusiveCart(cart)
   const knowsDelivery = hasDeliveryDetails(cart)
@@ -70,33 +75,34 @@ const Summary = ({ cart }: SummaryProps) => {
 
   const shippingMethod = cart.shipping_methods?.at(-1)
   const destination = formatDestination(cart.shipping_address)
+  const itemCount = cart.items?.length ?? 0
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <div className="flex flex-col gap-5 rounded-lg border border-line p-5">
       {knowsDelivery && (
         <div
-          className="flex flex-col gap-y-1 rounded-rounded border border-ui-border-base bg-ui-bg-subtle p-4"
+          className="flex flex-col gap-1 rounded border border-line bg-surface p-3"
           data-testid="cart-delivery-summary"
         >
-          <div className="flex items-start justify-between gap-x-4">
-            <Text className="txt-small-plus text-ui-fg-base">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm font-medium text-ink">
               Continue where you left off
-            </Text>
+            </p>
             <LocalizedClientLink
               href="/checkout?step=delivery"
-              className="txt-small text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+              className="shrink-0 text-sm text-accent hover:text-accent-strong"
               data-testid="edit-delivery-link"
             >
               Edit
             </LocalizedClientLink>
           </div>
-          <Text className="txt-small text-ui-fg-subtle">
+          <p className="text-xs leading-5 text-muted">
             Delivering to {destination}
-          </Text>
+          </p>
           {shippingMethod?.name && (
-            <Text className="txt-small text-ui-fg-subtle">
+            <p className="text-xs leading-5 text-muted">
               via {shippingMethod.name}
-            </Text>
+            </p>
           )}
         </div>
       )}
@@ -104,58 +110,62 @@ const Summary = ({ cart }: SummaryProps) => {
       <DiscountCode cart={cart} />
       <Divider />
 
-      <div className="flex flex-col gap-y-2 txt-medium text-ui-fg-subtle">
-        <div className="flex items-center justify-between">
-          <span>
+      <dl className="flex flex-col gap-2 text-sm">
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-muted">
             Subtotal{" "}
-            <span className="text-ui-fg-muted">
-              ({cart.items?.length ?? 0}{" "}
-              {(cart.items?.length ?? 0) === 1 ? "item" : "items"})
+            <span className="text-muted">
+              ({itemCount} {itemCount === 1 ? "item" : "items"})
             </span>
-          </span>
-          <span data-testid="cart-subtotal" data-value={goods}>
+          </dt>
+          <dd
+            className="font-mono tabular text-ink"
+            data-testid="cart-subtotal"
+            data-value={goods}
+          >
             {convertToLocale({ amount: goods, currency_code })}
-          </span>
+          </dd>
         </div>
 
         {!!discount && (
-          <div className="flex items-center justify-between">
-            <span>Discount</span>
-            <span
-              className="text-ui-fg-interactive"
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted">Discount</dt>
+            <dd
+              className="font-mono tabular text-signal"
               data-testid="cart-discount"
               data-value={discount}
             >
-              - {convertToLocale({ amount: discount, currency_code })}
-            </span>
+              &minus; {convertToLocale({ amount: discount, currency_code })}
+            </dd>
           </div>
         )}
 
         {knowsDelivery && (
-          <div className="flex items-center justify-between">
-            <span>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted">
               Shipping
               {shippingMethod?.name && (
-                <span className="text-ui-fg-muted"> · {shippingMethod.name}</span>
+                <span className="text-muted"> · {shippingMethod.name}</span>
               )}
-            </span>
-            <span
+            </dt>
+            <dd
+              className="font-mono tabular text-ink"
               data-testid="cart-shipping"
               data-value={shippingTotal(cart)}
             >
               {convertToLocale({ amount: shippingTotal(cart), currency_code })}
-            </span>
+            </dd>
           </div>
         )}
-      </div>
+      </dl>
 
       {knowsDelivery ? (
         <>
           <Divider />
-          <div className="flex items-center justify-between text-ui-fg-base txt-medium">
-            <span>Total</span>
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-base font-medium text-ink">Total</span>
             <span
-              className="txt-xlarge-plus"
+              className="font-mono text-xl font-medium tabular text-ink"
               data-testid="cart-total"
               data-value={cart.total ?? 0}
             >
@@ -163,30 +173,32 @@ const Summary = ({ cart }: SummaryProps) => {
             </span>
           </div>
           {taxInclusive && !!cart.tax_total && (
-            <Text className="txt-small text-ui-fg-muted text-right">
+            <p className="-mt-3 text-right text-2xs text-muted">
               Inclusive of{" "}
               {convertToLocale({ amount: cart.tax_total, currency_code })} GST
-            </Text>
+            </p>
           )}
         </>
       ) : (
         // No address and no delivery method: shipping and tax are unknown, not
         // zero, and there is no honest total to show yet.
-        <Text
-          className="txt-small text-ui-fg-subtle"
+        <p
+          className="rounded border border-line bg-surface px-3 py-2 text-xs leading-5 text-muted"
           data-testid="cart-totals-pending"
         >
           Shipping{taxInclusive ? "" : " and taxes"} calculated at checkout
           {taxInclusive && ". Prices include GST."}
-        </Text>
+        </p>
       )}
 
-      <LocalizedClientLink
-        href={"/checkout?step=" + step}
-        data-testid="checkout-button"
-      >
-        <Button className="w-full h-10">Go to checkout</Button>
-      </LocalizedClientLink>
+      <Button asChild size="large" block>
+        <LocalizedClientLink
+          href={`/checkout?step=${step}`}
+          data-testid="checkout-button"
+        >
+          Go to checkout
+        </LocalizedClientLink>
+      </Button>
     </div>
   )
 }

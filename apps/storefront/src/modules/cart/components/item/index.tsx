@@ -1,143 +1,129 @@
-"use client"
-
-import { Table, Text, clx } from "@modules/common/components/ui"
-import { updateLineItem } from "@lib/data/cart"
+import { convertToLocale } from "@lib/util/money"
+import { headlineSpecs } from "@lib/util/specs"
 import { HttpTypes } from "@medusajs/types"
-import CartItemSelect from "@modules/cart/components/cart-item-select"
-import ErrorMessage from "@modules/checkout/components/error-message"
-import DeleteButton from "@modules/common/components/delete-button"
-import LineItemOptions from "@modules/common/components/line-item-options"
-import LineItemPrice from "@modules/common/components/line-item-price"
-import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
+import QuantityStepper from "@modules/cart/components/quantity-stepper"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import Spinner from "@modules/common/icons/spinner"
+import { SpecInline } from "@modules/common/components/spec-block"
 import Thumbnail from "@modules/products/components/thumbnail"
-import { useState } from "react"
+
+/**
+ * One line of the cart.
+ *
+ * The specification line is the same component the product card and the product
+ * page use, so a shopper checking that they configured the right machine sees
+ * the same three figures they chose it by rather than a bare "Variant: 6 x
+ * 12TB / 64GB".
+ *
+ * Prices come off `item.total`, which is gross on a tax-inclusive cart. That
+ * matters: the summary below adds up gross figures, and a net line item here
+ * would make the column stop reconciling.
+ */
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
-  type?: "full" | "preview"
   currencyCode: string
+  /** `preview` is the read-only form used in the checkout summary. */
+  type?: "full" | "preview"
 }
 
-const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
-  const [updating, setUpdating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+const Item = ({ item, currencyCode, type = "full" }: ItemProps) => {
+  const specs = headlineSpecs(item.variant?.product?.metadata, 2)
+  const lineTotal = item.total ?? 0
+  const originalTotal = item.original_total ?? 0
+  const discounted = lineTotal < originalTotal
 
-  const changeQuantity = async (quantity: number) => {
-    setError(null)
-    setUpdating(true)
-
-    await updateLineItem({
-      lineId: item.id,
-      quantity,
-    })
-      .catch((err) => {
-        setError(err.message)
-      })
-      .finally(() => {
-        setUpdating(false)
-      })
-  }
-
-  // TODO: Update this to grab the actual max inventory
-  const maxQtyFromInventory = 10
-  const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
+  const maxQuantity = item.variant?.manage_inventory
+    ? (item.variant.inventory_quantity ?? undefined)
+    : undefined
 
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
+    <li
+      className="grid grid-cols-[72px_1fr] gap-4 py-5 sm:grid-cols-[96px_1fr_auto] sm:gap-6"
+      data-testid="product-row"
+    >
+      <LocalizedClientLink
+        href={`/products/${item.product_handle}`}
+        className="pressable block"
+      >
+        <Thumbnail
+          thumbnail={item.thumbnail}
+          images={item.variant?.product?.images}
+          title={item.product_title ?? undefined}
+          metadata={item.variant?.product?.metadata}
+          size="full"
+          compactPlate
+        />
+      </LocalizedClientLink>
+
+      <div className="flex min-w-0 flex-col gap-1.5">
         <LocalizedClientLink
           href={`/products/${item.product_handle}`}
-          className={clx("flex", {
-            "w-16": type === "preview",
-            "small:w-24 w-12": type === "full",
-          })}
-        >
-          <Thumbnail
-            thumbnail={item.thumbnail}
-            images={item.variant?.product?.images}
-            size="square"
-          />
-        </LocalizedClientLink>
-      </Table.Cell>
-
-      <Table.Cell className="text-left">
-        <Text
-          className="txt-medium-plus text-ui-fg-base"
+          className="text-base font-medium text-ink hover:text-accent"
           data-testid="product-title"
         >
           {item.product_title}
-        </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
-      </Table.Cell>
+        </LocalizedClientLink>
 
-      {type === "full" && (
-        <Table.Cell>
-          <div className="flex gap-2 items-center w-28">
-            <DeleteButton id={item.id} data-testid="product-delete-button" />
-            <CartItemSelect
-              value={item.quantity}
-              onChange={(value) => changeQuantity(parseInt(value.target.value))}
-              className="w-14 h-10 p-4"
+        {item.variant?.title && (
+          <p
+            className="font-mono text-xs tabular text-muted"
+            data-testid="product-variant"
+          >
+            {item.variant.title}
+          </p>
+        )}
+
+        <SpecInline rows={specs} />
+
+        {type === "full" && (
+          <div className="mt-2">
+            <QuantityStepper
+              lineId={item.id}
+              quantity={item.quantity}
+              max={maxQuantity}
               data-testid="product-select-button"
-            >
-              {/* TODO: Update this with the v2 way of managing inventory */}
-              {Array.from(
-                {
-                  length: Math.min(maxQuantity, 10),
-                },
-                (_, i) => (
-                  <option value={i + 1} key={i}>
-                    {i + 1}
-                  </option>
-                )
-              )}
-
-              <option value={1} key={1}>
-                1
-              </option>
-            </CartItemSelect>
-            {updating && <Spinner />}
+            />
           </div>
-          <ErrorMessage error={error} data-testid="product-error-message" />
-        </Table.Cell>
-      )}
+        )}
+      </div>
 
-      {type === "full" && (
-        <Table.Cell className="hidden small:table-cell">
-          <LineItemUnitPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
-        </Table.Cell>
-      )}
-
-      <Table.Cell className="!pr-0">
+      <div className="col-start-2 flex items-baseline justify-between gap-2 sm:col-start-3 sm:flex-col sm:items-end sm:justify-start">
+        {type === "preview" && (
+          <span className="font-mono text-xs tabular text-muted">
+            {item.quantity} x
+          </span>
+        )}
         <span
-          className={clx("!pr-0", {
-            "flex flex-col items-end h-full justify-center": type === "preview",
-          })}
+          className="font-mono text-base tabular text-ink"
+          data-testid="product-price"
         >
-          {type === "preview" && (
-            <span className="flex gap-x-1 ">
-              <Text className="text-ui-fg-muted">{item.quantity}x </Text>
-              <LineItemUnitPrice
-                item={item}
-                style="tight"
-                currencyCode={currencyCode}
-              />
-            </span>
-          )}
-          <LineItemPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
+          {convertToLocale({ amount: lineTotal, currency_code: currencyCode })}
         </span>
-      </Table.Cell>
-    </Table.Row>
+        {discounted && (
+          <span
+            className="font-mono text-xs tabular text-muted line-through"
+            data-testid="product-original-price"
+          >
+            {convertToLocale({
+              amount: originalTotal,
+              currency_code: currencyCode,
+            })}
+          </span>
+        )}
+        {item.quantity > 1 && type === "full" && (
+          <span
+            className="font-mono text-2xs tabular text-muted"
+            data-testid="product-unit-price"
+          >
+            {convertToLocale({
+              amount: lineTotal / item.quantity,
+              currency_code: currencyCode,
+            })}{" "}
+            each
+          </span>
+        )}
+      </div>
+    </li>
   )
 }
 

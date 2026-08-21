@@ -1,56 +1,24 @@
-import repeat from "@lib/util/repeat"
-import { HttpTypes } from "@medusajs/types"
-import { Heading, Table } from "@modules/common/components/ui"
-
 import Item from "@modules/cart/components/item"
-import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
+import { HttpTypes } from "@medusajs/types"
 
-type ItemsTemplateProps = {
-  cart?: HttpTypes.StoreCart
-}
+/**
+ * The cart's line items.
+ *
+ * A list rather than a table: the old version was a five-column table whose
+ * "Price" column was hidden below 1024px, leaving a header row on a phone with
+ * nothing under one of its headings.
+ */
+const ItemsTemplate = ({ cart }: { cart: HttpTypes.StoreCart }) => {
+  const items = [...(cart.items ?? [])].sort((a, b) =>
+    (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+  )
 
-const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
-  const items = cart?.items
   return (
-    <div>
-      <div className="pb-3 flex items-center">
-        <Heading className="text-[2rem] leading-[2.75rem]">Cart Summary</Heading>
-      </div>
-      <Table>
-        <Table.Header className="border-t-0">
-          <Table.Row className="text-ui-fg-subtle txt-medium-plus">
-            <Table.HeaderCell className="!pl-0">Item</Table.HeaderCell>
-            <Table.HeaderCell></Table.HeaderCell>
-            <Table.HeaderCell>Quantity</Table.HeaderCell>
-            <Table.HeaderCell className="hidden small:table-cell">
-              Price
-            </Table.HeaderCell>
-            <Table.HeaderCell className="!pr-0 text-right">
-              Total
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {items
-            ? items
-                .sort((a, b) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                })
-                .map((item) => {
-                  return (
-                    <Item
-                      key={item.id}
-                      item={item}
-                      currencyCode={cart?.currency_code}
-                    />
-                  )
-                })
-            : repeat(5).map((i) => {
-                return <SkeletonLineItem key={i} />
-              })}
-        </Table.Body>
-      </Table>
-    </div>
+    <ul className="divide-y divide-line border-y border-line">
+      {items.map((item) => (
+        <Item key={item.id} item={item} currencyCode={cart.currency_code} />
+      ))}
+    </ul>
   )
 }
 

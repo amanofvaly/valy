@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import AddressBook from "@modules/account/components/address-book"
+import AccountPageHeader from "@modules/account/components/page-header"
 
 import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
@@ -25,13 +26,10 @@ export default async function Addresses(props: {
 
   return (
     <div className="w-full" data-testid="addresses-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Shipping Addresses</h1>
-        <p className="text-base-regular">
-          View and update your shipping addresses, you can add as many as you
-          like. Saving your addresses will make them available during checkout.
-        </p>
-      </div>
+      <AccountPageHeader
+        title="Addresses"
+        description="Saved here, they fill themselves in at checkout. Add as many as you need."
+      />
       <AddressBook customer={customer} region={region} />
     </div>
   )
