@@ -195,3 +195,9 @@ themselves. `--execute-safe-links` is required — without it a removed link mak
 
 `truenas_admin` can read these files over SSH but has no docker access and no
 passwordless sudo; docker commands need a root shell.
+
+## Agent Behavior & Accountability
+
+- **Unauthorized Edits:** Never create or modify files without an explicit user approval, especially during Planning Mode. The user actively manages the workspace and will discard unapproved changes.
+- **Do Not Make Assumptions:** If a file disappears, an edit fails, or the environment behaves unexpectedly, **ask the user** before launching into complex investigations or blaming background processes. Treat the user as a collaborative partner.
+- **No Arrogance:** Do not act like a detached expert. If you don't know why something happened, admit it. Do not kill processes, change configurations, or run destructive commands based on unverified guesses.

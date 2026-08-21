@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-21T00:00:00+05:30",
+  "title": "Design System: Valy Storefront",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#15181c",
+        "tonalRamp": ["#15181c", "#666c75", "#cbcfd4"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#ffffff", "#f5f6f7", "#eceef0"]
+      },
+      "swiss-red": {
+        "role": "primary",
+        "displayName": "Swiss Red",
+        "canonical": "#da291c",
+        "tonalRamp": ["#fdefee", "#da291c", "#b01f15"]
+      },
+      "signal": {
+        "role": "status",
+        "displayName": "Signal Green",
+        "canonical": "#0f7a52",
+        "tonalRamp": ["#eaf5f0", "#0f7a52"]
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Warning Amber",
+        "canonical": "#8a5a00",
+        "tonalRamp": ["#fdf5e6", "#8a5a00"]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Danger Red",
+        "canonical": "#9b2226",
+        "tonalRamp": ["#fbefef", "#9b2226"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Rare hero statements and first-viewport product arguments."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Major section titles and page-level product story."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Cards, checkout panels, account sections, and product subsections."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Primary explanatory copy and commerce text."
+      },
+      "label": {
+        "displayName": "Label Mono",
+        "purpose": "Measurements, capacities, prices, SKUs, and compact metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "surface-low",
+        "value": "0 1px 2px rgb(21 24 28 / 0.04)",
+        "purpose": "Rare raised containers only."
+      },
+      {
+        "name": "surface-default",
+        "value": "0 1px 3px rgb(21 24 28 / 0.06), 0 1px 2px rgb(21 24 28 / 0.04)",
+        "purpose": "Subtle elevation when a border is insufficient."
+      },
+      {
+        "name": "overlay",
+        "value": "0 16px 48px rgb(21 24 28 / 0.14)",
+        "purpose": "Sheets, dialogs, and floating panels."
+      }
+    ],
+    "motion": [
+      {
+        "name": "pressable",
+        "value": "100ms ease-out transform, background-color, border-color, color",
+        "purpose": "Immediate touch and pointer response on controls."
+      },
+      {
+        "name": "view-transition-old",
+        "value": "vt-fade-out 90ms ease-out both",
+        "purpose": "Root transition fade for outgoing page state."
+      },
+      {
+        "name": "view-transition-new",
+        "value": "vt-fade-in 140ms ease-out both",
+        "purpose": "Root transition fade for incoming page state."
+      },
+      {
+        "name": "sheet",
+        "value": "260ms cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Edge sheet entrance."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" },
+      { "name": "legacy-small", "value": "1024px" },
+      { "name": "legacy-medium", "value": "1280px" },
+      { "name": "legacy-large", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default decisive action with ink background and immediate pressed feedback.",
+      "html": "<button class=\"ds-btn-primary\">Add to cart</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 6px; background: #15181c; color: #ffffff; font: 500 0.8125rem/1.25rem Inter, sans-serif; transition: transform 100ms ease-out, background-color 100ms ease-out; } .ds-btn-primary:hover { background: rgb(21 24 28 / 0.9); } .ds-btn-primary:active { transform: translateY(1px) scale(0.985); background: rgb(21 24 28 / 0.8); }"
+    },
+    {
+      "name": "Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Sparse Swiss red action button for rare high-priority moments.",
+      "html": "<button class=\"ds-btn-accent\">Configure machine</button>",
+      "css": ".ds-btn-accent { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; border-radius: 6px; background: #da291c; color: #ffffff; font: 500 0.8125rem/1.25rem Inter, sans-serif; transition: transform 100ms ease-out, background-color 100ms ease-out; } .ds-btn-accent:hover, .ds-btn-accent:active { background: #b01f15; } .ds-btn-accent:active { transform: translateY(1px) scale(0.985); }"
+    },
+    {
+      "name": "Product Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat product grid card with stable image, title, spec, and price zones.",
+      "html": "<a class=\"ds-product-card\"><div class=\"ds-product-image\"></div><h3>Flow 4</h3><p>Quiet four-bay home server</p></a>",
+      "css": ".ds-product-card { display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; border-radius: 10px; color: #15181c; text-decoration: none; } .ds-product-image { aspect-ratio: 1; border-radius: 10px; box-shadow: inset 0 0 0 1px #e2e4e7; background: #f5f6f7; } .ds-product-card:hover .ds-product-image { box-shadow: inset 0 0 0 1px #cbcfd4; } .ds-product-card:active .ds-product-image { box-shadow: inset 0 0 0 1px #15181c; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Flat paper field with hairline border and red focus.",
+      "html": "<label class=\"ds-field\"><span>Email</span><input placeholder=\"you@example.com\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; font: 500 0.8125rem/1.25rem Inter, sans-serif; color: #15181c; } .ds-field input { height: 44px; border: 1px solid #e2e4e7; border-radius: 6px; background: #ffffff; padding: 0 12px; color: #15181c; font-size: 16px; } .ds-field input:hover { border-color: #cbcfd4; } .ds-field input:focus { outline: none; border-color: #da291c; box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #da291c; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Utility Room",
+    "overview": "Valy's storefront should feel like reliable home infrastructure: organized, plain-spoken, and calm enough to make technical buying feel manageable. The Apple-like reference is restraint and precision, not theatrical minimalism. The system is calm technical retail: flat, neutral, precise, and responsive.",
+    "keyCharacteristics": [
+      "Light, neutral, and flat.",
+      "Precise and quiet controls.",
+      "Technical detail made readable through tables, specs, and stable grids.",
+      "Red as a rare brand/action accent.",
+      "Immediate pressed states on every interactive surface."
+    ],
+    "rules": [
+      {
+        "name": "The Red Rarity Rule",
+        "body": "Swiss red is most effective when it is scarce. Do not tint whole layouts red or use it to decorate ordinary cards.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Commerce Rule",
+        "body": "Product cards, specs, account panels, and checkout surfaces sit flat at rest. Use a border before a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Data Mono Rule",
+        "body": "Use the mono font for values that are scanned or compared, not for mood.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do keep most screens neutral, flat, and bordered.",
+      "Do use Swiss red for focus, selection, and rare high-priority actions.",
+      "Do preserve immediate active states on touch and pointer controls.",
+      "Do align product-card baselines and reserve room for dynamic catalogue data."
+    ],
+    "donts": [
+      "Don't use blue as the brand accent.",
+      "Don't make red a page-wide theme or decorative wash.",
+      "Don't use location as a brand proof point.",
+      "Don't add heavy card shadows to ordinary commerce surfaces."
+    ]
+  }
+}

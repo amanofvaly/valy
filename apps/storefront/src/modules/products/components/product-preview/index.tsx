@@ -81,7 +81,7 @@ export default function ProductPreview({
         />
         {kind !== "part" && (
           <Badge
-            color={kind === "machine" ? "ink" : "blue"}
+            color={kind === "machine" ? "ink" : "accent"}
             className="absolute left-3 top-3"
           >
             {KIND_LABEL[kind]}

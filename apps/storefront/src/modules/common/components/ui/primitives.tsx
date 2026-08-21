@@ -207,7 +207,7 @@ const badgeVariants = cva(
         green: "bg-signal-wash text-signal",
         red: "bg-danger-wash text-danger",
         orange: "bg-warn-wash text-warn",
-        blue: "bg-accent-wash text-accent",
+        accent: "bg-accent-wash text-accent",
         purple: "bg-accent-wash text-accent",
         ink: "bg-ink text-paper",
       },
@@ -221,7 +221,7 @@ type BadgeColor =
   | "green"
   | "red"
   | "orange"
-  | "blue"
+  | "accent"
   | "purple"
   | "ink"
 

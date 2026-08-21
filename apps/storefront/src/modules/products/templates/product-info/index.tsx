@@ -38,7 +38,7 @@ const ProductInfo = ({ product }: { product: HttpTypes.StoreProduct }) => {
       <div className="flex flex-wrap items-center gap-2">
         {product.collection && (
           <LocalizedClientLink href={`/collections/${product.collection.handle}`}>
-            <Badge color="blue">{product.collection.title}</Badge>
+            <Badge color="accent">{product.collection.title}</Badge>
           </LocalizedClientLink>
         )}
         {(product.tags ?? []).slice(0, 3).map((tag) => (
