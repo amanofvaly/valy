@@ -9,6 +9,36 @@ const S3_HOSTNAME = process.env.MEDUSA_CLOUD_S3_HOSTNAME
 const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
 
 /**
+ * The backend's own host, for deployments that serve product images from
+ * Medusa's local file provider (`/static/...`) rather than S3. The optimizer
+ * rejects any host missing from `remotePatterns` with a 400, which reads on
+ * the page as every product image being broken, so this is derived from the
+ * URL we already point the storefront at instead of being hardcoded per env.
+ */
+const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
+const backendPattern = (() => {
+  if (!BACKEND_URL) {
+    return []
+  }
+
+  try {
+    const { protocol, hostname, port } = new URL(BACKEND_URL)
+    return [
+      {
+        protocol: protocol.replace(":", ""),
+        hostname,
+        ...(port ? { port } : {}),
+      },
+    ]
+  } catch {
+    console.warn(
+      `Ignoring unparseable NEXT_PUBLIC_MEDUSA_BACKEND_URL for image optimization: ${BACKEND_URL}`
+    )
+    return []
+  }
+})()
+
+/**
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
@@ -78,6 +108,7 @@ const nextConfig = {
         protocol: "https",
         hostname: "medusa-public-images.s3.eu-west-1.amazonaws.com",
       },
+      ...backendPattern,
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {
