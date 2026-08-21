@@ -90,8 +90,10 @@
     ::before,
     ::after {
       animation-duration: 0.01ms !important;
+      animation-delay: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
       scroll-behavior: auto !important;
     }
   }
@@ -104,6 +106,16 @@
    */
   .container-page {
     @apply mx-auto w-full max-w-[1280px] px-5 sm:px-8;
+  }
+
+  /*
+   * The wide container. One chapter on the homepage — the application library —
+   * deliberately outgrows the 1280px page and runs to 1680px, so the catalogue
+   * physically breaks the frame the rest of the page keeps to. Nothing else in
+   * the app is allowed to use it.
+   */
+  .container-wide {
+    @apply mx-auto w-full max-w-[1680px] px-5 sm:px-8;
   }
 
   .container-prose {

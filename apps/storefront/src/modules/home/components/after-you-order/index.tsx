@@ -5,6 +5,12 @@ import { Section, SectionHeading } from "@modules/home/components/section"
  *
  * The 48-hour burn-in and the 2 PM IST cutoff are commitments made elsewhere on
  * the site and in the FAQ, so they are stated here in the same terms.
+ *
+ * The step numbers stay because this is genuinely a sequence and the reader
+ * needs the order, but they stop being 11px grey annotations and become the
+ * left-hand column of the section: red, monospaced, at heading scale, with the
+ * elapsed time counting down the right-hand edge. The row is then readable in
+ * one sweep — where you are, what happens, how long it takes.
  */
 
 const STEPS = [
@@ -35,29 +41,33 @@ const STEPS = [
 ]
 
 const AfterYouOrder = () => (
-  <Section ground="surface">
+  <Section ground="surface" rule="none">
     <SectionHeading
-      eyebrow="After you order"
       title="Nothing leaves the bench untested."
       lede="A grey-market box arrives with mystery drives, no invoice and no way to complain. This is what happens instead."
     />
 
-    <ol className="mt-10 border-t border-line">
+    <ol className="mt-14 border-t-2 border-ink">
       {STEPS.map((step, index) => (
         <li
           key={step.title}
-          className="grid grid-cols-[2.5rem_1fr] gap-x-4 border-b border-line py-6 sm:grid-cols-[3rem_1fr_8rem] sm:gap-x-8"
+          className="grid grid-cols-[2.75rem_1fr] gap-x-5 border-b border-line py-8 sm:grid-cols-[5rem_1fr_9rem] sm:gap-x-10 lg:py-10"
         >
-          <span className="font-mono text-sm tabular text-muted">
+          <span
+            aria-hidden="true"
+            className="font-mono text-3xl font-medium leading-none tabular tracking-tight text-accent sm:text-5xl"
+          >
             {String(index + 1).padStart(2, "0")}
           </span>
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-base font-medium text-ink">{step.title}</h3>
-            <p className="max-w-prose text-sm leading-6 text-muted">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-balance text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+              {step.title}
+            </h3>
+            <p className="max-w-prose text-base leading-7 text-muted">
               {step.detail}
             </p>
           </div>
-          <span className="col-start-2 font-mono text-2xs uppercase tracking-[0.12em] text-muted sm:col-start-3 sm:text-right">
+          <span className="col-start-2 mt-1 font-mono text-sm tabular text-ink sm:col-start-3 sm:mt-2 sm:text-right">
             {step.duration}
           </span>
         </li>

@@ -71,6 +71,12 @@ module.exports = {
       "5xl": ["3rem", { lineHeight: "3.25rem", letterSpacing: "-0.025em" }],
       "6xl": ["3.75rem", { lineHeight: "3.875rem", letterSpacing: "-0.028em" }],
       "7xl": ["4.5rem", { lineHeight: "4.625rem", letterSpacing: "-0.03em" }],
+      /**
+       * The broadsheet step. One statement per page gets it — the homepage
+       * headline and the two figures in the arithmetic chapter — and nothing
+       * else in the app is allowed to reach for it.
+       */
+      "8xl": ["6rem", { lineHeight: "5.75rem", letterSpacing: "-0.035em" }],
     },
 
     fontFamily: {
@@ -177,6 +183,15 @@ module.exports = {
           to: { transform: "rotate(360deg)" },
         },
         /**
+         * The homepage's one authored moment: the wall of service marks
+         * assembling itself. Staggered by index at the call site, so the grid
+         * fills rather than appearing, and gone entirely under reduced motion.
+         */
+        "app-cell-in": {
+          from: { opacity: "0", transform: "scale(0.9)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        /**
          * Holds a pending indicator invisible for its first 150ms. Most
          * navigations finish inside that window because the destination was
          * prefetched, and a spinner that appears and vanishes in 80ms reads as
@@ -196,6 +211,7 @@ module.exports = {
         "sheet-in-bottom": "sheet-in-bottom 260ms cubic-bezier(0.32, 0.72, 0, 1)",
         "pop-in": "pop-in 130ms cubic-bezier(0.32, 0.72, 0, 1)",
         spin: "spin 700ms linear infinite",
+        "app-cell-in": "app-cell-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "pending-appear": "pending-appear 300ms ease-out both",
       },
     },

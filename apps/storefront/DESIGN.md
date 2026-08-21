@@ -142,6 +142,8 @@ The palette is mostly white, ink, cool grays, and thin borders, with Swiss red r
 
 **The Neutral First Rule.** Product information, specification tables, and checkout surfaces should default to paper, ink, muted text, and hairlines. Color enters only when it clarifies state or action.
 
+**The Borrowed Color Rule.** One surface takes its color from content rather than from this palette: the self-hosted application grids on the homepage, where each cell carries a project's own mark on a wash of that project's own color. This is the site's only saturated region and it stays that way. Both values are precomputed in `src/lib/data/self-hosted-apps.ts` so every mark clears 3:1 and every muted line clears 4.5:1 against the wash it sits on — a component must never mix a brand color itself. Borrowed color is legitimate only where the color belongs to the thing being named; it is never a way to introduce a second accent.
+
 ## Typography
 
 **Display Font:** Inter with system sans fallback.

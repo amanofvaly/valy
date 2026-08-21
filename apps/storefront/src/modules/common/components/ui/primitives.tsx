@@ -122,6 +122,14 @@ export const buttonVariants = cva(
         transparent:
           "bg-transparent text-ink hover:bg-surface active:bg-surface-strong",
         danger: "bg-danger text-paper hover:bg-danger/90 active:bg-danger/80",
+        /**
+         * For the homepage's dark and red chapters. `primary` is an ink pill,
+         * which disappears on ink and fights the ground on red, so the filled
+         * button flips: paper block, ink label.
+         */
+        inverse: "bg-paper text-ink hover:bg-paper/90 active:bg-paper/80",
+        "inverse-secondary":
+          "bg-transparent text-paper ring-1 ring-inset ring-paper/35 hover:bg-paper/10 active:bg-paper/20",
         link: "bg-transparent p-0 text-accent underline underline-offset-4 hover:text-accent-strong active:text-accent-strong",
       },
       size: {

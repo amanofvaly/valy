@@ -13,6 +13,10 @@ import { Section, SectionHeading } from "@modules/home/components/section"
  * Flow, Hike and Summit and referred to Nano, Core and Vault. Every figure is
  * unchanged, and the lineup's own metadata was reconciled to match these
  * numbers rather than the other way round.
+ *
+ * The questions are set at reading size rather than at label size, and the open
+ * one turns red along with its chevron, so the row that is currently answering
+ * is findable from the top of the section.
  */
 const questions = [
   {
@@ -42,31 +46,37 @@ const questions = [
 ]
 
 const Faq = () => (
-  <Section ground="surface">
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+  <Section rule="none">
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
       <SectionHeading
-        eyebrow="Before you order"
+        className="lg:col-span-4"
         title="The questions we get every week."
       />
 
-      <Accordion.Root type="single" collapsible className="flex flex-col">
+      <Accordion.Root
+        type="single"
+        collapsible
+        className="flex flex-col border-t-2 border-ink lg:col-span-8"
+      >
         {questions.map((item) => (
           <Accordion.Item
             key={item.q}
             value={item.q}
-            className="border-t border-line last:border-b"
+            className="border-b border-line"
           >
             <Accordion.Header>
-              <Accordion.Trigger className="pressable group flex w-full items-center justify-between gap-6 py-5 text-left focus-visible:outline-none">
-                <span className="text-base font-medium text-ink">{item.q}</span>
+              <Accordion.Trigger className="pressable group flex w-full items-center justify-between gap-6 py-6 text-left focus-visible:outline-none">
+                <span className="text-lg font-semibold tracking-tight text-ink transition-colors group-hover:text-accent group-radix-state-open:text-accent sm:text-xl">
+                  {item.q}
+                </span>
                 <ChevronDownMini
                   aria-hidden
-                  className="shrink-0 text-muted transition-transform duration-200 group-radix-state-open:rotate-180"
+                  className="shrink-0 text-muted transition-[transform,color] duration-200 group-hover:text-accent group-radix-state-open:rotate-180 group-radix-state-open:text-accent"
                 />
               </Accordion.Trigger>
             </Accordion.Header>
             <Accordion.Content className="overflow-hidden radix-state-closed:animate-accordion-close radix-state-open:animate-accordion-open">
-              <p className="max-w-prose pb-6 pr-10 text-sm leading-6 text-muted">
+              <p className="max-w-prose pb-7 pr-10 text-base leading-7 text-muted">
                 {item.a}
               </p>
             </Accordion.Content>

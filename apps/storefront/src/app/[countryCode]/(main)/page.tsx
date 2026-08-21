@@ -1,29 +1,39 @@
 import AfterYouOrder from "@modules/home/components/after-you-order"
+import AppLibrary from "@modules/home/components/app-library"
 import Arithmetic from "@modules/home/components/arithmetic"
 import AssuranceStrip from "@modules/home/components/assurance-strip"
 import Faq from "@modules/home/components/faq"
 import Hero from "@modules/home/components/hero"
 import PartsProof from "@modules/home/components/parts-proof"
+import { Section, SectionHeading } from "@modules/home/components/section"
 import TheRange from "@modules/home/components/the-range"
-import WhatItReplaces from "@modules/home/components/what-it-replaces"
+import TheWork from "@modules/home/components/the-work"
 import WhoBuildsIt from "@modules/home/components/who-builds-it"
 import { Metadata } from "next"
 import { Suspense } from "react"
 
 export const metadata: Metadata = {
-  title: "Homelab servers built in Bengaluru",
+  title: "Run twenty-eight apps on a machine you own",
   description:
-    "Small, quiet servers that hold your photographs, films and work on hardware you own. Built to order, burned in for 48 hours, GST invoiced, three-year warranty serviced in India.",
+    "Immich, Jellyfin, Home Assistant, Pi-hole, Frigate, Proxmox and twenty-two more — free, open source, and installed before the machine ships. Built to order, burned in for 48 hours, GST invoiced, three-year warranty serviced in India.",
 }
 
 /**
- * The homepage makes one argument: that the files should be yours, and that
- * this is a practical thing to arrange rather than a hobby.
+ * The homepage makes one argument in two halves: that the software worth
+ * running at home is free and excellent, and that the reason most people never
+ * run it is an evening of work nobody wants to do.
  *
- * Everything except the lineup is static — no API call, nothing to wait for, so
- * the argument is on screen in the first frame. The lineup reads live prices
- * and streams in behind its own boundary; it sits four sections down, which is
- * well past where anyone has read to by the time it lands.
+ * So the order is why, then what, then how much, then what the work is, then
+ * which machine. The two sections that read live — the services and the lineup
+ * — sit fifth and sixth, well past where anyone has read to by the time they
+ * land, and each streams behind its own boundary. Everything above them is
+ * static, so the argument paints with the first frame.
+ *
+ * The grounds alternate deliberately rather than by rota: paper, ink, paper,
+ * red, paper, surface, paper, surface, ink, paper. The two dark chapters and
+ * the one red one are the three places the page raises its voice — what you get
+ * for the money, what renting costs, and what happens when it breaks — and
+ * everything between them is quiet on purpose so those three land.
  */
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
@@ -34,8 +44,12 @@ export default async function Home(props: {
     <>
       <Hero />
       <AssuranceStrip />
+      <AppLibrary />
       <Arithmetic />
-      <WhatItReplaces />
+
+      <Suspense fallback={<WorkFallback />}>
+        <TheWork countryCode={countryCode} />
+      </Suspense>
 
       <Suspense fallback={<RangeFallback />}>
         <TheRange countryCode={countryCode} />
@@ -50,29 +64,41 @@ export default async function Home(props: {
 }
 
 /**
- * The lineup's own shape while its prices arrive: the section heading is
- * already real, and only the three cards are pending. Matched to the real
- * card's height so the page does not jump when they land.
+ * Both fallbacks are the real section — the same ground, the same rule, the
+ * same heading at the same size — with only the priced rows pending. The page
+ * does not reflow when the catalogue answers; a block of grey turns into text.
  */
-const RangeFallback = () => (
-  <section className="border-t border-line bg-surface py-14 sm:py-20 lg:py-24">
-    <div className="container-page">
-      <div className="flex flex-col gap-4">
-        <p className="font-mono text-2xs uppercase tracking-[0.14em] text-muted">
-          The range
-        </p>
-        <h2 className="max-w-2xl text-balance text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Three sizes, named after how far you have got.
-        </h2>
-      </div>
-      <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-72 animate-pulse rounded-lg border border-line bg-paper"
-          />
-        ))}
-      </div>
+const WorkFallback = () => (
+  <Section rule="none">
+    <SectionHeading
+      title="The software is free. The evening it takes is not."
+      lede="Every one of those applications is a container, a reverse proxy entry, a folder permission and an hour of reading. Doing it once, on a bench, for a machine we already know the shape of, is the whole product. This is that work, itemised — the first one is included with every machine and the rest are ordinary catalogue items you can buy for hardware you already own."
+    />
+    <div className="mt-14 border-t-2 border-ink">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="border-b border-line py-7 lg:py-9">
+          <div className="h-[7.5rem] animate-pulse rounded bg-surface lg:h-[8.5rem]" />
+        </div>
+      ))}
     </div>
-  </section>
+  </Section>
+)
+
+const RangeFallback = () => (
+  <Section ground="surface" rule="accent">
+    <SectionHeading
+      title="Three sizes, named after how far you have got."
+      lede="Every one is built to order, burned in for 48 hours and configured before it ships. The bays and the processor are what separate them; the warranty and the work do not change."
+    />
+    <div className="mt-14 grid grid-cols-1 border-t-2 border-ink lg:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="border-b border-line py-8 lg:border-b-0 lg:border-l lg:px-7 lg:first:border-l-0 lg:first:pl-0"
+        >
+          <div className="h-[24rem] animate-pulse rounded bg-paper" />
+        </div>
+      ))}
+    </div>
+  </Section>
 )
