@@ -123,6 +123,48 @@
   }
 
   /*
+   * Borrowed colour, applied from the stylesheet rather than from a style
+   * attribute.
+   *
+   * Twenty-eight applications each supply their own mark colour, and the
+   * application library is a client component — so every declaration it writes
+   * inline is compared against the browser's parsed value during hydration.
+   * `#4250AF` comes back as `rgb(66 80 175)` and `color-mix(… 33.4470148%…)`
+   * comes back rounded, and React calls both a mismatch. Passing only the raw
+   * custom properties inline and doing the arithmetic here means there is
+   * nothing left to disagree about.
+   *
+   * `--app-brand` and `--app-wash` are set once per screen and inherited.
+   */
+  .app-mark {
+    color: var(--app-brand);
+  }
+
+  .app-fill {
+    background-color: var(--app-brand);
+  }
+
+  /*
+   * A picture cell: two tints of the application's own colour. Where
+   * `color-mix` is missing the whole declaration drops and the precomputed
+   * wash behind it stands in.
+   */
+  .app-cell {
+    background-color: var(--app-wash);
+    background-image: linear-gradient(
+      148deg,
+      color-mix(in oklab, var(--app-brand) var(--app-c1), white),
+      color-mix(in oklab, var(--app-brand) var(--app-c2), white)
+    );
+  }
+
+  /* A tile that is currently on, tinted by the thing that turned it on. */
+  .app-tile-on {
+    background-color: var(--app-wash);
+    background-color: color-mix(in oklab, var(--app-brand) 7%, white);
+  }
+
+  /*
    * Hairline. Used instead of `border` in dense tables so the rule sits on the
    * device pixel grid at any DPR.
    */

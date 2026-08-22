@@ -11,6 +11,10 @@ import { Section, SectionHeading } from "@modules/home/components/section"
  * left-hand column of the section: red, monospaced, at heading scale, with the
  * elapsed time counting down the right-hand edge. The row is then readable in
  * one sweep — where you are, what happens, how long it takes.
+ *
+ * The numbers keep the data face because a padded two-digit counter is exactly
+ * what it is for. The durations do not: "1 to 2 days" is a phrase, and a
+ * monospaced space is a full character wide, so every word in it drifts apart.
  */
 
 const STEPS = [
@@ -67,7 +71,7 @@ const AfterYouOrder = () => (
               {step.detail}
             </p>
           </div>
-          <span className="col-start-2 mt-1 font-mono text-sm tabular text-ink sm:col-start-3 sm:mt-2 sm:text-right">
+          <span className="col-start-2 mt-1 text-sm font-medium tabular text-ink sm:col-start-3 sm:mt-2 sm:text-right">
             {step.duration}
           </span>
         </li>

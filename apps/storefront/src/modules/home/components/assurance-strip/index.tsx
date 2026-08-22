@@ -3,8 +3,12 @@
  *
  * The wording is a promise to customers and is reused verbatim — in the footer,
  * on the product pages and here. Only the presentation changed: the figures now
- * carry the weight they are worth, set in the data face at heading scale, and
- * the band is the page's first dark chapter rather than a thin ink stripe.
+ * carry the weight they are worth, and the band is the page's first dark
+ * chapter rather than a thin ink stripe.
+ *
+ * Set in the sans rather than the data face. "48 h" and "7 day" contain a
+ * space, and a monospaced space is a full character wide — at heading scale the
+ * unit drifts far enough from the number to read as a typing error.
  */
 const assurances = [
   { value: "GST", label: "Invoice on every order, input credit ready" },
@@ -26,7 +30,7 @@ const AssuranceStrip = () => (
           key={item.value}
           className="flex flex-col gap-2 bg-ink px-5 py-7 sm:px-8 sm:py-9"
         >
-          <span className="font-mono text-2xl font-medium tabular tracking-tight text-paper sm:text-3xl">
+          <span className="text-3xl font-semibold tabular tracking-tight text-paper sm:text-4xl">
             {item.value}
           </span>
           <span className="max-w-[26ch] text-sm leading-6 text-paper/60">

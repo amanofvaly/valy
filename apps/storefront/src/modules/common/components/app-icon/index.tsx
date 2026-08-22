@@ -13,6 +13,11 @@ import { cn } from "@lib/util/cn"
  * `fill="currentColor"` inside the symbol resolves against the referencing
  * element, which is what lets one shared definition render in twenty-eight
  * different brand colours.
+ *
+ * The colour arrives as a custom property rather than as an inline `color`,
+ * because this component is rendered inside a client component whose inline
+ * styles are diffed against the browser's parsed values during hydration —
+ * where `#4250AF` comes back as `rgb(66 80 175)` and counts as a mismatch.
  */
 
 /** Render once per page, before the first `AppIcon`. */
@@ -45,8 +50,8 @@ export const AppIcon = ({
     aria-hidden="true"
     focusable="false"
     viewBox="0 0 24 24"
-    style={{ color: app.brand }}
-    className={cn("shrink-0", className)}
+    style={{ "--app-brand": app.brand } as React.CSSProperties}
+    className={cn("app-mark shrink-0", className)}
   >
     <use href={`#si-${app.slug}`} />
   </svg>

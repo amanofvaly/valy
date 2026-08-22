@@ -13,6 +13,13 @@ import { Aside, Section } from "@modules/home/components/section"
  * on Swiss red and the owned one on the darker red beneath it, and the
  * comparison is made by scale and ground rather than by two boxes side by side.
  *
+ * They are set in the sans, not the data face, which is the one place the mono
+ * rule bends. IBM Plex Mono centres the comma in a full advance: at 96px
+ * "₹12,000" comes apart into "₹12 , 000" with a hole either side of the
+ * separator. Mono earns its place where figures are compared down a column —
+ * the specification blocks, the service prices, the step numbers — and none of
+ * that applies to a number that is being read once, as a sentence.
+ *
  * The assumption behind the rented figure is labelled, because quoting a
  * competitor's price as though it were a fixed law is how this kind of section
  * stops being trustworthy.
@@ -58,7 +65,7 @@ const Arithmetic = () => (
               {row.heading}
             </h3>
             <p className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span className="font-mono text-5xl font-medium tabular tracking-tight text-paper sm:text-7xl lg:text-8xl">
+              <span className="text-6xl font-semibold tabular tracking-tight text-paper sm:text-7xl lg:text-8xl">
                 {row.figure}
               </span>
               <span className="text-lg text-paper/75">{row.period}</span>

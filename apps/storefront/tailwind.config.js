@@ -192,6 +192,32 @@ module.exports = {
           to: { opacity: "1", transform: "scale(1)" },
         },
         /**
+         * The application library's screens, assembling when their panel is
+         * selected. Nothing here loops: a browser restarts a CSS animation when
+         * an element goes from `display: none` to visible, so selecting a tab
+         * replays the entrance and selecting away resets it, with no JavaScript
+         * involved and no perpetual motion behind the reader's paragraph.
+         */
+        "screen-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        /** A bar chart growing off its baseline. `--h` is the bar's own height. */
+        "screen-rise": {
+          from: { transform: "scaleY(0)" },
+          to: { transform: "scaleY(var(--h))" },
+        },
+        /** A progress rule filling to the width already set on it. */
+        "screen-grow": {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
+        /** A connection drawing itself, once, from one end to the other. */
+        "screen-draw": {
+          from: { strokeDashoffset: "1" },
+          to: { strokeDashoffset: "0" },
+        },
+        /**
          * Holds a pending indicator invisible for its first 150ms. Most
          * navigations finish inside that window because the destination was
          * prefetched, and a spinner that appears and vanishes in 80ms reads as
@@ -213,6 +239,10 @@ module.exports = {
         spin: "spin 700ms linear infinite",
         "app-cell-in": "app-cell-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "pending-appear": "pending-appear 300ms ease-out both",
+        "screen-in": "screen-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "screen-rise": "screen-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "screen-grow": "screen-grow 520ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "screen-draw": "screen-draw 700ms cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

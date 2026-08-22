@@ -1,6 +1,7 @@
 import { listProducts } from "@lib/data/products"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { specRows } from "@lib/util/specs"
+import { cn } from "@lib/util/cn"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SpecBlock from "@modules/common/components/spec-block"
 import { Button } from "@modules/common/components/ui"
@@ -22,6 +23,15 @@ import { Section, SectionHeading } from "@modules/home/components/section"
  * boxes them, so the eye reads across a row of specifications rather than into
  * three separate containers — which is the only reason a homepage puts three
  * machines next to each other at all.
+ *
+ * The outer two columns drop their outside padding so the first tier starts on
+ * the page's left margin and the last ends on its right, and the block sits
+ * square inside the container instead of floating 28px in from both edges.
+ *
+ * The prices are Inter with tabular numerals; the specification values below
+ * them stay monospaced. Both align down their column, but "₹264,000.00" in a
+ * face that gives the comma and the point a full advance each comes apart into
+ * pieces, and these three figures are the ones being compared hardest.
  */
 
 /** Which rows earn a place in a three-across comparison. */
@@ -93,7 +103,7 @@ export default async function TheRange({
       />
 
       <ul className="mt-14 grid grid-cols-1 border-t-2 border-ink lg:grid-cols-3">
-        {tiers.map(({ product, tier, for: forWhom }) => {
+        {tiers.map(({ product, tier, for: forWhom }, index) => {
           const { cheapestPrice } = getProductPrice({ product: product! })
           const rows = specRows(product!.metadata).filter((r) =>
             COMPARISON_KEYS.has(r.key)
@@ -106,7 +116,20 @@ export default async function TheRange({
             >
               <LocalizedClientLink
                 href={`/products/${product!.handle}`}
-                className="group flex h-full w-full flex-col gap-5 py-8 transition-colors hover:bg-paper active:bg-surface-strong lg:px-7 lg:first:pl-0"
+                className={cn(
+                  "group flex h-full w-full flex-col gap-5 py-8 transition-colors hover:bg-paper active:bg-surface-strong lg:px-7",
+                  /*
+                   * The outside edges come off by index rather than by a
+                   * `first:`/`last:` variant. Written as `lg:first:[&_a]:pl-0`
+                   * on the list item, Tailwind attaches `:first-child` to the
+                   * `a` the arbitrary selector reaches, not to the `li` the
+                   * class sits on — and since the link is its item's only
+                   * child, that matched in every column and silently zeroed
+                   * the padding across the whole row.
+                   */
+                  index === 0 && "lg:pl-0",
+                  index === tiers.length - 1 && "lg:pr-0"
+                )}
               >
                 <div className="flex flex-col gap-3">
                   <h3 className="text-4xl font-semibold tracking-tight text-ink transition-colors group-hover:text-accent lg:text-5xl">
@@ -114,7 +137,7 @@ export default async function TheRange({
                   </h3>
                   <p className="flex items-baseline gap-2">
                     <span className="text-sm text-muted">from</span>
-                    <span className="font-mono text-2xl font-medium tabular tracking-tight text-accent">
+                    <span className="text-2xl font-semibold tabular tracking-tight text-accent">
                       {cheapestPrice?.calculated_price}
                     </span>
                   </p>

@@ -138,11 +138,27 @@ The palette is mostly white, ink, cool grays, and thin borders, with Swiss red r
 
 ### Named Rules
 
-**The Red Rarity Rule.** Swiss red is most effective when it is scarce. Do not tint whole layouts red or use it to decorate ordinary cards.
+**The Two Registers Rule.** Swiss red behaves differently on the homepage than everywhere else, and the split is deliberate rather than an inconsistency.
+
+On the homepage red is structural. It opens chapters as a 3px rule, sets the one word in the hero headline the page is actually about, carries prices and step numbers, marks the open question in the FAQ, and owns a full chapter ground of its own — the arithmetic, where the rented figure sits on `accent` and the owned figure on `accent-strong`. The homepage is the only surface arguing against something the reader is currently paying for, and it is allowed to raise its voice to do it.
+
+Everywhere else — product, category, cart, checkout, account, order — red stays scarce: focus, selection, error, and the rare high-priority action. A catalogue page that adopted the homepage's register would be a mistake, not a continuation.
+
+Paper on `accent` clears 6.7:1 and on `accent-strong` 6.9:1, so both grounds carry body text. Red on ink does not — it lands at 2.7:1 — so red never appears as type, a rule, or a meaningful shape on a dark ground.
 
 **The Neutral First Rule.** Product information, specification tables, and checkout surfaces should default to paper, ink, muted text, and hairlines. Color enters only when it clarifies state or action.
 
-**The Borrowed Color Rule.** One surface takes its color from content rather than from this palette: the self-hosted application grids on the homepage, where each cell carries a project's own mark on a wash of that project's own color. This is the site's only saturated region and it stays that way. Both values are precomputed in `src/lib/data/self-hosted-apps.ts` so every mark clears 3:1 and every muted line clears 4.5:1 against the wash it sits on — a component must never mix a brand color itself. Borrowed color is legitimate only where the color belongs to the thing being named; it is never a way to introduce a second accent.
+**The Borrowed Color Rule.** One subject takes its color from content rather than from this palette: the self-hosted applications on the homepage, where each project supplies its own mark in its own color. It is the only place where colour comes from content, and it stays that way. Every value is precomputed in `src/lib/data/self-hosted-apps.ts` — a component must never mix a brand color itself. Borrowed color is legitimate only where the color belongs to the thing being named; it is never a way to introduce a second accent.
+
+Three surfaces borrow it, and each uses it for a different job.
+
+The hero wall fills each cell with `wash`, a 4%-saturation trace of the mark's own color: the cells are square, small and touching, so the hues chain into a mosaic and the band reads as one colored object. **A wash is only ever legitimate where it touches other washes** — a wash covering ninety-nine percent of a wide, isolated cell averages out to white and reduces the mark it was meant to support to a bullet.
+
+The application library's launcher is the opposite case: twenty-eight marks in a column, each on paper at full strength, with no fill behind them. A greyed-out launcher that blooms on selection reads as a smaller catalogue, which is the opposite of what the section claims.
+
+Inside a screen the application's color is the only accent, and it does three things: it fills picture cells, it draws data — bars, progress, dots, the diagram's links and hub — and it marks a live state. **It never sets type.** `brand` is tuned to clear 3:1 as a shape, and several of the twenty-eight would fail 4.5:1 as a word, so a value, a label or a caption inside a screen is ink or muted like everything else on the site.
+
+The mixing itself happens in the stylesheet, not in a component. `src/lib/data/self-hosted-apps.ts` precomputes `brand`, `wash` and their dark-ground pairs; `.app-mark`, `.app-fill`, `.app-cell` and `.app-tile-on` in `globals.css` do the rest from two inherited custom properties. A component passes `--app-brand` and `--app-wash` and nothing else — partly so no component has to reason about contrast, and partly because the library is a client component, where an inline `color-mix()` or hex is compared against the browser's parsed value during hydration and reliably disagrees with it.
 
 ## Typography
 
@@ -154,6 +170,7 @@ The palette is mostly white, ink, cool grays, and thin borders, with Swiss red r
 
 ### Hierarchy
 
+- **Broadsheet** (600, 6rem, 0.96): the homepage headline and the two arithmetic figures. Nothing else in the app reaches for it, and it steps down to 3rem on a phone.
 - **Display** (600, 3.75rem, 1.03): home hero and rare first-viewport statements only.
 - **Headline** (600, 2.375rem, 1.11): major section headings and high-level product story.
 - **Title** (600, 1.5rem, 1.33): cards, product sections, account panels, and checkout sections.
@@ -162,13 +179,21 @@ The palette is mostly white, ink, cool grays, and thin borders, with Swiss red r
 
 ### Named Rules
 
-**The Data Mono Rule.** Use the mono font for values that are scanned or compared, not for mood.
+**The Data Mono Rule.** Use the mono font for values that are scanned or compared, not for mood — and not above about 20px. IBM Plex Mono gives every glyph the same advance, so at heading scale a thousands comma, a decimal point, or the space in "48 h" opens a full character of air and the figure comes apart. Above that size, set figures in Inter with `tabular` instead: they still align down a column, and they hold together as a number. Mono keeps the specification blocks, the small prices, the SKUs, and the padded step counters.
 
 **The Quiet Heading Rule.** Headings rely on weight, scale, and breathing room. Avoid decorative display treatments, gradient text, and exaggerated tracking.
+
+**The No Eyebrow Rule.** A section heading carries its own label. The homepage used to open every chapter with a monospace kicker directly above a heading that said the same thing better — "The range" over "Three sizes, named after how far you have got." The kickers are gone and the headings grew into the space. Where a section needs marking, it gets the red rule across its top edge, not a word.
 
 ## Layout
 
 The storefront uses a centered page container with a 1280px maximum width, 20px mobile gutters, and 32px tablet/desktop gutters. Section rhythm is generous: 56px vertical padding on mobile, 80px on tablet, and 96px on desktop.
+
+The homepage is the one surface that composes its grounds rather than alternating them. Its chapters run paper, ink, paper, red, paper, surface, paper, surface, ink, paper: the two dark chapters and the red one are the three places the argument raises its voice — what the machine ships with, what renting costs, and what happens when it breaks — and every chapter between them is quiet on purpose so those three land. Colour chapters are full-bleed; their inner content still sits in the page container.
+
+Two homepage chapters leave the container deliberately. The hero's wall of application marks runs edge to edge with no gutter at all, so the catalogue reads as something that continues past the frame. The application library uses `container-wide` (1680px) rather than the 1280px page, so a section whose claim is possibility physically outgrows the paragraphs around it. Nothing outside the homepage uses either.
+
+Inside that container the library is not a grid at all but a machine: one framed window with its own title bar, a launcher of twenty-eight applications down the left edge, and whichever one is selected filling the rest at a fixed 36rem. The six chapters survive as the launcher's headings and as the caption under the frame. On a phone the launcher becomes a scroll-snapping strip above the screen and the frame's height goes back to being whatever its content needs.
 
 Commerce layouts are structured and stable. Product grids hold equal card heights, image areas do not collapse, title and subtitle lines reserve space, and price baselines align across a row. Product pages use a two-column desktop composition where the buy/configuration column can stay sticky while the visitor reads specifications.
 
@@ -203,6 +228,7 @@ Borders are one-pixel hairlines. Dense tables use rules aligned to the device pi
 - **Accent:** Swiss red background with paper text for rare brand or high-priority action.
 - **Secondary:** paper background, ink text, and an inset strong hairline.
 - **Ghost:** transparent background with neutral hover and pressed surface fills.
+- **Inverse / Inverse Secondary:** for the ink and red chapters, where an ink pill either disappears into the ground or fights it. The filled button flips to a paper block with an ink label; the secondary is transparent with a paper hairline.
 - **States:** every button has a touch-first active transform and pressed color change. Loading keeps the label width in place and centers a spinner over it.
 
 ### Chips and Badges
@@ -240,6 +266,16 @@ Product cards are anchors with stable geometry. Images reserve a fixed square re
 
 Specifications are content, not decoration. Use tabular numbers, compact rows, clear labels, and hairline separation so storage, RAM, NICs, wattage, noise, and compatibility can be compared quickly.
 
+### Application Screens
+
+The homepage's application library draws each of the twenty-eight as the interface it actually is. There are no screenshots to ship and no honest way to fake one, so a screen is a drawing of software in this system's own hairlines, ink and paper, with the application's borrowed color as the only accent inside its frame.
+
+Six shapes cover all twenty-eight, because the software really does fall into six shapes: a wall of pictures, a list of things, one figure that matters with its history under it, a board of live states, a diagram of connections, and a conversation. Adding an application means picking one of the six and writing its content in `src/lib/data/app-screens.ts` — never inventing a seventh for one application.
+
+Two rules keep them from becoming decoration. **Every screen fills its frame:** a list that stops two-thirds down or a shelf of five blank rectangles reads as a loading state, which is precisely the failure this section exists to undo. And **every label is real content** — a filename, a temperature, a peer, a due date. A gray bar standing in for a word is the same lie as a fake screenshot, told smaller.
+
+Illustrative figures are allowed inside a frame and nowhere else. `4,812 photographs` and `18,431 requests dropped today` describe the shape of what the software shows; they are not measurements of a Valy machine and must never be lifted out of a screen and into a claim.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -253,7 +289,11 @@ Specifications are content, not decoration. Use tabular numbers, compact rows, c
 ### Don't:
 
 - **Don't** use blue as the brand accent.
-- **Don't** make red a page-wide theme or decorative wash.
+- **Don't** carry the homepage's red register onto catalogue, cart, or checkout surfaces.
+- **Don't** use red as a decorative wash anywhere, or as type or a rule on a dark ground.
+- **Don't** put a monospace kicker above a heading, on any surface.
 - **Don't** use location as a brand proof point.
 - **Don't** add heavy card shadows to ordinary commerce surfaces.
 - **Don't** use vague launch language when a concrete product or app outcome can be named.
+- **Don't** introduce a self-hosted application by its logo and a caption where its screen would say more.
+- **Don't** let a borrowed brand color set type; it is tuned to carry a shape, not a word.

@@ -12,6 +12,10 @@ import { Section, SectionHeading } from "@modules/home/components/section"
  * services catalogue rather than with adjectives — the same four products a
  * customer can put in a basket, at the price the catalogue is charging today.
  *
+ * The figures are Inter with tabular numerals rather than the data face. They
+ * align down the column either way, and a monospaced "₹2,500.00" at 30px puts
+ * a full character of air on both sides of the comma and the point.
+ *
  * It is a price list now rather than a grid of cards. Four bordered boxes made
  * four separate offers; four ruled rows with the figure hanging in the right-
  * hand column make one itemised bill, which is what the heading promises and
@@ -128,22 +132,29 @@ export default async function TheWork({
                     </dl>
                   )}
 
+                  {/*
+                   * Status first, then the figure. The other order — "on its
+                   * own", the price, then "Free with every machine" — reads as
+                   * a contradiction until the eye has been over it twice, and
+                   * the qualifier belongs on the figure's own baseline rather
+                   * than stacked above it.
+                   */}
                   <div className="flex flex-col gap-1 lg:col-span-3 lg:items-end lg:text-right">
+                    <p className="max-w-[24ch] text-sm leading-6 text-muted">
+                      {WHEN[product.handle!] ?? "Optional"}
+                    </p>
                     {cheapestPrice && (
-                      <p className="flex items-baseline gap-2 lg:flex-col lg:items-end lg:gap-0">
+                      <p className="flex items-baseline gap-2">
                         {PRICE_PREFIX[product.handle!] && (
-                          <span className="order-2 text-sm text-muted lg:order-none">
+                          <span className="text-sm text-muted">
                             {PRICE_PREFIX[product.handle!]}
                           </span>
                         )}
-                        <span className="order-1 font-mono text-2xl font-medium tabular tracking-tight text-accent lg:order-none lg:text-3xl">
+                        <span className="text-2xl font-semibold tabular tracking-tight text-accent lg:text-3xl">
                           {cheapestPrice.calculated_price}
                         </span>
                       </p>
                     )}
-                    <p className="max-w-[24ch] text-sm leading-6 text-muted">
-                      {WHEN[product.handle!] ?? "Optional"}
-                    </p>
                   </div>
                 </LocalizedClientLink>
               </li>
