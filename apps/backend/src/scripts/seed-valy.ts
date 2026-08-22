@@ -921,7 +921,7 @@ export default async function seedValyCatalogue({
 
   const { data: existingOptions } = await query.graph({
     entity: "product_option",
-    fields: ["id", "title", "is_exclusive", "product_id", "values.id", "values.value"],
+    fields: ["id", "title", "is_exclusive", "values.id", "values.value"],
   })
 
   const sharedOptionByTitle = new Map<
@@ -929,7 +929,13 @@ export default async function seedValyCatalogue({
     { id: string; values: Map<string, string> }
   >()
   for (const opt of existingOptions) {
-    if (opt.is_exclusive || opt.product_id) {
+    // `is_exclusive` is the whole test. An option is not owned by a single
+    // product any more: `product_option` has no `product_id` column, and
+    // products reach their options through the `product_product_option`
+    // pivot. The flag is what separates a product-scoped option from a
+    // shared facet, and a partial unique index on `title WHERE
+    // is_exclusive = false` is what keeps the shared ones unique by name.
+    if (opt.is_exclusive) {
       continue
     }
     sharedOptionByTitle.set(opt.title, {
