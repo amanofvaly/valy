@@ -3,7 +3,6 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { Button } from "@modules/common/components/ui"
 import { Aside, Section, SectionHeading } from "@modules/home/components/section"
 
-import AppLibraryView from "./library"
 import AppMachine from "./machine"
 
 /**
@@ -55,9 +54,6 @@ const AppLibrary = () => (
         }
       />
 
-      <div className="mt-12 lg:mt-14">
-        <AppLibraryView />
-      </div>
 
       <div className="mt-20 lg:mt-24">
         <AppMachine />
