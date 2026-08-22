@@ -1,7 +1,7 @@
 import ContactForm from "@modules/contact/components/contact-form"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { PageHeader } from "@modules/content/components/prose"
-import { Aside, Section, SectionHeading } from "@modules/home/components/section"
+import { Section, SectionHeading } from "@modules/home/components/section"
 import { Metadata } from "next"
 
 /**
