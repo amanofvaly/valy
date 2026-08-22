@@ -36,7 +36,7 @@ export default function TermsPage() {
       <div className="container-page py-8 lg:py-12">
         <Clause id="who" number="1" title="Who you are buying from">
           <p>
-            Valy builds and sells computer hardware from Bengaluru, Karnataka,
+            Valy builds and sells computer hardware from Delhi,
             India, and ships across India. Every order is invoiced from here,
             with GST, in rupees.
           </p>

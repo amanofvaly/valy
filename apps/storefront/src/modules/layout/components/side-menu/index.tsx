@@ -88,7 +88,7 @@ const SideMenu = ({ links, children }: SideMenuProps) => {
         <div className="mt-auto flex flex-col gap-4 border-t border-line px-5 py-5">
           {children}
           <p className="text-2xs text-muted">
-            © {new Date().getFullYear()} Valy. Bengaluru, India.
+            © {new Date().getFullYear()} Valy, India.
           </p>
         </div>
       </SheetContent>

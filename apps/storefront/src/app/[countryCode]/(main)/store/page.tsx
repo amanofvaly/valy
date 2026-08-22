@@ -6,7 +6,7 @@ import { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Everything we sell",
   description:
-    "Machines, the parts that fit them, and the setup work. Prices include GST, invoiced from Bengaluru.",
+    "Machines, the parts that fit them, and the setup work. Prices include GST, invoiced from Delhi.",
 }
 
 type Props = {

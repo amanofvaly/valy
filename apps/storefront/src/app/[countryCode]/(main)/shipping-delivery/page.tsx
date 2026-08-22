@@ -61,7 +61,7 @@ export default function ShippingDeliveryPage() {
         <Clause id="locations" number="4" title="Where we ship">
           <p>
             We currently ship across India. All orders are invoiced from
-            Bengaluru, Karnataka, with GST included. We do not offer international
+            New Delhi, with GST included. We do not offer international
             shipping at this time.
           </p>
         </Clause>

@@ -45,7 +45,7 @@ const WhoBuildsIt = () => (
     <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
       <div className="flex flex-col gap-6 lg:col-span-6">
         <h2 className="max-w-[15ch] text-balance text-4xl font-semibold leading-[1.03] tracking-tight text-paper sm:text-5xl">
-          A small workshop in Bengaluru, and a three-year promise.
+          A small workshop, and a three-year promise.
         </h2>
         <div className="flex max-w-prose flex-col gap-5 text-base leading-7 text-paper/70">
           <p>

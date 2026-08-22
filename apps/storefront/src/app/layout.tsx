@@ -31,7 +31,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
   title: {
-    default: "Valy — homelab servers, built in Bengaluru",
+    default: "Valy — homelab servers",
     template: "%s · Valy",
   },
   description:
