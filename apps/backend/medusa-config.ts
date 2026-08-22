@@ -38,6 +38,9 @@ module.exports = defineConfig({
       },
     },
     {
+      resolve: "./src/modules/contact",
+    },
+    {
       resolve: "./src/modules/india-gst",
     },
     {

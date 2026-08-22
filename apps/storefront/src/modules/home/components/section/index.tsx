@@ -1,7 +1,11 @@
 import { cn } from "@lib/util/cn"
 
 /**
- * One homepage chapter, and its heading.
+ * One chapter, and its heading.
+ *
+ * The homepage is built entirely out of these, and the contact page borrows
+ * the same grammar — a rule across the top edge, a heading that carries itself
+ * with no label above it, and a ground that is chosen rather than alternated.
  *
  * Two things changed when the page stopped being a stack of identical bands.
  *

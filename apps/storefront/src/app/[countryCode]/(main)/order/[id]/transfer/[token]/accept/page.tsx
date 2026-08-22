@@ -49,10 +49,10 @@ export default async function TransferDecisionPage({
             <p className="text-sm leading-6 text-muted">
               Email{" "}
               <a
-                href="mailto:hello@valy.in"
+                href="mailto:support@valy.in"
                 className="text-accent hover:text-accent-strong"
               >
-                hello@valy.in
+                support@valy.in
               </a>{" "}
               and we will sort it out.
             </p>

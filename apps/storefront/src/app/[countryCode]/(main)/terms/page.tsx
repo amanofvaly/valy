@@ -27,13 +27,13 @@ export default function TermsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Terms of sale"
-        title="What we owe you, and what we do not."
+        
+        title="Terms of sale and service"
         lede="These are the terms every order is sold under. They are short on purpose, and they say the same things the rest of the site says."
         updated={UPDATED}
       />
 
-      <div className="container-page max-w-3xl py-8 lg:py-12">
+      <div className="container-page py-8 lg:py-12">
         <Clause id="who" number="1" title="Who you are buying from">
           <p>
             Valy builds and sells computer hardware from Bengaluru, Karnataka,
@@ -42,7 +42,7 @@ export default function TermsPage() {
           </p>
           <p>
             Questions about an order, before or after it ships, go to{" "}
-            <a href="mailto:hello@valy.in">hello@valy.in</a>. A real person
+            <a href="mailto:support@valy.in">support@valy.in</a>. A real person
             answers within one working day.
           </p>
         </Clause>

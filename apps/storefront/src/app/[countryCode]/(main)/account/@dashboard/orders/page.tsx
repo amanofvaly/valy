@@ -25,7 +25,7 @@ export default async function Orders() {
           that instead of pointing at a button that does not exist. */}
       <AccountPageHeader
         title="Orders"
-        description="Every order, its invoice and the test sheet for the machine. To return something inside the seven-day window, email hello@valy.in."
+        description="Every order, its invoice and the test sheet for the machine. To return something inside the seven-day window, email support@valy.in."
       />
 
       <div className="flex flex-col gap-10">

@@ -46,10 +46,10 @@ export default function CheckoutError({
       <p>
         If it keeps failing, email{" "}
         <a
-          href="mailto:hello@valy.in"
+          href="mailto:support@valy.in"
           className="text-accent hover:text-accent-strong"
         >
-          hello@valy.in
+          support@valy.in
         </a>
         {error.digest && (
           <>

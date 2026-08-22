@@ -58,10 +58,10 @@ const AccountLayout: React.FC<{
             Getting started
           </LocalizedClientLink>
           <a
-            href="mailto:hello@valy.in"
+            href="mailto:support@valy.in"
             className="text-accent hover:text-accent-strong"
           >
-            hello@valy.in
+            support@valy.in
           </a>
         </div>
       </div>

@@ -24,12 +24,12 @@ const ProfileEmail = ({ customer }: { customer: HttpTypes.StoreCustomer }) => (
     <p className="mt-1 text-xs leading-5 text-muted">
       This is what you sign in with, so we change it by hand. Email{" "}
       <a
-        href={`mailto:hello@valy.in?subject=Change%20account%20email%20for%20${encodeURIComponent(
+        href={`mailto:support@valy.in?subject=Change%20account%20email%20for%20${encodeURIComponent(
           customer.email
         )}`}
         className="text-accent hover:text-accent-strong"
       >
-        hello@valy.in
+        support@valy.in
       </a>{" "}
       from the current address and we will move it.
     </p>

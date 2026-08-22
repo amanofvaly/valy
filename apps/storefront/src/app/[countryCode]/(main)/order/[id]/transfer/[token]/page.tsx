@@ -48,10 +48,10 @@ export default async function TransferPage({
         <p className="text-sm leading-6 text-muted">
           If you were not expecting this, close the page and email{" "}
           <a
-            href="mailto:hello@valy.in"
+            href="mailto:support@valy.in"
             className="text-accent hover:text-accent-strong"
           >
-            hello@valy.in
+            support@valy.in
           </a>
           .
         </p>

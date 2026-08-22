@@ -52,10 +52,10 @@ export default function Error({
       <p>
         If it keeps happening, email{" "}
         <a
-          href="mailto:hello@valy.in"
+          href="mailto:support@valy.in"
           className="text-accent hover:text-accent-strong"
         >
-          hello@valy.in
+          support@valy.in
         </a>
         {error.digest && (
           <>

@@ -7,8 +7,6 @@ import Hero from "@modules/home/components/hero"
 import PartsProof from "@modules/home/components/parts-proof"
 import { Section, SectionHeading } from "@modules/home/components/section"
 import TheRange from "@modules/home/components/the-range"
-import TheWork from "@modules/home/components/the-work"
-import WhoBuildsIt from "@modules/home/components/who-builds-it"
 import { Metadata } from "next"
 import { Suspense } from "react"
 
@@ -47,17 +45,12 @@ export default async function Home(props: {
       <AppLibrary />
       <Arithmetic />
 
-      <Suspense fallback={<WorkFallback />}>
-        <TheWork countryCode={countryCode} />
-      </Suspense>
-
       <Suspense fallback={<RangeFallback />}>
         <TheRange countryCode={countryCode} />
       </Suspense>
 
       <PartsProof />
       <AfterYouOrder />
-      <WhoBuildsIt />
       <Faq />
     </>
   )
@@ -68,21 +61,6 @@ export default async function Home(props: {
  * same heading at the same size — with only the priced rows pending. The page
  * does not reflow when the catalogue answers; a block of grey turns into text.
  */
-const WorkFallback = () => (
-  <Section rule="none">
-    <SectionHeading
-      title="The software is free. The evening it takes is not."
-      lede="Every one of those applications is a container, a reverse proxy entry, a folder permission and an hour of reading. Doing it once, on a bench, for a machine we already know the shape of, is the whole product. This is that work, itemised — the first one is included with every machine and the rest are ordinary catalogue items you can buy for hardware you already own."
-    />
-    <div className="mt-14 border-t-2 border-ink">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="border-b border-line py-7 lg:py-9">
-          <div className="h-[7.5rem] animate-pulse rounded bg-surface lg:h-[8.5rem]" />
-        </div>
-      ))}
-    </div>
-  </Section>
-)
 
 const RangeFallback = () => (
   <Section ground="surface" rule="accent">

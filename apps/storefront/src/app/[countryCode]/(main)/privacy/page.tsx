@@ -33,13 +33,13 @@ export default function PrivacyPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Privacy"
-        title="We hold as little as an order needs."
+        eyebrow="We hold as little as an order needs."
+        title="Privacy Policy"
         lede="Selling machines whose point is that your files stay yours, while quietly building a profile of the people who buy them, would be an odd way to run a business."
         updated={UPDATED}
       />
 
-      <div className="container-page max-w-3xl py-8 lg:py-12">
+      <div className="container-page py-8 lg:py-12">
         <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
           <h2 className="text-base font-medium text-ink">
             Things we do not do

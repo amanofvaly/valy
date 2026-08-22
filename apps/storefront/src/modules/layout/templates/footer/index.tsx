@@ -17,9 +17,9 @@ const LEARN_LINKS = [
   { href: "/getting-started#capacity", label: "How much space do I need" },
 ]
 
-const COMPANY_LINKS = [
-  { href: "/store", label: "Everything we sell" },
-  { href: "/account", label: "Your orders" },
+const POLICY_LINKS = [
+  { href: "/refund-cancellations", label: "Refunds & Cancellations" },
+  { href: "/shipping-delivery", label: "Shipping & Delivery" },
   { href: "/terms", label: "Terms of sale" },
   { href: "/privacy", label: "Privacy" },
 ]
@@ -40,12 +40,23 @@ export default async function Footer() {
             href="/"
             className="text-lg font-semibold tracking-tight text-ink"
           >
-            Valy
+            Valy Homelabs
           </LocalizedClientLink>
           <p className="max-w-xs text-sm leading-6 text-muted">
-            Homelab servers built in Bengaluru, so the photographs and the films
-            and the work stay on hardware you own.
+            Home Servers for everyone. Keep your photographs and your films
+            and your work on hardware you own.
           </p>
+          {/*
+           * Contact sits with the brand rather than in a link column: it is the
+           * one footer link someone goes looking for, and the columns beside it
+           * are catalogue and policy, which is neither.
+           */}
+          <LocalizedClientLink
+            href="/contact"
+            className="pressable w-fit rounded text-sm font-medium text-ink underline decoration-line-strong decoration-1 underline-offset-4 hover:text-accent hover:decoration-accent"
+          >
+            Contact us
+          </LocalizedClientLink>
         </div>
 
         {!!topLevel.length && (
@@ -83,8 +94,8 @@ export default async function Footer() {
           ))}
         </FooterColumn>
 
-        <FooterColumn title="Valy">
-          {COMPANY_LINKS.map((link) => (
+        <FooterColumn title="Policy">
+          {POLICY_LINKS.map((link) => (
             <FooterLink key={link.href} href={link.href}>
               {link.label}
             </FooterLink>
@@ -106,7 +117,7 @@ export default async function Footer() {
             <li>7-day returns</li>
           </ul>
           <p className="text-2xs text-muted">
-            © {new Date().getFullYear()} Valy, Bengaluru
+            © {new Date().getFullYear()} Valy Homelabs
           </p>
         </div>
       </div>

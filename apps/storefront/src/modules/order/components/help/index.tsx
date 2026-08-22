@@ -33,10 +33,10 @@ const Help = () => (
     <p className="mt-4 text-sm text-muted">
       Something wrong with the order?{" "}
       <a
-        href="mailto:hello@valy.in"
+        href="mailto:support@valy.in"
         className="text-accent hover:text-accent-strong"
       >
-        hello@valy.in
+        support@valy.in
       </a>
       , or find it again under{" "}
       <LocalizedClientLink

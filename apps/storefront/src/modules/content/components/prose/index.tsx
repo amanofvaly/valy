@@ -28,11 +28,11 @@ export const PageHeader = ({
           {eyebrow}
         </p>
       )}
-      <h1 className="max-w-3xl text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-5xl">
+      <h1 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-5xl">
         {title}
       </h1>
       {lede && (
-        <p className="max-w-prose text-lg leading-8 text-muted">{lede}</p>
+        <p className="text-lg leading-8 text-muted">{lede}</p>
       )}
       {updated && (
         <p className="font-mono text-2xs tabular text-muted">
@@ -53,7 +53,7 @@ export const Prose = ({
 }) => (
   <div
     className={cn(
-      "flex max-w-prose flex-col gap-4 text-base leading-7 text-muted",
+      "flex flex-col gap-4 text-base leading-7 text-muted",
       "[&_a]:text-accent hover:[&_a]:text-accent-strong",
       "[&_strong]:font-medium [&_strong]:text-ink",
       "[&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-5",
