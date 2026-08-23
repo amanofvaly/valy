@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/**'
       - 'apps/backend/**'
       - 'package.json'
       - 'pnpm-workspace.yaml'
