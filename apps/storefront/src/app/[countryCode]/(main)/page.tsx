@@ -11,9 +11,9 @@ import { Metadata } from "next"
 import { Suspense } from "react"
 
 export const metadata: Metadata = {
-  title: "Run twenty-eight apps on a machine you own",
+  title: "Easy homelabs and NAS - Valy",
   description:
-    "Immich, Jellyfin, Home Assistant, Pi-hole, Frigate, Proxmox and twenty-two more — free, open source, and installed before the machine ships. Built to order, burned in for 48 hours, GST invoiced, three-year warranty serviced in India.",
+    "Photo backup and sync, media streaming, home automation, network monitoring, virtualization and more - all on a machine you own. Free and open source apps to run your home on your terms.",
 }
 
 /**

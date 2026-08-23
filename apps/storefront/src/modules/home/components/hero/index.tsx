@@ -8,7 +8,7 @@ import { Button } from "@modules/common/components/ui"
  *
  * The picture is the software. Real marks, each project's own colour, no
  * photograph of a datacentre and no render of a box. The wall is the product
- * argument: this much is possible, none of it is ours, and the machine is the
+ * argument: this much is possible, none of it is proprietory, and the machine is the
  * only part with a price on it.
  *
  * What changed is the scale and the edges. The wall used to be a rounded card
@@ -22,20 +22,7 @@ import { Button } from "@modules/common/components/ui"
  * One word is red. It is the word the whole page is about.
  */
 
-/**
- * The six most people will recognise, named in the caption. The caption is
- * also the wall's accessible text — twenty-eight logos read out one after
- * another is a worse experience than a sentence, and the library two sections
- * down gives every one of them a proper name and a description.
- */
-const FAMILIAR = [
-  "Immich",
-  "Jellyfin",
-  "Home Assistant",
-  "Pi-hole",
-  "Frigate",
-  "Proxmox",
-]
+
 
 const Hero = () => (
   <section className="bg-paper">
@@ -43,8 +30,7 @@ const Hero = () => (
 
     <div className="container-page pb-10 pt-12 sm:pb-14 sm:pt-20 lg:pb-16 lg:pt-24">
       <h1 className="max-w-[13ch] text-balance text-5xl font-semibold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl xl:text-8xl">
-        All of this is <span className="text-accent">free</span>. The machine is
-        the only part you buy.
+        A smarter home <span className="text-accent">starts</span> with your own cloud
       </h1>
     </div>
 
@@ -81,13 +67,12 @@ const Hero = () => (
      */}
     <div className="border-b border-line">
       <p className="container-page py-4 text-sm leading-6 text-muted">
-        {FAMILIAR.join(", ")} and twenty-two more, installed and configured
-        before it ships.{" "}
+        Automatically back up every device, stream your media anywhere, share files securely, and access your data from anywhere, all from one compact server. 
         <a
           href="#apps"
           className="font-medium text-accent underline decoration-accent/35 underline-offset-4 transition-colors hover:decoration-accent"
         >
-          What each one does
+          Most popular apps
         </a>
       </p>
     </div>
@@ -102,33 +87,21 @@ const Hero = () => (
       <div className="flex flex-col gap-3 lg:col-span-4 lg:pr-6">
         <Button asChild size="large" block>
           <LocalizedClientLink href="/categories/machines">
-            See the five machines
+            Find your server
           </LocalizedClientLink>
         </Button>
         <Button asChild variant="secondary" size="large" block>
           <LocalizedClientLink href="/getting-started">
-            Never done this before
+            What is a homelab?
           </LocalizedClientLink>
         </Button>
       </div>
 
-      <div className="flex flex-col gap-6 text-base leading-7 text-muted md:grid md:grid-cols-2 md:gap-10 lg:col-span-8">
+      <div className="flex flex-col gap-6 text-base leading-7 text-muted md:gap-10 lg:col-span-8">
         <p>
-          Immich holds a phone camera roll better than Google Photos does.
-          Jellyfin plays your films on every television in the house. Pi-hole
-          takes the advertising out of the whole network, Frigate watches the
-          front door without a subscription, and Home Assistant runs the lights.
-          All of it is open source, all of it costs nothing, and none of it is
-          ours.
+          As more of life moves online, owning your data has never been more important. Valy makes self-hosting accessible with ready-to-use home servers that combine private cloud storage, automated backups, and powerful applications into one seamless experience without the complexity.
         </p>
-        <p>
-          The catch has always been that somebody has to choose the parts, build
-          the array, install twenty-eight applications and be there when a drive
-          dies. That is the part we sell. A Valy machine arrives with the
-          operating system installed, the storage built and the apps already
-          running, so the first evening is spent copying photographs across
-          rather than reading forum posts.
-        </p>
+        
       </div>
     </div>
   </section>

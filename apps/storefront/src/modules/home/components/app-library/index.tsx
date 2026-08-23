@@ -43,8 +43,8 @@ const AppLibrary = () => (
   <Section id="apps" rule="accent" bleed>
     <div className="container-wide">
       <SectionHeading
-        title={`${APP_COUNT_WORD[0].toUpperCase()}${APP_COUNT_WORD.slice(1)} applications, and not one of them is ours.`}
-        lede="Free, open source, and installed before the machine leaves the bench. There is no Valy subscription underneath any of this and no account to keep paying for — if we disappeared tomorrow every one of these would carry on running, because nothing in the box depends on us."
+        title={`Start simple. Grow when you're ready.`}
+        lede="Whether you're backing up family photos, building a media library, running AI locally, hosting a website, or simply replacing cloud subscriptions, it adapts to your needs without becoming complicated."
         action={
           <Button asChild variant="secondary" size="large">
             <LocalizedClientLink href="/categories/services">
@@ -59,17 +59,7 @@ const AppLibrary = () => (
         <AppMachine />
       </div>
 
-      {/*
-       * The limit, said out loud. A machine showing twenty-eight screens
-       * implies one that runs all of them at once, and the smallest does not.
-       */}
-      <Aside className="mt-12 lg:mt-14">
-        Not all at once, and not all on the smallest machine. A Flow will hold a
-        photo library, a film library and the network services without
-        complaining; transcoding four streams while a language model runs is what
-        the Hike and the Summit are for. Tell us what you want it to do and we
-        will size it for that, which is cheaper than sizing it for everything.
-      </Aside>
+      
     </div>
   </Section>
 )
