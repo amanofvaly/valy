@@ -18,6 +18,7 @@ RUN pnpm run build --filter=@dtc/backend...
 
 FROM base AS runner
 WORKDIR /app
+
 # Copy built output
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-workspace.yaml ./

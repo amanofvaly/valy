@@ -42,6 +42,17 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}-backend
 
+      - name: Generate version.json
+        run: |
+          cat << 'EOF' > apps/backend/version.json
+          {
+            "commitSha": "${{ github.sha }}",
+            "commitTime": "${{ github.event.head_commit.timestamp }}",
+            "commitMessage": ${{ toJSON(github.event.head_commit.message) }},
+            "deployTime": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          EOF
+
       # Tagged with the commit as well as latest, so the image running in
       # production can be traced back to a commit. `latest` is a moving
       # pointer and its digest says nothing about what is inside.
