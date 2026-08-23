@@ -155,46 +155,24 @@ claude mcp add --transport http medusa https://docs.medusajs.com/mcp # or agent 
 
 ## Production (TrueNAS)
 
-The stack runs on TrueNAS at `192.168.0.99`, deployed by Docker Compose **from the
-host, not from Portainer**. Everything lives in `/mnt/Server-Storage/valy_backend/`:
+The backend stack runs on TrueNAS at `192.168.0.99`. It is deployed and fully managed by Portainer using its Git repository integration (the stack is named `valy-store` in Portainer). 
+
+**Portainer is the absolute source of truth for this stack.** Because it was deployed via Portainer's Git feature, it is **NOT** a limited stack. 
 
 | | |
 | --- | --- |
-| `docker-compose.yml` | the stack — postgres, redis, medusa, cloudflared, watchtower |
-| `.env` | `STORE_CORS`, `ADMIN_CORS`, `AUTH_CORS`, secrets |
-| `cloudflared/config.yml` | tunnel ingress for `api.valy.in` (root-owned) |
+| `docker-compose.prod.yml` | the stack configuration, pulled automatically by Portainer |
+| Environment Variables | Managed directly inside the Portainer Stack UI, not in a `.env` file |
 
-Compose is the only lever. To change any environment variable:
+Do **not** use TrueNAS SSH (`docker compose up`) to manage this stack. If you run compose commands directly on the host, it will conflict with Portainer's managed containers. All modifications should be made either:
+1. By committing changes to `docker-compose.prod.yml` and letting Portainer automatically pull them.
+2. By editing the Stack configuration directly in the Portainer UI.
 
-```bash
-sudo -i
-cd /mnt/Server-Storage/valy_backend
-nano .env
-docker compose up -d
-```
+Because of a previous outage on 2026-08-20, the Cloudflare tunnel targets `valy-medusa` — the explicit `container_name` — instead of the compose service alias `medusa`. Always address containers by `container_name`.
 
-`docker compose up -d` recreates only what changed and lets compose re-establish
-networks and aliases.
+Deploys are automatic: pushing to `main` builds `ghcr.io/amanofvaly/valy-backend:latest` via GitHub Actions. Watchtower (5-minute poll, with `--cleanup`) restarts the container and automatically deletes the old image to save space. 
 
-**Never use Portainer's Recreate on a container in this stack.** Portainer sees it as
-a "limited" stack — it did not create it, so it has no compose file and rebuilds the
-container from its own view of it. That drops the compose-assigned network alias, and
-on 2026-08-20 it took the site down: cloudflared could no longer resolve the origin
-(`dial tcp: lookup medusa ... no such host`) while the container itself was healthy and
-answering on the LAN. Portainer is for reading logs and inspecting state only.
-
-Because of that outage the tunnel now targets `valy-medusa` — the explicit
-`container_name` — instead of the compose service alias `medusa`. Address containers by
-`container_name`; the service-name alias only exists while compose is doing the creating.
-
-Deploys are automatic: pushing to `main` builds `ghcr.io/amanofvaly/valy-backend:latest`
-via GitHub Actions, and watchtower (5-minute poll) restarts the container. The container
-runs `medusa db:migrate --execute-safe-links` before starting, so schema changes apply
-themselves. `--execute-safe-links` is required — without it a removed link makes
-`db:migrate` stop at an interactive prompt and the container never serves.
-
-`truenas_admin` can read these files over SSH but has no docker access and no
-passwordless sudo; docker commands need a root shell.
+The container runs `medusa db:migrate --execute-safe-links` before starting, so schema changes apply themselves. `--execute-safe-links` is required — without it a removed link makes `db:migrate` stop at an interactive prompt and the container never serves.
 
 ## Agent Behavior & Accountability
 

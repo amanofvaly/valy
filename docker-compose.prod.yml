@@ -1,18 +1,11 @@
 # Production stack for TrueNAS.
 #
-# THIS FILE IS PRODUCTION. It is a byte-for-byte match of what runs at
-# /mnt/Server-Storage/valy_backend/docker-compose.yml, so a change here is a
-# change to the running system and a diff here is reviewable.
+# THIS FILE IS PRODUCTION. It is pulled and managed automatically by Portainer's 
+# Git integration (Stack: valy-store). 
 #
-# It exists because container configuration used to live only on that box, and
-# the same settings could be edited in two places — this file and Portainer's
-# container editor. Whichever ran last won, silently. On 2026-08-20 a CORS
-# origin set through Portainer was erased the next time compose ran, with no
-# error and no trace, after a Portainer container recreate had already taken
-# the tunnel down by dropping a network alias.
-#
-# So: change containers HERE, apply with `docker compose up -d`, and never use
-# Portainer's container-level Recreate or Duplicate/Edit on this stack.
+# To apply infrastructure changes, modify this file, commit, and push. Portainer 
+# will automatically pull the changes and redeploy the stack. Do not use SSH 
+# (`docker compose up`) to deploy this stack, as it will conflict with Portainer.
 #
 # Secrets stay out of git: they are set as stack environment variables in
 # Portainer, not in this file.
@@ -98,7 +91,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 valy-medusa
+    command: --cleanup --interval 300 valy-medusa
     environment:
       - TZ=${TZ:-Asia/Kolkata}
       - WATCHTOWER_LOG_FORMAT=Pretty
