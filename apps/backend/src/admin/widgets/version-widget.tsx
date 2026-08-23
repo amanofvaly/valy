@@ -6,7 +6,7 @@ const VersionWidget = () => {
   const [version, setVersion] = useState<any>(null)
 
   useEffect(() => {
-    fetch("/store/version")
+    fetch("/version")
       .then((res) => res.json())
       .then(setVersion)
       .catch(console.error)
