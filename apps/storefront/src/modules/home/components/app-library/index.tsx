@@ -1,7 +1,6 @@
-import { APP_COUNT_WORD } from "@lib/data/self-hosted-apps"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Button } from "@modules/common/components/ui"
-import { Aside, Section, SectionHeading } from "@modules/home/components/section"
+import { Section, SectionHeading } from "@modules/home/components/section"
 
 import AppMachine from "./machine"
 
