@@ -48,10 +48,11 @@ jobs:
           {
             "commitSha": "${{ github.sha }}",
             "commitTime": "${{ github.event.head_commit.timestamp }}",
-            "commitMessage": ${{ toJSON(github.event.head_commit.message) }},
-            "deployTime": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            "commitMessage": ${{ toJSON(github.event.head_commit.message) }}
           }
           EOF
+          jq --arg dt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" '. + {deployTime: $dt}' apps/backend/version.json > apps/backend/version.json.tmp
+          mv apps/backend/version.json.tmp apps/backend/version.json
 
       # Tagged with the commit as well as latest, so the image running in
       # production can be traced back to a commit. `latest` is a moving
