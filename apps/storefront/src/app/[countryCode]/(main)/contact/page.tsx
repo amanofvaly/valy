@@ -2,37 +2,51 @@ import ContactForm from "@modules/contact/components/contact-form"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { PageHeader } from "@modules/content/components/prose"
 import { Section, SectionHeading } from "@modules/home/components/section"
+import { Envelope, Phone, User } from "@medusajs/icons"
 import { Metadata } from "next"
 
 /**
  * Contact.
- *
- * The page is built out of the homepage's chapter grammar rather than the
- * legal pages' single column: a red rule opening the chapter that matters, a
- * heading that carries itself with no label above it, hairline rules doing the
- * dividing, and mono reserved for the things that are actually data. What it
- * does not borrow is the homepage's red register — that ground belongs to the
- * one surface arguing against a subscription, and this one is a task.
- *
+
  * The composition is a decision about what a contact page is for. The form is
  * seven columns wide and opens the chapter, because writing the message is the
  * errand. The rail beside it exists for the visitor who would rather not use a
- * form at all: the address is set at heading scale, not buried in a sentence,
- * and the three facts under it are the ones that decide whether writing is even
- * necessary. The last chapter is the honest admission that most of what arrives
- * in the inbox is already answered on three other pages.
+ * form at all: name, email and phone sit at heading scale, and the three facts
+ * under them are the ones that decide whether writing is even necessary. The
+ * last chapter is the honest admission that most of what arrives in the inbox
+ * is already answered on three other pages.
  *
- * No address, no phone number, no office hours: publishing a fact nobody has
- * confirmed is worse than publishing nothing. Every figure on the page —
- * one working day, three years, seven days — is copy this site already commits
- * to in the terms and the assurance strip, restated in the same words.
+ * Every figure on the page — one working day, three years, seven days — is
+ * copy this site already commits to in the terms and the assurance strip,
+ * restated in the same words.
  */
 
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Write to Valy about a machine, an order, a warranty claim or whether a part fits. A person answers within one working day, or write to support@valy.in directly.",
+    "Write to Valy about a machine, an order, a warranty claim or whether a part fits. A person answers within one working day — Aman Kumar, work.amankumar@gmail.com, +91 99717 79734.",
 }
+
+const DIRECT = [
+  {
+    label: "Name",
+    value: "Aman Kumar",
+    href: undefined as string | undefined,
+    Icon: User,
+  },
+  {
+    label: "Email",
+    value: "work.amankumar@gmail.com",
+    href: "mailto:work.amankumar@gmail.com",
+    Icon: Envelope,
+  },
+  {
+    label: "Phone",
+    value: "+91 99717 79734",
+    href: "tel:+919971779734",
+    Icon: Phone,
+  },
+]
 
 export const dynamic = "force-static"
 
@@ -90,14 +104,39 @@ export default function ContactPage() {
                 Or write to us directly.
               </h2>
 
-              <a
-                href="mailto:support@valy.in"
-                className="pressable mt-5 inline-block rounded text-xl font-semibold tracking-tight text-ink underline decoration-line-strong decoration-1 underline-offset-[6px] hover:text-accent hover:decoration-accent sm:text-2xl"
-              >
-                support@valy.in
-              </a>
+              <ul className="mt-5 flex flex-col gap-4">
+                {DIRECT.map(({ label, value, href, Icon }) => {
+                  const content = (
+                    <>
+                      <Icon
+                        aria-hidden
+                        className="mt-0.5 shrink-0 text-muted"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-xs text-muted">{label}</span>
+                        <span className="mt-0.5 block break-all text-base font-medium tracking-tight text-ink sm:text-lg">
+                          {value}
+                        </span>
+                      </span>
+                    </>
+                  )
 
-             
+                  return (
+                    <li key={label}>
+                      {href ? (
+                        <a
+                          href={href}
+                          className="pressable flex items-start gap-3 rounded hover:[&_span:last-child]:text-accent"
+                        >
+                          {content}
+                        </a>
+                      ) : (
+                        <div className="flex items-start gap-3">{content}</div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
 
               <dl className="mt-8 border-t border-line">
                 {FACTS.map((fact) => (

@@ -1,6 +1,7 @@
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { Envelope, Phone, User } from "@medusajs/icons"
 
 /**
  * The footer.
@@ -9,6 +10,24 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * the moment it is published, without a redeploy. Both reads are unrelated, so
  * they go out together rather than one after the other.
  */
+
+const CONTACT = [
+  {
+    label: "Aman Kumar",
+    href: undefined as string | undefined,
+    Icon: User,
+  },
+  {
+    label: "work.amankumar@gmail.com",
+    href: "mailto:work.amankumar@gmail.com",
+    Icon: Envelope,
+  },
+  {
+    label: "+91 99717 79734",
+    href: "tel:+919971779734",
+    Icon: Phone,
+  },
+]
 
 const LEARN_LINKS = [
   { href: "/compatibility", label: "What fits what" },
@@ -48,9 +67,34 @@ export default async function Footer() {
           </p>
           {/*
            * Contact sits with the brand rather than in a link column: it is the
-           * one footer link someone goes looking for, and the columns beside it
-           * are catalogue and policy, which is neither.
+           * one thing someone goes looking for, and the columns beside it are
+           * catalogue and policy, which is neither.
            */}
+          <ul className="mt-1 flex flex-col gap-2.5">
+            {CONTACT.map(({ label, href, Icon }) => {
+              const className =
+                "pressable flex w-fit items-center gap-2 rounded text-sm text-ink"
+
+              const content = (
+                <>
+                  <Icon aria-hidden className="shrink-0 text-muted" />
+                  <span>{label}</span>
+                </>
+              )
+
+              return (
+                <li key={label}>
+                  {href ? (
+                    <a href={href} className={`${className} hover:text-accent`}>
+                      {content}
+                    </a>
+                  ) : (
+                    <div className={className}>{content}</div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
           <LocalizedClientLink
             href="/contact"
             className="pressable w-fit rounded text-sm font-medium text-ink underline decoration-line-strong decoration-1 underline-offset-4 hover:text-accent hover:decoration-accent"
