@@ -28,6 +28,7 @@ import { Suspense } from "react"
  */
 
 const NAV_LINKS = [
+  { href: "/store", label: "All Products" },
   { href: "/categories/machines", label: "Machines" },
   { href: "/categories/parts", label: "Parts" },
   { href: "/categories/services", label: "Services" },

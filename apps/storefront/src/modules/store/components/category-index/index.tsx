@@ -29,10 +29,8 @@ export default async function CategoryIndex() {
   }
 
   return (
-    <nav aria-labelledby="browse-catalogue" className="border-y border-line py-8">
-      <h2 id="browse-catalogue" className="mb-5 text-xs font-medium text-ink">
-        Browse
-      </h2>
+    <nav aria-labelledby="browse-catalogue" className="border-t border-line pt-8">
+      
 
       {/*
        * Multi-column rather than grid: categories have wildly different numbers

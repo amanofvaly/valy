@@ -51,7 +51,7 @@ const OptionsPicker = ({ facets }: OptionsPickerProps) => {
         data-facets-label
         className="flex items-center justify-between"
       >
-        <span className="text-xs font-medium text-ink">Filter</span>
+        
         {selectedValueIds.length > 0 && (
           <button
             type="button"

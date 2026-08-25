@@ -18,10 +18,6 @@ import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-g
 /**
  * One browse page, used by `/store`, every category and every collection.
  *
- * The three of them were three near-identical templates that had already
- * drifted — the category one hid the facets, the store one had no breadcrumb,
- * and only one of them rendered a description. They are the same page with
- * different arguments, so they are now the same page.
  *
  * Everything above the grid — heading, breadcrumb, description, subcategory
  * links, the filter rail — is structure the server sends immediately. Only the
@@ -76,11 +72,7 @@ export default function BrowsePage({
       <header className="mb-8 flex flex-col gap-3 lg:mb-10">
         {!!crumbs.length && (
           <nav aria-label="Breadcrumb">
-            {/*
-             * The separator goes *between* crumbs, and the current page is the
-             * last one. Rendering a slash after every crumb left the trail
-             * ending in "Parts /" with nothing after it.
-             */}
+            {}
             <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               {[...crumbs, { label: title }].map((crumb, i) => (
                 <li key={crumb.label} className="flex items-center gap-2">

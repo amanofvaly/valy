@@ -23,8 +23,8 @@ const StoreTemplate = ({
   optionValueIds?: OptionValueIds
 }) => (
   <BrowsePage
-    title="Everything we sell"
-    description="Five machines, the drives and memory and cards that fit them, and the setup work that means the thing arrives finished. Prices include GST."
+    title="All Products"
+    description="Preconfigured servers, storage, cases, network parts, and a lot more to setup your homelab."
     sortBy={sortBy}
     page={page}
     countryCode={countryCode}

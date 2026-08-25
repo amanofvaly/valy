@@ -4,9 +4,9 @@ import StoreTemplate from "@modules/store/templates"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Everything we sell",
+  title: "All Products",
   description:
-    "Machines, the parts that fit them, and the setup work. Prices include GST, invoiced from Delhi.",
+    "Preconfigured servers, storage, cases, network parts, and a lot more to setup your homelab.",
 }
 
 type Props = {
