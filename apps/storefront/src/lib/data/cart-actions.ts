@@ -225,6 +225,9 @@ export async function submitPromotionForm(
  * `subscribers/order-placed.ts`.
  */
 export async function setAddresses(_currentState: unknown, formData: FormData) {
+  let updatedCart: HttpTypes.StoreCart
+  let countryCode: string
+
   try {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
@@ -236,6 +239,15 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       throw new Error("No existing cart found when setting addresses")
     }
 
+    countryCode = text(
+      formData,
+      "shipping_address.country_code"
+    ).toLowerCase()
+
+    if (!countryCode) {
+      throw new Error("Please select a delivery country")
+    }
+
     const shippingAddress = {
       first_name: text(formData, "shipping_address.first_name"),
       last_name: text(formData, "shipping_address.last_name"),
@@ -244,7 +256,7 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       company: text(formData, "shipping_address.company"),
       postal_code: text(formData, "shipping_address.postal_code"),
       city: text(formData, "shipping_address.city"),
-      country_code: text(formData, "shipping_address.country_code"),
+      country_code: countryCode,
       province: text(formData, "shipping_address.province"),
       phone: text(formData, "shipping_address.phone"),
     }
@@ -278,7 +290,7 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       },
     }
 
-    await updateCart(data)
+    updatedCart = await updateCart(data)
 
     if (formData.get("save_address") === "on") {
       await saveCheckoutAddressToAccount(shippingAddress)
@@ -287,9 +299,10 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
     return e instanceof Error ? e.message : String(e)
   }
 
-  redirect(
-    `/${text(formData, "shipping_address.country_code")}/checkout?step=delivery`
-  )
+  return {
+    cart: updatedCart,
+    countryCode,
+  }
 }
 
 /**
