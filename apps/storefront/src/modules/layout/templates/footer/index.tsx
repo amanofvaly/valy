@@ -12,11 +12,7 @@ import { Envelope, Phone, User } from "@medusajs/icons"
  */
 
 const CONTACT = [
-  {
-    label: "Aman Kumar",
-    href: undefined as string | undefined,
-    Icon: User,
-  },
+  
   {
     label: "work.amankumar@gmail.com",
     href: "mailto:work.amankumar@gmail.com",

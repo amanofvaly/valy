@@ -24,20 +24,15 @@ import { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Write to Valy about a machine, an order, a warranty claim or whether a part fits. A person answers within one working day — Aman Kumar, work.amankumar@gmail.com, +91 99717 79734.",
+    "Write to us about a machine, an order, a warranty claim or whether a part fits.",
 }
 
 const DIRECT = [
-  {
-    label: "Name",
-    value: "Aman Kumar",
-    href: undefined as string | undefined,
-    Icon: User,
-  },
+  
   {
     label: "Email",
-    value: "work.amankumar@gmail.com",
-    href: "mailto:work.amankumar@gmail.com",
+    value: "support@valy.in",
+    href: "mailto:support@valy.in",
     Icon: Envelope,
   },
   {
