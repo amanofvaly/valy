@@ -13,8 +13,8 @@ import { Envelope, Phone } from "@medusajs/icons"
 
 const CONTACT = [
   {
-    label: "work.amankumar@gmail.com",
-    href: "mailto:work.amankumar@gmail.com",
+    label: "support@valy.in",
+    href: "mailto:support@valy.in",
     Icon: Envelope,
   },
   {
