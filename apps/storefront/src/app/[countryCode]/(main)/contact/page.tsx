@@ -2,7 +2,7 @@ import ContactForm from "@modules/contact/components/contact-form"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { PageHeader } from "@modules/content/components/prose"
 import { Section, SectionHeading } from "@modules/home/components/section"
-import { Envelope, Phone, User } from "@medusajs/icons"
+import { Envelope, Phone } from "@medusajs/icons"
 import { Metadata } from "next"
 
 /**
@@ -11,7 +11,7 @@ import { Metadata } from "next"
  * The composition is a decision about what a contact page is for. The form is
  * seven columns wide and opens the chapter, because writing the message is the
  * errand. The rail beside it exists for the visitor who would rather not use a
- * form at all: name, email and phone sit at heading scale, and the three facts
+ * form at all: email and phone sit at heading scale, and the three facts
  * under them are the ones that decide whether writing is even necessary. The
  * last chapter is the honest admission that most of what arrives in the inbox
  * is already answered on three other pages.
@@ -28,7 +28,6 @@ export const metadata: Metadata = {
 }
 
 const DIRECT = [
-  
   {
     label: "Email",
     value: "support@valy.in",

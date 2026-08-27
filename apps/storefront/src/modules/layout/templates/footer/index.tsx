@@ -1,7 +1,7 @@
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { Envelope, Phone, User } from "@medusajs/icons"
+import { Envelope, Phone } from "@medusajs/icons"
 
 /**
  * The footer.
@@ -12,7 +12,6 @@ import { Envelope, Phone, User } from "@medusajs/icons"
  */
 
 const CONTACT = [
-  
   {
     label: "work.amankumar@gmail.com",
     href: "mailto:work.amankumar@gmail.com",
