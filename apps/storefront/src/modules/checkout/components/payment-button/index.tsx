@@ -40,7 +40,11 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
       )
     default:
-      return <Button disabled>Select a payment method</Button>
+      return (
+        <Button variant="action" disabled>
+          Select a payment method
+        </Button>
+      )
   }
 }
 
@@ -135,6 +139,9 @@ const StripePaymentButton = ({
   return (
     <>
       <Button
+        variant="action"
+        block
+        className="lg:w-auto"
         disabled={disabled || notReady}
         onClick={handlePayment}
         size="large"
@@ -174,6 +181,9 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   return (
     <>
       <Button
+        variant="action"
+        block
+        className="lg:w-auto"
         disabled={notReady}
         isLoading={submitting}
         onClick={handlePayment}

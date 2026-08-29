@@ -35,7 +35,9 @@ export default function Error({
       title="We could not load that."
       actions={
         <>
-          <Button onClick={reset}>Try again</Button>
+          <Button variant="action-outline" onClick={reset}>
+            Try again
+          </Button>
           <Button asChild variant="secondary">
             <LocalizedClientLink href="/getting-started">
               Read something instead

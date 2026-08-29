@@ -4,6 +4,7 @@ import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart-actions"
 import { CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import StepActions from "@modules/checkout/components/step-actions"
 import Step from "@modules/checkout/components/step"
 import PaymentContainer, {
   StripeCardContainer,
@@ -49,11 +50,15 @@ const Payment = ({
   }
 
   const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards && ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])?.length > 0 && cart?.total === 0
+    (cart as unknown as Record<string, unknown>)?.gift_cards &&
+    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
+      ?.length > 0 &&
+    cart?.total === 0
   )
 
   const paymentReady =
-    (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) || paidByGiftcard
+    (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
+    paidByGiftcard
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -141,15 +146,21 @@ const Payment = ({
           {paidByGiftcard && (
             <div className="flex flex-col gap-0.5">
               <p className="text-xs font-medium text-ink">Payment method</p>
-              <p className="text-sm text-muted" data-testid="payment-method-summary">
+              <p
+                className="text-sm text-muted"
+                data-testid="payment-method-summary"
+              >
                 Gift card
               </p>
             </div>
           )}
 
-          <div>
+          <StepActions>
             <Button
+              variant="action"
               size="large"
+              block
+              className="lg:w-auto"
               onClick={handleSubmit}
               isLoading={isLoading}
               disabled={
@@ -166,7 +177,7 @@ const Payment = ({
               error={error}
               data-testid="payment-method-error-message"
             />
-          </div>
+          </StepActions>
         </div>
       ) : cart && paymentReady && activeSession ? (
         <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2">
@@ -195,7 +206,10 @@ const Payment = ({
       ) : paidByGiftcard ? (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs font-medium text-ink">Payment method</p>
-          <p className="text-sm text-muted" data-testid="payment-method-summary">
+          <p
+            className="text-sm text-muted"
+            data-testid="payment-method-summary"
+          >
             Gift card
           </p>
         </div>

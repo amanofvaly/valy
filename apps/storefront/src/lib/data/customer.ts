@@ -24,7 +24,18 @@ export const retrieveCustomer = cache(
     return sdk.client
       .fetch<{ customer: HttpTypes.StoreCustomer }>(`/store/customers/me`, {
         method: "GET",
-        query: { fields: "*orders" },
+        /*
+         * `*addresses` as well as `*orders`.
+         *
+         * `fields` replaces the default selection rather than adding to it, so
+         * asking for orders alone meant the customer came back without an
+         * address book. Everything that reads `customer.addresses` — the
+         * account overview's count, the default-billing lookup, and checkout's
+         * offer to reuse a saved address — saw an empty list for a customer
+         * who had several, and checkout put a blank form in front of someone
+         * whose address it already held.
+         */
+        query: { fields: "*orders,*addresses" },
         headers: authHeaders,
         cache: "no-store",
       })

@@ -1,24 +1,23 @@
 "use client"
 
 import { setAddresses } from "@lib/data/cart-actions"
-import useToggleState from "@lib/hooks/use-toggle-state"
-import compareAddresses from "@lib/util/compare-addresses"
 import { HttpTypes } from "@medusajs/types"
 import Step from "@modules/checkout/components/step"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useActionState, useEffect } from "react"
-import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
+import StepActions from "../step-actions"
 import { SubmitButton } from "../submit-button"
 
 /**
- * Step one: where it goes, who to invoice, and the GSTIN.
+ * Step one: where it goes.
  *
- * The two GSTIN inputs — one on each address — collapse into
- * `cart.metadata.gstin` in `setAddresses`, with billing winning. That is the
- * entity the invoice is raised against, which is also what the backend derives
- * `is_b2b` from.
+ * There is no separate billing address and no checkbox offering one. The
+ * invoice is raised against the delivery address, which is what it was for
+ * every order this store has taken; the alternative was a checkbox that
+ * unfolded a second copy of the longest form on the site, one step before
+ * paying, to serve a case nobody had asked for.
  */
 const Addresses = ({
   cart,
@@ -30,12 +29,6 @@ const Addresses = ({
   const searchParams = useSearchParams()
   const router = useRouter()
   const isOpen = searchParams.get("step") === "address"
-
-  const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
-    cart?.shipping_address && cart?.billing_address
-      ? compareAddresses(cart.shipping_address, cart.billing_address)
-      : true
-  )
 
   const [message, formAction] = useActionState(setAddresses, null)
   const submittedCart =
@@ -67,35 +60,26 @@ const Addresses = ({
     >
       {isOpen ? (
         <form action={formAction} className="flex flex-col gap-2">
-          <ShippingAddress
-            customer={customer}
-            checked={sameAsBilling}
-            onChange={toggleSameAsBilling}
-            cart={cart}
-          />
+          <ShippingAddress customer={customer} cart={cart} />
 
-          {!sameAsBilling && (
-            <div className="mb-6 flex flex-col gap-4">
-              <h3 className="text-base font-medium text-ink">
-                Billing address
-              </h3>
-              <BillingAddress cart={cart} />
-            </div>
-          )}
-
-          <div>
-            <SubmitButton size="large" data-testid="submit-address-button">
+          <StepActions>
+            <SubmitButton
+              variant="action"
+              size="large"
+              className="w-full lg:w-auto"
+              data-testid="submit-address-button"
+            >
               Continue to delivery
             </SubmitButton>
             <ErrorMessage
               error={typeof message === "string" ? message : null}
               data-testid="address-error-message"
             />
-          </div>
+          </StepActions>
         </form>
       ) : (
         currentCart?.shipping_address && (
-          <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2">
             <div
               className="flex flex-col gap-0.5"
               data-testid="shipping-address-summary"
@@ -129,38 +113,6 @@ const Addresses = ({
                 {currentCart.shipping_address.phone}
                 <br />
                 {currentCart.email}
-              </dd>
-            </div>
-
-            <div
-              className="flex flex-col gap-0.5"
-              data-testid="billing-address-summary"
-            >
-              <dt className="text-xs font-medium text-ink">Invoice to</dt>
-              <dd className="text-muted">
-                {sameAsBilling ? (
-                  "Same as the delivery address."
-                ) : (
-                  <>
-                    {currentCart.billing_address?.first_name}{" "}
-                    {currentCart.billing_address?.last_name}
-                    <br />
-                    {currentCart.billing_address?.address_1}
-                    <br />
-                    {currentCart.billing_address?.city}{" "}
-                    {currentCart.billing_address?.postal_code}
-                    <br />
-                    {currentCart.billing_address?.country_code?.toUpperCase()}
-                  </>
-                )}
-                {!!currentCart.metadata?.gstin && (
-                  <>
-                    <br />
-                    <span className="font-mono text-xs text-ink">
-                      GSTIN {String(currentCart.metadata.gstin)}
-                    </span>
-                  </>
-                )}
               </dd>
             </div>
           </dl>

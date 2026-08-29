@@ -3,6 +3,7 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useOptimisticCart } from "@modules/cart/context/optimistic-cart"
 import { cn } from "@lib/util/cn"
+import { useHeaderStatus } from "@modules/layout/components/header-status"
 
 /**
  * `Cart (3)`, where the 3 already counts the thing you just pressed add on.
@@ -12,12 +13,27 @@ import { cn } from "@lib/util/cn"
  */
 const CartCount = ({ serverCount }: { serverCount: number }) => {
   const { delta } = useOptimisticCart()
+  /*
+   * The cart gives up its slot on a phone whenever a page has claimed the
+   * header. It is a link out of a page the reader is halfway through, showing
+   * a count that stays zero until they finish it, and the row it occupies is
+   * the one place the page has to say what is being built. From `lg` there is
+   * room for both and nothing changes.
+   *
+   * Asked of the header store rather than of the pathname: the page that needs
+   * the room is the page that says so, and a list of route patterns in the
+   * cart button would be a second place to keep that fact.
+   */
+  const claimed = useHeaderStatus() !== null
   const count = serverCount + delta
 
   return (
     <LocalizedClientLink
       href="/cart"
-      className="pressable-tint rounded px-3 py-2 text-sm text-muted hover:text-ink"
+      className={cn(
+        "pressable-tint shrink-0 rounded px-3 py-2 text-sm text-muted hover:text-ink",
+        claimed && "hidden lg:inline-flex"
+      )}
       data-testid="nav-cart-link"
     >
       Cart

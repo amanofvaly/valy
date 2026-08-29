@@ -51,6 +51,7 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
       {status?.accept !== "success" && status?.decline !== "success" && (
         <div className="flex gap-x-4">
           <Button
+            variant="action"
             size="large"
             onClick={acceptTransfer}
             isLoading={status?.accept === "pending"}

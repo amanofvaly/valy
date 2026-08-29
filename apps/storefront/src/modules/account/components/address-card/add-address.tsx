@@ -132,7 +132,10 @@ const AddAddress = ({
               <Input
                 label="Phone"
                 name="phone"
-                autoComplete="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                required
                 data-testid="phone-input"
               />
             </div>
@@ -156,7 +159,9 @@ const AddAddress = ({
               >
                 Cancel
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton variant="action-outline" data-testid="save-button">
+                Save
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

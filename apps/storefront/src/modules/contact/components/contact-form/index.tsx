@@ -336,6 +336,7 @@ const ContactForm = () => {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
           <Button
+            variant="action"
             type="submit"
             size="large"
             isLoading={isPending}

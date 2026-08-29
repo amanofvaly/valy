@@ -78,6 +78,11 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                 autoFocus={false}
                 data-testid="discount-input"
               />
+              {/*
+               * Not blue. It sits on the same screen as "Go to checkout",
+               * which is the action, and a second gradient beside it would put
+               * a coupon field level with the purchase.
+               */}
               <SubmitButton
                 variant="secondary"
                 data-testid="discount-apply-button"

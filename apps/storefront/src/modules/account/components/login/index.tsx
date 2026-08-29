@@ -5,6 +5,7 @@ import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
+import { useParams } from "next/navigation"
 import { useActionState } from "react"
 
 /**
@@ -16,13 +17,20 @@ import { useActionState } from "react"
  */
 const Login = ({
   setCurrentView,
+  redirectTo,
 }: {
   setCurrentView: (view: LOGIN_VIEW) => void
+  /** A path on this site, without the country prefix. */
+  redirectTo?: string
 }) => {
+  const { countryCode } = useParams() as { countryCode?: string }
   const [message, formAction] = useActionState(login, null)
 
   return (
-    <div className="flex w-full max-w-sm flex-col gap-6" data-testid="login-page">
+    <div
+      className="flex w-full max-w-sm flex-col gap-6"
+      data-testid="login-page"
+    >
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           Sign in
@@ -44,6 +52,19 @@ const Login = ({
       )}
 
       <form className="flex flex-col gap-4" action={formAction}>
+        {/*
+         * Localised here rather than by the caller: the prompt that sent us
+         * knows which page it wants back, and this form knows which country's
+         * copy of it the customer is in.
+         */}
+        {redirectTo && (
+          <input
+            type="hidden"
+            name="redirect"
+            value={countryCode ? `/${countryCode}${redirectTo}` : redirectTo}
+          />
+        )}
+
         <Input
           label="Email"
           name="email"
@@ -67,7 +88,12 @@ const Login = ({
           data-testid="login-error-message"
         />
 
-        <SubmitButton size="large" data-testid="sign-in-button" className="w-full">
+        <SubmitButton
+          variant="action"
+          size="large"
+          data-testid="sign-in-button"
+          className="w-full"
+        >
           Sign in
         </SubmitButton>
       </form>

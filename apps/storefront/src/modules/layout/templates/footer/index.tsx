@@ -57,8 +57,8 @@ export default async function Footer() {
             Valy Homelabs
           </LocalizedClientLink>
           <p className="max-w-xs text-sm leading-6 text-muted">
-            Home Servers for everyone. Keep your photographs and your films
-            and your work on hardware you own.
+            Home Servers for everyone. Keep your photographs and your films and
+            your work on hardware you own.
           </p>
           {/*
            * Contact sits with the brand rather than in a link column: it is the
@@ -144,8 +144,13 @@ export default async function Footer() {
 
       {/*
        * The four promises, restated where someone checks them: at the point of
-       * deciding whether this is a real company. Wording matches the assurance
-       * strip on the homepage because both are commitments, not marketing.
+       * deciding whether this is a real company. These four used to open the
+       * homepage as well; that band now carries the argument instead, so this
+       * is the only place on the site they are stated in short form.
+       *
+       * The icon credit sits with them because CC BY 4.0 requires attribution
+       * and a colophon line is where a licence notice belongs — not beside the
+       * marks themselves, which are decoration.
        */}
       <div className="border-t border-line">
         <div className="container-page flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
@@ -156,7 +161,16 @@ export default async function Footer() {
             <li>7-day returns</li>
           </ul>
           <p className="text-2xs text-muted">
-            © {new Date().getFullYear()} Valy Homelabs
+            Icons by{" "}
+            <a
+              href="https://www.streamlinehq.com/icons/flex-gradient-free"
+              rel="noreferrer nofollow"
+              target="_blank"
+              className="underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+            >
+              Streamline
+            </a>{" "}
+            (CC BY 4.0) · © {new Date().getFullYear()} Valy Homelabs
           </p>
         </div>
       </div>

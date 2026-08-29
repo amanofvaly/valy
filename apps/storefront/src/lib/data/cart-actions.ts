@@ -204,7 +204,13 @@ export async function updateLineItem({
   }
 
   await sdk.store.cart
-    .updateLineItem(cartId, lineId, { quantity }, {}, { ...(await getAuthHeaders()) })
+    .updateLineItem(
+      cartId,
+      lineId,
+      { quantity },
+      {},
+      { ...(await getAuthHeaders()) }
+    )
     .then(refreshCartSurfaces)
     .catch(medusaError)
 }
@@ -323,13 +329,14 @@ export async function submitPromotionForm(
 }
 
 /**
- * Writes the checkout address onto the cart, and the GSTIN into
- * `cart.metadata`.
+ * Writes the checkout address onto the cart.
  *
- * Two inputs collapse into one value here — billing wins, because that is the
- * entity the invoice is raised against. The backend validates the format in
- * `workflows/cart-validate.ts` and derives `is_b2b` in
- * `subscribers/order-placed.ts`.
+ * It used to also collapse two GSTIN inputs into `cart.metadata.gstin`, with
+ * billing winning. Checkout no longer asks for one, so nothing is written: the
+ * fields are gone and an action that kept sending the key would write null
+ * over whatever was already there. The backend's format validation in
+ * `workflows/cart-validate.ts` and the `is_b2b` derivation in
+ * `subscribers/order-placed.ts` still stand for any GSTIN set another way.
  */
 export async function setAddresses(_currentState: unknown, formData: FormData) {
   let updatedCart: HttpTypes.StoreCart
@@ -346,10 +353,7 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       throw new Error("No existing cart found when setting addresses")
     }
 
-    countryCode = text(
-      formData,
-      "shipping_address.country_code"
-    ).toLowerCase()
+    countryCode = text(formData, "shipping_address.country_code").toLowerCase()
 
     if (!countryCode) {
       throw new Error("Please select a delivery country")
@@ -360,7 +364,6 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       last_name: text(formData, "shipping_address.last_name"),
       address_1: text(formData, "shipping_address.address_1"),
       address_2: "",
-      company: text(formData, "shipping_address.company"),
       postal_code: text(formData, "shipping_address.postal_code"),
       city: text(formData, "shipping_address.city"),
       country_code: countryCode,
@@ -368,33 +371,16 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
       phone: text(formData, "shipping_address.phone"),
     }
 
-    const sameAsBilling = formData.get("same_as_billing") === "on"
-
+    /*
+     * One address. Checkout collects a delivery address and bills to it, so
+     * there is no `same_as_billing` to read and no second set of fields to
+     * fall back to — the cart still carries both because the API expects
+     * both, and they are the same object.
+     */
     const data: HttpTypes.StoreUpdateCart = {
       shipping_address: shippingAddress,
-      billing_address: sameAsBilling
-        ? shippingAddress
-        : {
-            first_name: text(formData, "billing_address.first_name"),
-            last_name: text(formData, "billing_address.last_name"),
-            address_1: text(formData, "billing_address.address_1"),
-            address_2: "",
-            company: text(formData, "billing_address.company"),
-            postal_code: text(formData, "billing_address.postal_code"),
-            city: text(formData, "billing_address.city"),
-            country_code: text(formData, "billing_address.country_code"),
-            province: text(formData, "billing_address.province"),
-            phone: text(formData, "billing_address.phone"),
-          },
+      billing_address: shippingAddress,
       email: text(formData, "email"),
-      metadata: {
-        // Billing wins: that is the entity the invoice is raised against, and
-        // the backend derives `is_b2b` from it.
-        gstin:
-          text(formData, "billing_address.gstin") ||
-          text(formData, "shipping_address.gstin") ||
-          null,
-      },
     }
 
     updatedCart = await updateCart(data)

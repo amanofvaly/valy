@@ -228,6 +228,48 @@
     );
   }
 
+  /*
+   * The same sweep, as an outline.
+   *
+   * There is no `border-image` that survives a rounded corner, so the border is
+   * transparent and two backgrounds are painted through it: a flat paper fill
+   * clipped to the padding box, and the gradient clipped to the border box.
+   * What shows through the transparent border is the gradient; what shows
+   * inside it is paper. The order matters — the fill is listed first because
+   * the first background paints on top.
+   *
+   * The consequence to know: the fill is paper, so this belongs on paper. On
+   * surface or ink the inside of the button stays white and it reads as a
+   * filled button of the wrong colour. `--action-outline-fill` is there for a
+   * call site that has to put one on another ground.
+   */
+  .action-outline-surface {
+    border-color: transparent;
+    background-image: linear-gradient(
+        rgb(var(--action-outline-fill, var(--paper))),
+        rgb(var(--action-outline-fill, var(--paper)))
+      ),
+      linear-gradient(
+        100deg,
+        rgb(var(--action-from)) 0%,
+        rgb(var(--action-to)) 100%
+      );
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  .action-outline-surface:hover {
+    background-image: linear-gradient(
+        rgb(var(--accent-wash)),
+        rgb(var(--accent-wash))
+      ),
+      linear-gradient(
+        100deg,
+        rgb(var(--action-from-strong)) 0%,
+        rgb(var(--action-to-strong)) 100%
+      );
+  }
+
   .app-mark {
     color: var(--app-brand);
   }

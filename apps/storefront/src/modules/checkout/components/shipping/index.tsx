@@ -11,6 +11,7 @@ import {
 import { Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import StepActions from "@modules/checkout/components/step-actions"
 import Step from "@modules/checkout/components/step"
 import MedusaRadio from "@modules/common/components/radio"
 import { Button, clx } from "@modules/common/components/ui"
@@ -76,7 +77,16 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const _shippingMethods = availableShippingMethods?.filter(
     (sm) =>
-      (sm as unknown as { service_zone?: { fulfillment_set?: { type?: string; location?: { address: HttpTypes.StoreCartAddress } } } }).service_zone?.fulfillment_set?.type !== "pickup" &&
+      (
+        sm as unknown as {
+          service_zone?: {
+            fulfillment_set?: {
+              type?: string
+              location?: { address: HttpTypes.StoreCartAddress }
+            }
+          }
+        }
+      ).service_zone?.fulfillment_set?.type !== "pickup" &&
       // An option whose fulfillment provider is no longer registered can never
       // be fulfilled, so it is pure noise for the customer. The admin health
       // check is what surfaces it to the merchant.
@@ -85,7 +95,17 @@ const Shipping: React.FC<ShippingProps> = ({
   )
 
   const _pickupMethods = availableShippingMethods?.filter(
-    (sm) => (sm as unknown as { service_zone?: { fulfillment_set?: { type?: string; location?: { address: HttpTypes.StoreCartAddress } } } }).service_zone?.fulfillment_set?.type === "pickup"
+    (sm) =>
+      (
+        sm as unknown as {
+          service_zone?: {
+            fulfillment_set?: {
+              type?: string
+              location?: { address: HttpTypes.StoreCartAddress }
+            }
+          }
+        }
+      ).service_zone?.fulfillment_set?.type === "pickup"
   )
 
   const hasPickupOptions = !!_pickupMethods?.length
@@ -377,7 +397,17 @@ const Shipping: React.FC<ShippingProps> = ({
                         <span className="text-sm text-ink">{option.name}</span>
                         <span className="text-xs text-muted">
                           {formatAddress(
-                            (option as unknown as { service_zone?: { fulfillment_set?: { location?: { address: HttpTypes.StoreCartAddress } } } }).service_zone?.fulfillment_set?.location
+                            (
+                              option as unknown as {
+                                service_zone?: {
+                                  fulfillment_set?: {
+                                    location?: {
+                                      address: HttpTypes.StoreCartAddress
+                                    }
+                                  }
+                                }
+                              }
+                            ).service_zone?.fulfillment_set?.location
                               ?.address as HttpTypes.StoreCartAddress
                           )}
                         </span>
@@ -395,9 +425,12 @@ const Shipping: React.FC<ShippingProps> = ({
             </div>
           )}
 
-          <div>
+          <StepActions>
             <Button
+              variant="action"
               size="large"
+              block
+              className="lg:w-auto"
               onClick={handleSubmit}
               isLoading={isLoading}
               disabled={!cart.shipping_methods?.[0]}
@@ -409,7 +442,7 @@ const Shipping: React.FC<ShippingProps> = ({
               error={error}
               data-testid="delivery-option-error-message"
             />
-          </div>
+          </StepActions>
         </div>
       ) : (
         savedMethod && (
@@ -429,9 +462,10 @@ const Shipping: React.FC<ShippingProps> = ({
                 saved state shows the same promise the option did — read from
                 the method itself, not recomputed. */}
             {(() => {
-              const methodData = savedMethod.data as
-                | { courier_name?: string; estimated_delivery_days?: number }
-                | null
+              const methodData = savedMethod.data as {
+                courier_name?: string
+                estimated_delivery_days?: number
+              } | null
               const detail = [
                 formatDeliveryEstimate(methodData?.estimated_delivery_days),
                 methodData?.courier_name,

@@ -4,6 +4,10 @@ import { listRegions } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
 import CountrySelect from "@modules/layout/components/country-select"
+import {
+  HeaderStatusDetail,
+  HeaderWordmark,
+} from "@modules/layout/components/header-status"
 import LanguageSelect from "@modules/layout/components/language-select"
 import SideMenu from "@modules/layout/components/side-menu"
 import { Suspense } from "react"
@@ -61,12 +65,18 @@ export default function Nav() {
           </SideMenu>
         </div>
 
+        {/*
+         * The wordmark, unless a page has claimed the header — on a phone the
+         * Flow configurator replaces it with the machine's name, because a
+         * reader seven decisions into a build does not need to be told which
+         * site they are on, and the row is the only one they get.
+         */}
         <LocalizedClientLink
           href="/"
-          className="pressable -ml-1 rounded px-1 text-lg font-semibold tracking-tight text-ink"
+          className="pressable -ml-1 shrink-0 rounded px-1 text-lg font-semibold tracking-tight text-ink"
           data-testid="nav-store-link"
         >
-          Valy
+          <HeaderWordmark />
         </LocalizedClientLink>
 
         <ul className="ml-4 hidden items-center gap-1 lg:flex">
@@ -83,7 +93,14 @@ export default function Nav() {
           ))}
         </ul>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex min-w-0 items-center gap-1">
+          {/*
+           * A page's running detail, where the cart link would be. It renders
+           * nothing on every route that has not claimed the header, so this is
+           * the cart's slot as before on all of them.
+           */}
+          <HeaderStatusDetail />
+
           <LocalizedClientLink
             href="/account"
             className="pressable-tint hidden rounded px-3 py-2 text-sm text-muted hover:text-ink sm:inline-flex"

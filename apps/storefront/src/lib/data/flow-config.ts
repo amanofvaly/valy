@@ -71,7 +71,7 @@ export const FLOW_STAGES: FlowStage[] = [
       "i3 2 Bay":
         "Files, backups and a photo library, with room for two drives. The right machine if this is the first one you have owned.",
       "i5 3 Bay":
-        "More cores for running several services at once, and a third bay — which is what lets a pool survive a drive failure without giving up half its capacity.",
+        "More cores for running several services at once, and a third bay, which is what lets a pool survive a drive failure without giving up half its capacity.",
     },
   },
   {
@@ -281,7 +281,7 @@ export const totalTb = (drives: number, capacity: string | null): number =>
  * full, so the usable figures below are the pool's size, not a target to fill.
  */
 export const CAPACITY_FOOTNOTE =
-  "Figures are the pool's size in decimal terabytes, the way drives are sold. TrueNAS will report about 7 percent less — an 8TB drive shows as 7.28TiB — and ZFS wants headroom, so plan on filling to around 80 percent."
+  "Figures are the pool's size in decimal terabytes, the way drives are sold. TrueNAS reports about 7 percent less, so an 8TB drive shows as 7.28TiB, and ZFS wants headroom, so plan on filling to around 80 percent."
 
 /* -------------------------------------------------------------------------- */
 /*  Selection                                                                  */
@@ -355,9 +355,8 @@ const variantOf = (
 ): HttpTypes.StoreProductVariant | undefined =>
   products[handle]?.variants?.find((v) => v.title === title)
 
-export const priceOf = (
-  variant?: HttpTypes.StoreProductVariant
-): number => (variant?.calculated_price?.calculated_amount as number) ?? 0
+export const priceOf = (variant?: HttpTypes.StoreProductVariant): number =>
+  (variant?.calculated_price?.calculated_amount as number) ?? 0
 
 export type BuildLine = {
   variantId: string
@@ -404,7 +403,7 @@ export const buildLines = (
     })
   }
 
-  push("valy-flow", selection.kit, "kit", `Valy Flow — ${selection.kit}`)
+  push("valy-flow", selection.kit, "kit", `Valy Flow, ${selection.kit}`)
 
   const boot = products["flow-boot-media"]?.variants?.[0]
   if (boot?.title) {
@@ -432,7 +431,7 @@ export const buildLines = (
       "Storage pool and basic apps",
       "setup",
       layout
-        ? `Storage pool and basic apps — ${layout.name}`
+        ? `Storage pool and basic apps, ${layout.name}`
         : "Storage pool and basic apps"
     )
   }

@@ -293,6 +293,7 @@ export default function ProductActions({
         <ProductPrice product={product} variant={selectedVariant} />
 
         <Button
+          variant="action"
           size="large"
           block
           onClick={handleAddToCart}
@@ -353,6 +354,7 @@ export default function ProductActions({
           </div>
 
           <Button
+            variant="action"
             size="large"
             onClick={handleAddToCart}
             disabled={!inStock || !!disabled}

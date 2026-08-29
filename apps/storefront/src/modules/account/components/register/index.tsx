@@ -111,7 +111,12 @@ const Register = ({
           .
         </p>
 
-        <SubmitButton size="large" className="w-full" data-testid="register-button">
+        <SubmitButton
+          variant="action"
+          size="large"
+          className="w-full"
+          data-testid="register-button"
+        >
           Create account
         </SubmitButton>
       </form>

@@ -1,6 +1,11 @@
 import { cn } from "@lib/util/cn"
-import { cva } from "class-variance-authority"
-import { HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import {
+  HTMLAttributes,
+  TableHTMLAttributes,
+  TdHTMLAttributes,
+  ThHTMLAttributes,
+} from "react"
 
 /**
  * The presentational half of the primitive layer.
@@ -100,7 +105,18 @@ export const Eyebrow = ({
 export const buttonVariants = cva(
   [
     "relative inline-flex select-none items-center justify-center gap-2",
-    "whitespace-nowrap rounded font-medium",
+    /*
+     * Every button is a pill.
+     *
+     * The shape used to belong to `action` alone, on the argument that being
+     * the only round thing on the page was part of what made it the thing to
+     * press. That worked while it was one button on one page. Across a
+     * catalogue, a cart and a checkout it made two families instead: a round
+     * blue one and a squared-off black one that plainly came from somewhere
+     * else. The shape is the system's; what separates the ladder's rungs is
+     * colour and weight, which is a difference a reader can rank.
+     */
+    "whitespace-nowrap rounded-full font-medium",
     // Rung zero of the responsiveness contract: something happens on touch,
     // before any JavaScript or any network involvement.
     "pressable active:translate-y-px",
@@ -110,36 +126,56 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        /*
+         * The ladder, in the order a reader ranks it. Pick by what the control
+         * does, never by where it sits on the screen:
+         *
+         *   action          the thing the page exists for, and money changes
+         *                   hands or a build is committed. One per screen.
+         *   action-outline  a real action, second in line, or the same action
+         *                   in a place that is not the page's main event.
+         *   primary         going somewhere. The strongest navigation there is.
+         *   secondary       going somewhere less important, or backing out.
+         *   link            an aside, a footnote, an undo.
+         *
+         * Two blues on one screen is the failure this ordering exists to stop.
+         * If a second control is tempting you toward `action-outline` beside an
+         * `action`, it is usually navigation and belongs on `primary`.
+         */
         primary: "bg-ink text-paper hover:bg-ink/90 active:bg-ink/80",
         secondary:
           "bg-paper text-ink ring-1 ring-inset ring-line-strong hover:bg-surface active:bg-surface-strong",
         /** Alias kept for call sites that already say `outline`. */
         outline:
           "bg-paper text-ink ring-1 ring-inset ring-line-strong hover:bg-surface active:bg-surface-strong",
-        accent: "bg-accent text-paper hover:bg-accent-strong active:bg-accent-strong",
+        accent:
+          "bg-accent text-paper hover:bg-accent-strong active:bg-accent-strong",
         /*
-         * The one button on a page that is the reason the page exists — and at
-         * present that is "Buy your Flow" and nothing else.
-         *
-         * It is the only gradient in the system and the only blue in it, both
-         * of which are departures, so its scarcity is the whole point: a second
-         * one on the same screen makes neither of them mean anything. Red keeps
-         * its existing jobs (focus, selection, error, brand); this is not a
-         * replacement for it.
+         * The reason the page exists: buy, commit, pay, place the order.
          *
          * The ground is `.action-surface` in globals.css, where its two stops
-         * and their hover pair are defined together.
-         *
-         * A full pill, which is a third departure and belongs to the variant
-         * rather than to any call site — the shape is part of what makes this
-         * one button recognisable as the thing to press, and a squared-off
-         * version of it somewhere else would read as a different control. It
-         * overrides the base `rounded` through `cn`, whose twMerge keeps the
-         * later of two conflicting radii.
+         * and their hover pair are defined together. One to a screen — a second
+         * gradient makes neither of them mean anything, and the ladder above
+         * has a rung for whatever the second control actually is.
          */
         action:
-          "action-surface rounded-full text-paper shadow-[0_1px_2px_rgb(21_24_28/0.12)] active:brightness-95",
-        ghost: "bg-transparent text-ink hover:bg-surface active:bg-surface-strong",
+          "action-surface text-paper shadow-[0_1px_2px_rgb(21_24_28/0.12)] active:brightness-95",
+        /*
+         * The same sweep as a hairline, with the flat midpoint for the label.
+         *
+         * For an action that is genuinely an action and genuinely second: add
+         * to cart beside a configured build, save beside submit. It reads as
+         * the same family as `action` at a glance and as clearly the lesser of
+         * the two at a second glance, which is the whole job.
+         *
+         * `border` rather than `ring`, because the gradient is painted through
+         * the border box — see `.action-outline-surface`. It sits on paper; on
+         * a tinted ground set `--action-outline-fill` to that ground.
+         */
+        "action-outline":
+          "action-outline-surface border-[1.5px] text-action active:brightness-95",
+        ghost:
+          "bg-transparent text-ink hover:bg-surface active:bg-surface-strong",
         /** Alias kept for call sites that already say `transparent`. */
         transparent:
           "bg-transparent text-ink hover:bg-surface active:bg-surface-strong",
@@ -164,6 +200,16 @@ export const buttonVariants = cva(
     defaultVariants: { variant: "primary", size: "medium" },
   }
 )
+
+/**
+ * The variant names, for components that wrap `Button` and pass one through.
+ *
+ * Derived from `buttonVariants` rather than written out, so a wrapper cannot
+ * quietly fall behind the ladder the way `SubmitButton` did.
+ */
+export type ButtonVariant = NonNullable<
+  VariantProps<typeof buttonVariants>["variant"]
+>
 
 export const Spinner = ({ className }: { className?: string }) => (
   <svg
@@ -298,7 +344,10 @@ const TableRoot = ({
   // A wide table scrolls inside its own box; the page body never scrolls
   // sideways because of one.
   <div className="w-full overflow-x-auto">
-    <table className={cn("w-full caption-bottom text-sm", className)} {...props}>
+    <table
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    >
       {children}
     </table>
   </div>
@@ -309,7 +358,10 @@ const TableHeader = ({
   children,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <thead className={cn("[&_tr]:border-b [&_tr]:border-line", className)} {...props}>
+  <thead
+    className={cn("[&_tr]:border-b [&_tr]:border-line", className)}
+    {...props}
+  >
     {children}
   </thead>
 )

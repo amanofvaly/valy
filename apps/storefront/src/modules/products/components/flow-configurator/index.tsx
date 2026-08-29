@@ -23,6 +23,7 @@ import {
   usableTb,
 } from "@lib/data/flow-config"
 import { SETUP_APPS } from "@lib/data/flow-setup-apps"
+import { setHeaderStatus } from "@modules/layout/components/header-status"
 import { cn } from "@lib/util/cn"
 import { convertToLocale } from "@lib/util/money"
 import { useOptimisticCart } from "@modules/cart/context/optimistic-cart"
@@ -127,7 +128,7 @@ export default function FlowConfigurator({
         driveCount,
         pool: layouts.some((l) => l.id === prev.pool)
           ? prev.pool
-          : (layouts.find((l) => l.recommended)?.id ?? layouts[0]?.id ?? null),
+          : layouts.find((l) => l.recommended)?.id ?? layouts[0]?.id ?? null,
       }
     })
   }, [bays])
@@ -146,9 +147,10 @@ export default function FlowConfigurator({
   const stageRefs = useRef<Partial<Record<FlowStageId, HTMLElement | null>>>({})
 
   useEffect(() => {
-    const nodes = Object.entries(stageRefs.current).filter(
-      ([, el]) => el
-    ) as [FlowStageId, HTMLElement][]
+    const nodes = Object.entries(stageRefs.current).filter(([, el]) => el) as [
+      FlowStageId,
+      HTMLElement
+    ][]
 
     if (!nodes.length || typeof IntersectionObserver === "undefined") {
       return
@@ -213,6 +215,25 @@ export default function FlowConfigurator({
     })
   }
 
+  /* ---- the header ------------------------------------------------------- */
+
+  const summary = buildSummary(selection, drivesLabel(selection))
+
+  /*
+   * On a phone this page takes the header over: the wordmark becomes the
+   * machine and the cart's slot becomes the specification. Everything the
+   * reader needs while deciding is then in one row they cannot scroll away
+   * from, and the page does not have to stack a second bar under a first one
+   * that was saying nothing they needed.
+   *
+   * Cleared on unmount, or the next route inherits a title for a machine it
+   * knows nothing about.
+   */
+  useEffect(() => {
+    setHeaderStatus({ title: "Valy Flow", detail: summary })
+    return () => setHeaderStatus(null)
+  }, [summary])
+
   /* ---- media ------------------------------------------------------------ */
 
   const stage = FLOW_STAGES.find((s) => s.id === activeStage) ?? FLOW_STAGES[0]
@@ -234,11 +255,8 @@ export default function FlowConfigurator({
     <div className="border-t border-line">
       <AppIconSprite apps={SETUP_APPS} />
 
-      <SummaryBar
-        total={total}
-        currencyCode={currencyCode}
-        summary={buildSummary(selection, drivesLabel(selection))}
-      />
+      {/* The wide layout's own row. On a phone this lives in the header. */}
+      <SummaryBar total={total} currencyCode={currencyCode} summary={summary} />
 
       <div className="container-page">
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-x-12 xl:gap-x-16">
@@ -398,9 +416,7 @@ const StageSection = ({
               loading="lazy"
               sizes="(min-width: 1024px) 0px, 100vw"
               className={
-                stage.fit === "contain"
-                  ? "object-contain p-6"
-                  : "object-cover"
+                stage.fit === "contain" ? "object-contain p-6" : "object-cover"
               }
             />
           </div>
@@ -448,8 +464,8 @@ const VariantStage = ({
   )[stage.id as "kit" | "memory" | "network" | "transcode"]
 
   const current = stage.locked
-    ? (variants[0]?.title ?? null)
-    : ((selection[key] as string) ?? null)
+    ? variants[0]?.title ?? null
+    : (selection[key] as string) ?? null
 
   const choices: Choice[] = variants.map((variant) => ({
     value: variant.title ?? "",
@@ -529,7 +545,13 @@ const StorageStage = ({
       note:
         count === 1
           ? "No redundancy. A drive failure means restoring from a backup."
-          : `${best.name} keeps ${tb(usableTb(best, selection.driveCapacity))} of ${tb(totalTb(count, selection.driveCapacity))} and survives ${best.tolerates === 1 ? "one drive failing" : `${best.tolerates} drives failing`}.`,
+          : `${best.name} keeps ${tb(
+              usableTb(best, selection.driveCapacity)
+            )} of ${tb(totalTb(count, selection.driveCapacity))} and survives ${
+              best.tolerates === 1
+                ? "one drive failing"
+                : `${best.tolerates} drives failing`
+            }.`,
       price: delta(unitPrice * count, currencyCode),
       meta: `${tb(totalTb(count, selection.driveCapacity))} raw`,
     }
@@ -582,9 +604,7 @@ const StorageStage = ({
                 "pool",
                 next.some((l) => l.id === selection.pool)
                   ? selection.pool
-                  : (next.find((l) => l.recommended)?.id ??
-                      next[0]?.id ??
-                      null)
+                  : next.find((l) => l.recommended)?.id ?? next[0]?.id ?? null
               )
             }}
           />
@@ -617,7 +637,17 @@ const PoolTable = ({
   capacity: string | null
   drives: number
 }) => (
-  <div className="rounded-lg border border-line">
+  /*
+   * Surface, not paper.
+   *
+   * Every other block in this column is a decision: a row of pickers on the
+   * page's own paper ground. This one is arithmetic — nothing in it can be
+   * clicked, and the layout it describes is chosen further down, in the setup
+   * step, and only when we are the ones building the pool. On paper it looked
+   * like a table of options that had stopped responding. On surface it reads
+   * as a note, and the pickers keep paper to themselves.
+   */
+  <div className="rounded-lg border border-line bg-surface">
     <div className="border-b border-line px-4 py-3">
       <h3 className="text-[0.9375rem] font-semibold leading-6 text-ink">
         What {drives} × {capacity} gives you
@@ -655,8 +685,8 @@ const PoolTable = ({
                 {layout.tolerates === 0
                   ? "no failure"
                   : layout.tolerates === 1
-                    ? "1 drive"
-                    : `${layout.tolerates} drives`}
+                  ? "1 drive"
+                  : `${layout.tolerates} drives`}
               </td>
             </tr>
           ))}
@@ -674,12 +704,7 @@ const PoolTable = ({
 /*  Setup                                                                      */
 /* -------------------------------------------------------------------------- */
 
-const SetupStage = ({
-  products,
-  currencyCode,
-  selection,
-  set,
-}: StageProps) => {
+const SetupStage = ({ products, currencyCode, selection, set }: StageProps) => {
   const variant = products["flow-setup"]?.variants?.[0]
   const price = priceOf(variant)
   const available = setupAvailable(selection)
@@ -700,7 +725,7 @@ const SetupStage = ({
       disabled: !available,
       disabledReason: available
         ? undefined
-        : "Needs at least one drive — there is no pool to build without one.",
+        : "Needs at least one drive. There is no pool to build without one.",
     },
   ]
 
@@ -729,22 +754,60 @@ const SetupStage = ({
        * The eight applications, as their own marks. A list of names would be
        * eight words nobody recognises; the marks are how someone who already
        * pays for Google Photos knows this section is about them.
+       *
+       * Surface for the same reason the pool table has it: this is the one
+       * block in the setup step that cannot be chosen. It states what the
+       * service installs; the choice about whether to buy it is the pair of
+       * cards above.
+       *
+       * The line under each name is gone. "Follows a series and fetches each
+       * new episode" is fifty characters in a column that is a quarter of a
+       * phone wide, so every one of the eight was cut mid-word — eight
+       * truncated sentences read as damage, not as description. The name is
+       * what the row is for, and the sentence is one hover or one tab away.
+       *
+       * The grid stays at two columns. Dropping the second line frees vertical
+       * space, not horizontal, and going four across to use it only moved the
+       * clipping up onto the names, which are the one thing here that has to
+       * be read. With nothing left to truncate, the names carry no truncation.
        */}
-      <div>
+      <div className="rounded-lg border border-line bg-surface p-4">
         <h3 className="text-[0.9375rem] font-semibold leading-6 text-ink">
           What gets installed
         </h3>
-        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-2">
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
           {SETUP_APPS.map((app) => (
-            <li key={app.slug} className="flex items-center gap-2.5">
-              <AppIcon app={app} className="h-5 w-5" />
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium leading-5 text-ink">
+            <li key={app.slug} className="group relative">
+              {/*
+               * `tabIndex` because a description nobody can reach with a
+               * keyboard is a description that does not exist. Focus opens the
+               * same bubble hover does, and `aria-describedby` hands the
+               * sentence to a screen reader whether or not it is visible.
+               */}
+              <span
+                tabIndex={0}
+                aria-describedby={`flow-app-${app.slug}`}
+                className="flex items-center gap-2.5 rounded"
+              >
+                <AppIcon app={app} className="h-5 w-5 shrink-0" />
+                <span className="text-sm font-medium leading-5 text-ink">
                   {app.name}
                 </span>
-                <span className="block truncate text-xs leading-5 text-muted">
-                  {app.line}
-                </span>
+              </span>
+
+              {/*
+               * Bottom-left rather than centred: a bubble centred on a mark in
+               * the first column hangs off the panel, and one in the last
+               * column hangs off the page. Anchored to the left edge it always
+               * opens inwards, and `w-max` with a cap keeps it to one or two
+               * lines.
+               */}
+              <span
+                role="tooltip"
+                id={`flow-app-${app.slug}`}
+                className="pointer-events-none absolute bottom-full left-0 z-20 mb-1.5 hidden w-max max-w-[15rem] rounded bg-ink px-2 py-1 text-xs leading-5 text-paper shadow-[0_2px_8px_rgb(21_24_28/0.25)] group-hover:block group-focus-within:block"
+              >
+                {app.line}
               </span>
             </li>
           ))}
@@ -772,7 +835,7 @@ const SetupStage = ({
             choices={layouts.map((layout) => ({
               value: layout.id,
               name: layout.recommended
-                ? `${layout.name} — recommended`
+                ? `${layout.name} (recommended)`
                 : layout.name,
               note: layout.note,
               price: `${tb(usableTb(layout, selection.driveCapacity))} usable`,
@@ -859,7 +922,17 @@ const BuildTotal = ({
       </p>
     )}
 
+    {/*
+     * The action variant. The homepage's "Buy your Flow" opens this journey and
+     * this closes it, so the two ends of it are the same button — a reader who
+     * pressed a gradient pill to arrive here presses one to leave.
+     *
+     * It is also the only control on the page that is not a choice. Everything
+     * above it is a picker, and pickers are ink and paper; the one thing that
+     * is not reversible should not look like the seventh decision.
+     */}
     <Button
+      variant="action"
       size="large"
       block
       className="mt-6"
@@ -940,7 +1013,13 @@ const MobileBar = ({
         </p>
         <p className="text-xs leading-4 text-muted">inclusive of GST</p>
       </div>
+      {/*
+       * The same button as the one at the foot of the configurator, because on
+       * a phone it is the same button: this bar is how the total and the
+       * checkout stay on screen while the pickers scroll past.
+       */}
       <Button
+        variant="action"
         size="medium"
         disabled={!complete}
         isLoading={pending}

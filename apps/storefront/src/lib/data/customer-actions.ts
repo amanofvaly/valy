@@ -98,10 +98,36 @@ export async function login(
   _currentState: unknown,
   formData: FormData
 ): Promise<CustomerAuthState> {
-  return completeLogin(
+  const result = await completeLogin(
     formData.get("email") as string,
     formData.get("password") as string
   )
+
+  /*
+   * Go back where the customer came from.
+   *
+   * Signing in used to always land on the account dashboard, which is right
+   * when the customer went looking for their orders and wrong when they were
+   * halfway through checkout: the reason to sign in there is that the address
+   * fills itself in, and the reward for taking the offer was losing the page
+   * that made it.
+   *
+   * Only a path on this site: a value that does not start with a single slash
+   * is ignored, so the field cannot be used to bounce someone off to another
+   * host after they have typed their password.
+   */
+  const back = formData.get("redirect")
+
+  if (
+    result?.state === "success" &&
+    typeof back === "string" &&
+    back.startsWith("/") &&
+    !back.startsWith("//")
+  ) {
+    redirect(back)
+  }
+
+  return result
 }
 
 /**

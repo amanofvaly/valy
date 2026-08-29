@@ -16,9 +16,7 @@ async function ShippingStep({ cart }: { cart: HttpTypes.StoreCart }) {
     return null
   }
 
-  return (
-    <Shipping cart={cart} availableShippingMethods={shippingMethods} />
-  )
+  return <Shipping cart={cart} availableShippingMethods={shippingMethods} />
 }
 
 async function PaymentStep({ cart }: { cart: HttpTypes.StoreCart }) {

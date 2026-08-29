@@ -5,6 +5,7 @@ import Step from "@modules/checkout/components/step"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useSearchParams } from "next/navigation"
 import PaymentButton from "../payment-button"
+import StepActions from "../step-actions"
 
 /**
  * The last step.
@@ -53,7 +54,9 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
             .
           </p>
 
-          <PaymentButton cart={cart} data-testid="submit-order-button" />
+          <StepActions>
+            <PaymentButton cart={cart} data-testid="submit-order-button" />
+          </StepActions>
         </div>
       )}
     </Step>

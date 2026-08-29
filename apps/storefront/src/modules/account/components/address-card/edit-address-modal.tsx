@@ -1,6 +1,9 @@
 "use client"
 
-import { deleteCustomerAddress, updateCustomerAddress } from "@lib/data/customer-actions"
+import {
+  deleteCustomerAddress,
+  updateCustomerAddress,
+} from "@lib/data/customer-actions"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { PencilSquare as Edit, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
@@ -75,10 +78,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             {address.first_name} {address.last_name}
           </Heading>
           {address.company && (
-            <Text
-              className="text-sm text-ink"
-              data-testid="address-company"
-            >
+            <Text className="text-sm text-ink" data-testid="address-company">
               {address.company}
             </Text>
           )}
@@ -94,6 +94,17 @@ const EditAddress: React.FC<EditAddressProps> = ({
               {address.province && `${address.province}, `}
               {address.country_code?.toUpperCase()}
             </span>
+            {/*
+             * The phone, on the card. It is required to save an address and it
+             * is the field a courier actually uses, so a card that listed
+             * everything except the number was the one place you could not
+             * check the thing most likely to be wrong.
+             */}
+            {address.phone && (
+              <span className="mt-2 text-muted" data-testid="address-phone">
+                {address.phone}
+              </span>
+            )}
           </Text>
         </div>
         <div className="flex items-center gap-x-4">
@@ -200,15 +211,16 @@ const EditAddress: React.FC<EditAddressProps> = ({
               <Input
                 label="Phone"
                 name="phone"
-                autoComplete="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                required
                 defaultValue={address.phone || undefined}
                 data-testid="phone-input"
               />
             </div>
             {formState.error && (
-              <div className="text-danger text-xs py-2">
-                {formState.error}
-              </div>
+              <div className="text-danger text-xs py-2">{formState.error}</div>
             )}
           </Modal.Body>
           <Modal.Footer>
@@ -222,7 +234,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
               >
                 Cancel
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton variant="action-outline" data-testid="save-button">
+                Save
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

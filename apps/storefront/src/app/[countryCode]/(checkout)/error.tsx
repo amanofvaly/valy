@@ -29,7 +29,9 @@ export default function CheckoutError({
       title="Something went wrong before we took payment."
       actions={
         <>
-          <Button onClick={reset}>Try again</Button>
+          <Button variant="action-outline" onClick={reset}>
+            Try again
+          </Button>
           <Button asChild variant="secondary">
             <LocalizedClientLink href="/cart">Back to cart</LocalizedClientLink>
           </Button>

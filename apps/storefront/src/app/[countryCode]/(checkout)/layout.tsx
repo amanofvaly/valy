@@ -1,5 +1,7 @@
+import CheckoutIdentity from "@modules/checkout/components/checkout-identity"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
+import { Suspense } from "react"
 
 /**
  * Checkout runs outside the main shell on purpose: no nav, no footer, no
@@ -33,10 +35,15 @@ export default function CheckoutLayout({
             Valy
           </LocalizedClientLink>
 
+          {/*
+           * Streamed, so the header paints with the rest of the page. The
+           * customer is the only thing here that needs the API, and a checkout
+           * header that waits on it is a blank bar above a form.
+           */}
           <div className="flex flex-1 basis-0 justify-end">
-            <span className="hidden text-2xs text-muted sm:inline">
-              Secure checkout
-            </span>
+            <Suspense fallback={null}>
+              <CheckoutIdentity />
+            </Suspense>
           </div>
         </nav>
       </header>
@@ -47,8 +54,7 @@ export default function CheckoutLayout({
 
       <footer className="border-t border-line py-5">
         <p className="container-page text-2xs text-muted">
-          Prices include GST. A tax invoice is raised against your GSTIN if you
-          add one.
+          Prices include GST. A tax invoice is raised on every order.
         </p>
       </footer>
     </div>

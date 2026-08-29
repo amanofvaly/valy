@@ -105,6 +105,7 @@ const AccountInfo = ({
         {children}
         <div className="flex justify-end">
           <Button
+            variant="action-outline"
             isLoading={pending}
             type="submit"
             data-testid="save-button"

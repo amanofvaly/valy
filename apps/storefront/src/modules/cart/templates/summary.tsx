@@ -192,7 +192,13 @@ const Summary = ({ cart }: SummaryProps) => {
         </p>
       )}
 
-      <Button asChild size="large" block>
+      {/*
+       * `action`, though it is a link. The ladder ranks what a control does,
+       * not what element it happens to be: this is the cart's one reason to
+       * exist and the next step of the purchase. Navigation that is also the
+       * commerce path is still the commerce path.
+       */}
+      <Button asChild variant="action" size="large" block>
         <LocalizedClientLink
           href={`/checkout?step=${step}`}
           data-testid="checkout-button"

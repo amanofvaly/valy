@@ -16,6 +16,8 @@
 
 export { cn, clx } from "@lib/util/cn"
 
+export type { ButtonVariant } from "./primitives"
+
 export {
   Badge,
   buttonVariants,
