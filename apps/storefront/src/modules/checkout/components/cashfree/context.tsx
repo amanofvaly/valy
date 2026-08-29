@@ -56,6 +56,12 @@ type CashfreeContextValue = {
   paymentSessionId: string | null
   /** Runs the payment. Resolves only once Cashfree has an outcome. */
   pay: (paymentSessionId: string) => Promise<PayResult>
+  /**
+   * The drop-in equivalent of `pay`. Needs no mounted component, because the
+   * form belongs to Cashfree, so it works whether or not anything on this page
+   * managed to read the state of a field.
+   */
+  checkout: (paymentSessionId: string) => Promise<PayResult>
 }
 
 const CashfreeContext = createContext<CashfreeContextValue | null>(null)
@@ -169,6 +175,46 @@ export const CashfreeProvider = ({
     [method, sdk]
   )
 
+  const checkout = useCallback(
+    async (paymentSessionId: string): Promise<PayResult> => {
+      if (!sdk) {
+        return { ok: false, message: "The payment form is not ready yet." }
+      }
+
+      try {
+        /*
+         * `_modal` for the same reason `pay` uses it: the cart has not been
+         * completed in Medusa yet, so navigating away from this page would
+         * strand an order that Cashfree is about to take money for. Cashfree
+         * still falls back to the order's `return_url` where a method insists
+         * on a real redirect, such as a UPI intent handing off to an app.
+         */
+        const result = await sdk.checkout({
+          paymentSessionId,
+          redirectTarget: "_modal",
+        })
+
+        if (result?.error) {
+          return {
+            ok: false,
+            message: result.error.message ?? "The payment was not completed.",
+          }
+        }
+
+        return { ok: true }
+      } catch (error) {
+        return {
+          ok: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "The payment could not be completed.",
+        }
+      }
+    },
+    [sdk]
+  )
+
   const value = useMemo(
     () => ({
       sdk,
@@ -185,6 +231,7 @@ export const CashfreeProvider = ({
       setUsesInlineQrAction,
       paymentSessionId,
       pay,
+      checkout,
     }),
     [
       sdk,
@@ -195,6 +242,7 @@ export const CashfreeProvider = ({
       usesInlineQrAction,
       paymentSessionId,
       pay,
+      checkout,
     ]
   )
 

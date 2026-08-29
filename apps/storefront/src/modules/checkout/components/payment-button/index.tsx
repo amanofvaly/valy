@@ -1,6 +1,7 @@
 "use client"
 
 import { isCashfree, isManual, isStripeLike } from "@lib/constants"
+import { CASHFREE_USE_DROP_IN } from "@modules/checkout/components/cashfree/config"
 import { useCashfree } from "@modules/checkout/components/cashfree/context"
 import { placeOrder } from "@lib/data/cart-actions"
 import { HttpTypes } from "@medusajs/types"
@@ -107,7 +108,9 @@ const CashfreePaymentButton = ({
     setSubmitting(true)
     setErrorMessage(null)
 
-    const result = await cashfree.pay(paymentSessionId)
+    const result = CASHFREE_USE_DROP_IN
+      ? await cashfree.checkout(paymentSessionId)
+      : await cashfree.pay(paymentSessionId)
 
     if (!result.ok) {
       setErrorMessage(result.message)
@@ -133,7 +136,12 @@ const CashfreePaymentButton = ({
         block
         className="lg:w-auto"
         size="large"
-        disabled={notReady || !cashfree?.ready}
+        /*
+         * The drop-in owns the form, so there is no field state here to wait
+         * on — only the cart's own prerequisites. Under Elements the button
+         * additionally waits for every card field to report itself complete.
+         */
+        disabled={notReady || (!CASHFREE_USE_DROP_IN && !cashfree?.ready)}
         isLoading={submitting}
         onClick={handlePayment}
         data-testid={dataTestId}

@@ -2,38 +2,19 @@
 
 import { initiatePaymentSession } from "@lib/data/cart-actions"
 import { isCashfree } from "@lib/constants"
-import { cn } from "@lib/util/cn"
 import { HttpTypes } from "@medusajs/types"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import {
   CardBrandMarks,
   UpiBrandMarks,
 } from "@modules/checkout/components/payment-brand-marks"
+import PaymentButton from "@modules/checkout/components/payment-button"
 import Step from "@modules/checkout/components/step"
 import StepActions from "@modules/checkout/components/step-actions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Button } from "@modules/common/components/ui"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-
-type CheckoutPaymentMethod = "card" | "upi"
-
-const METHODS: Array<{
-  id: CheckoutPaymentMethod
-  name: string
-  note: string
-}> = [
-  {
-    id: "card",
-    name: "Credit or Debit Card",
-    note: "Bank cards with secure verification.",
-  },
-  {
-    id: "upi",
-    name: "UPI",
-    note: "Use any UPI app to pay",
-  },
-]
 
 const Payment = ({
   cart,
@@ -45,47 +26,60 @@ const Payment = ({
   const cashfreeProvider = availablePaymentMethods.find((method) =>
     isCashfree(method.id)
   )
-  const [selectedMethod, setSelectedMethod] =
-    useState<CheckoutPaymentMethod | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
   const isOpen = searchParams.get("step") === "payment"
 
   useEffect(() => setError(null), [isOpen])
 
-  const handleSubmit = async () => {
-    if (!selectedMethod || !cashfreeProvider) {
-      setError("Choose Card or UPI to continue.")
+  /*
+   * Open the session as soon as the step is, rather than when a button is
+   * pressed.
+   *
+   * Cashfree's drop-in is handed a payment session id and renders the whole
+   * form itself, so there is nothing for the customer to fill in here and
+   * nothing to ask them first — the modal offers card, UPI, netbanking and
+   * wallets whatever we might have pre-selected. The session therefore has to
+   * exist before the pay button can do anything, and creating it here means the
+   * button opens the form on the first press instead of the second.
+   */
+  useEffect(() => {
+    if (!isOpen || !cashfreeProvider) {
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    const activeSession = cart.payment_collection?.payment_sessions?.find(
+      (session) => session.status === "pending"
+    )
 
-    try {
-      const activeSession = cart.payment_collection?.payment_sessions?.find(
-        (session) => session.status === "pending"
-      )
-
-      if (activeSession?.provider_id !== cashfreeProvider.id) {
-        await initiatePaymentSession(cart, {
-          provider_id: cashfreeProvider.id,
-        })
-      }
-
-      router.push(`${pathname}/payment?method=${selectedMethod}`)
-    } catch (paymentError) {
-      setError(
-        paymentError instanceof Error
-          ? paymentError.message
-          : "Payment could not be prepared. Try again."
-      )
-      setIsLoading(false)
+    if (activeSession?.provider_id === cashfreeProvider.id) {
+      return
     }
-  }
+
+    let cancelled = false
+
+    initiatePaymentSession(cart, { provider_id: cashfreeProvider.id }).catch(
+      (sessionError: unknown) => {
+        if (!cancelled) {
+          setError(
+            sessionError instanceof Error
+              ? sessionError.message
+              : "Payment could not be prepared. Try again."
+          )
+        }
+      }
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, cashfreeProvider, cart])
+
+  /* A pending session belonging to Cashfree is what `PaymentButton` needs. */
+  const cashfreeSessionReady = !!cart.payment_collection?.payment_sessions?.some(
+    (session) =>
+      session.status === "pending" && isCashfree(session.provider_id)
+  )
 
   const paymentReady = !!cart.payment_collection?.payment_sessions?.some(
     (session) => session.status === "pending"
@@ -102,48 +96,21 @@ const Payment = ({
       {isOpen ? (
         <div className="flex flex-col gap-6">
           {cashfreeProvider ? (
-            <div
-              role="radiogroup"
-              aria-label="Payment method"
-              className="grid grid-cols-2 gap-3"
-            >
-              {METHODS.map((method) => {
-                const selected = selectedMethod === method.id
-
-                return (
-                  <button
-                    key={method.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => {
-                      setSelectedMethod(method.id)
-                      setError(null)
-                    }}
-                    className={cn(
-                      "pressable min-h-28 rounded-lg bg-paper px-4 py-4 text-left ring-1 ring-inset transition-[box-shadow,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                      selected
-                        ? "bg-accent-wash ring-2 ring-accent"
-                        : "ring-line hover:ring-line-strong active:bg-surface"
-                    )}
-                    data-testid={`payment-method-${method.id}`}
-                  >
-                    <span className="block text-[0.9375rem] font-semibold leading-6 text-ink">
-                      {method.name}
-                    </span>
-                    <span className="mt-1 block text-sm leading-6 text-muted">
-                      {method.note}
-                    </span>
-                    <span className="mt-4 block">
-                      {method.id === "card" ? (
-                        <CardBrandMarks />
-                      ) : (
-                        <UpiBrandMarks />
-                      )}
-                    </span>
-                  </button>
-                )
-              })}
+            /*
+             * No chooser. Cashfree's form offers card, UPI, netbanking and
+             * wallets on one screen, so picking one here only asked the same
+             * question twice — and picking wrongly used to send the customer
+             * to a form for the method they had not chosen.
+             */
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <CardBrandMarks />
+                <UpiBrandMarks />
+              </div>
+              <p className="max-w-prose text-sm leading-6 text-muted">
+                Cards, UPI, netbanking and wallets. Your details are entered on
+                Cashfree&rsquo;s secure form, which opens over this page.
+              </p>
             </div>
           ) : (
             <p role="alert" className="text-sm leading-6 text-danger">
@@ -166,22 +133,41 @@ const Payment = ({
             >
               privacy policy
             </LocalizedClientLink>
-            . Payment is completed on the next screen.
+            . Payment opens over this page.
           </p>
 
           <StepActions className="static mx-0 border-0 bg-transparent p-0 backdrop-blur-none supports-[backdrop-filter]:bg-transparent sm:mx-0 sm:px-0">
-            <Button
-              variant="action"
-              size="large"
-              block
-              className="lg:w-auto"
-              disabled={!selectedMethod || !cashfreeProvider}
-              isLoading={isLoading}
-              onClick={handleSubmit}
-              data-testid="continue-to-payment-button"
-            >
-              Place order
-            </Button>
+            {/*
+              The order is placed from here now. This used to be a "continue"
+              that navigated to a dedicated page holding the card fields; with
+              the drop-in there is nothing on that page to fill in, so it was a
+              screen that asked for nothing and cost a click.
+
+              Until the session exists, `PaymentButton` cannot tell which
+              provider it is rendering for and falls back to "Select a payment
+              method" — which is no longer a thing anyone can do. It stands in
+              as a disabled Place order instead, for the moment it takes the
+              effect above to open the session.
+            */}
+            {cashfreeSessionReady ? (
+              <PaymentButton
+                cart={cart}
+                label="Place order"
+                data-testid="submit-order-button"
+              />
+            ) : (
+              <Button
+                variant="action"
+                size="large"
+                block
+                className="lg:w-auto"
+                disabled
+                isLoading={!error}
+                data-testid="submit-order-button"
+              >
+                Place order
+              </Button>
+            )}
             <ErrorMessage
               error={error}
               data-testid="payment-method-error-message"
@@ -189,7 +175,7 @@ const Payment = ({
           </StepActions>
         </div>
       ) : paymentReady ? (
-        <p className="text-sm text-muted">Ready to choose Card or UPI.</p>
+        <p className="text-sm text-muted">Ready to pay.</p>
       ) : null}
     </Step>
   )

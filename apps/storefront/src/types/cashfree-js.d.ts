@@ -70,13 +70,37 @@ declare module "@cashfreepayments/cashfree-js" {
     paymentDetails?: { paymentMessage?: string }
   } | null
 
+  /**
+   * Options for the drop-in, which needs only the session.
+   *
+   * The contrast with `CashfreePayOptions` is the point: `pay()` charges a
+   * component this page built and is therefore only as good as the field state
+   * it can read back out of the iframes, while `checkout()` hands the whole
+   * form to Cashfree and needs nothing but the session id.
+   */
+  export type CashfreeCheckoutOptions = {
+    /** From the Medusa payment session's data, created by our backend. */
+    paymentSessionId: string
+    /** `_modal` keeps Cashfree's form inside the current page. */
+    redirectTarget?: "_self" | "_blank" | "_top" | "_modal" | HTMLElement
+    returnUrl?: string
+  }
+
+  export type CashfreeCheckoutResult = {
+    error?: { code?: string; type?: string; message?: string }
+    redirect?: boolean
+    paymentDetails?: { paymentMessage?: string }
+  } | null
+
   export type Cashfree = {
     create: (
       name: CashfreeComponentName,
       options?: CashfreeComponentOptions
     ) => CashfreeComponent
     pay: (options: CashfreePayOptions) => Promise<CashfreePayResult>
-    checkout: (options: Record<string, unknown>) => Promise<unknown>
+    checkout: (
+      options: CashfreeCheckoutOptions
+    ) => Promise<CashfreeCheckoutResult>
   }
 
   export function load(options: {
