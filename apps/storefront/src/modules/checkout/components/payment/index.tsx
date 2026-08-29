@@ -88,7 +88,13 @@ const Payment = ({
   return (
     <Step
       index={3}
-      title="Payment method"
+      /*
+       * "Review and pay", not "Payment method": the method is chosen inside
+       * Cashfree's form, so naming this step after a choice it does not offer
+       * only promised something the page could not deliver. What it is for is
+       * the last look before money moves — the total, the terms, one action.
+       */
+      title="Review and pay"
       step="payment"
       complete={!isOpen && paymentReady}
       editTestId="edit-payment-button"

@@ -299,6 +299,17 @@ export async function initiatePaymentSession(
 ) {
   return sdk.store.payment
     .initiatePaymentSession(cart, data, {}, { ...(await getAuthHeaders()) })
+    /*
+     * The session lands on the cart, so the rendered cart has to be refreshed
+     * like any other cart mutation here. Without this the checkout keeps the
+     * copy of the cart it was rendered with, never sees the session it just
+     * asked for, and leaves the pay button waiting on it — which a reload
+     * "fixes", because a reload is the only thing that fetches the cart again.
+     */
+    .then((result) => {
+      refreshCartSurfaces()
+      return result
+    })
     .catch(medusaError)
 }
 
