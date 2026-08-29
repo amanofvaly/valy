@@ -1,10 +1,10 @@
 import AppLibrary from "@modules/home/components/app-library"
 import Arithmetic from "@modules/home/components/arithmetic"
-import AssuranceStrip from "@modules/home/components/assurance-strip"
 import Faq from "@modules/home/components/faq"
 import Hero from "@modules/home/components/hero"
 import PartsProof from "@modules/home/components/parts-proof"
 import TheRange from "@modules/home/components/the-range"
+import TheTenancy from "@modules/home/components/the-tenancy"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -22,17 +22,21 @@ export const metadata: Metadata = {
  * and parts chapters use fixed explanatory imagery; catalogue size and ordering
  * cannot change what the homepage chooses to show.
  *
- * The grounds alternate deliberately rather than by rota: paper, ink, paper,
- * red, paper, surface, paper, surface, ink, paper. The two dark chapters and
- * the one red one are the three places the page raises its voice — what you get
- * for the money, what renting costs, and what happens when it breaks — and
- * everything between them is quiet on purpose so those three land.
+ * The grounds alternate deliberately rather than by rota, and the two loud
+ * chapters sit close together on purpose: the ink band names the tenancy and
+ * the accent band prices it. Everything after them — the software, the range,
+ * the parts, the questions — is quiet paper and surface, because the argument
+ * has already been made and the rest of the page is evidence.
  */
-export default function Home() {
+export default async function Home(props: {
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
+
   return (
     <>
-      <Hero />
-      <AssuranceStrip />
+      <Hero countryCode={countryCode} />
+      <TheTenancy />
       <AppLibrary />
       <Arithmetic />
 

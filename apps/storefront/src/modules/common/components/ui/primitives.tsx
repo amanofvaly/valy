@@ -117,6 +117,28 @@ export const buttonVariants = cva(
         outline:
           "bg-paper text-ink ring-1 ring-inset ring-line-strong hover:bg-surface active:bg-surface-strong",
         accent: "bg-accent text-paper hover:bg-accent-strong active:bg-accent-strong",
+        /*
+         * The one button on a page that is the reason the page exists — and at
+         * present that is "Buy your Flow" and nothing else.
+         *
+         * It is the only gradient in the system and the only blue in it, both
+         * of which are departures, so its scarcity is the whole point: a second
+         * one on the same screen makes neither of them mean anything. Red keeps
+         * its existing jobs (focus, selection, error, brand); this is not a
+         * replacement for it.
+         *
+         * The ground is `.action-surface` in globals.css, where its two stops
+         * and their hover pair are defined together.
+         *
+         * A full pill, which is a third departure and belongs to the variant
+         * rather than to any call site — the shape is part of what makes this
+         * one button recognisable as the thing to press, and a squared-off
+         * version of it somewhere else would read as a different control. It
+         * overrides the base `rounded` through `cn`, whose twMerge keeps the
+         * later of two conflicting radii.
+         */
+        action:
+          "action-surface rounded-full text-paper shadow-[0_1px_2px_rgb(21_24_28/0.12)] active:brightness-95",
         ghost: "bg-transparent text-ink hover:bg-surface active:bg-surface-strong",
         /** Alias kept for call sites that already say `transparent`. */
         transparent:

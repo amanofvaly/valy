@@ -1,7 +1,7 @@
 import { APPS } from "@lib/data/self-hosted-apps"
 import { AppIcon, AppIconSprite } from "@modules/common/components/app-icon"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { Button } from "@modules/common/components/ui"
+import BuyFlow from "@modules/home/components/hero/buy-flow"
+import Image from "next/image"
 
 /**
  * The argument, stated once, at the size it deserves.
@@ -19,19 +19,87 @@ import { Button } from "@modules/common/components/ui"
  * catalogue reads as something that continues past the frame rather than
  * something that fits inside a box.
  *
- * One word is red. It is the word the whole page is about.
+ * One word carries the accent. It is the word the whole page is about, and the
+ * accent is now the same blue the buy button is made of, so the emphasis in
+ * the sentence and the thing it is asking for are visibly one colour.
+ *
+ * A first-time visitor used to reach a sentence, a wall of logos, a paragraph
+ * and then two buttons offering a search and a definition — nowhere in the
+ * first screen was there a product or a price. The machine, what it starts at,
+ * and the button that buys it now sit directly under the headline on every
+ * screen, on the same left margin, so the eye finishes the sentence and lands
+ * on the button without crossing the picture.
+ *
+ * The paragraph that used to close the chapter is gone. "As more of life moves
+ * online, owning your data has never been more important" was the weak version
+ * of the sentence the ink band under this one now says properly, set three
+ * inches before it in grey. The hero ends on the plate caption and hands
+ * straight over.
  */
 
-
-
-const Hero = () => (
+const Hero = ({ countryCode }: { countryCode: string }) => (
   <section className="bg-paper">
     <AppIconSprite />
 
-    <div className="container-page pb-10 pt-12 sm:pb-14 sm:pt-20 lg:pb-16 lg:pt-24">
-      <h1 className="max-w-[13ch] text-balance text-5xl font-semibold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl xl:text-8xl">
-        A smarter home <span className="text-accent">starts</span> with your own cloud
-      </h1>
+    {/*
+     * The headline sits on the room rather than on paper.
+     *
+     * The crop does half the work: `object-left` on a phone keeps the pale wall
+     * — the only part of the frame a headline can sit on — behind the type, and
+     * only from `sm` does the whole room come into view. But the wall is not
+     * uniform, and a window, a lampshade or a pale book spine drifting under a
+     * letterform is enough to cost a word its edge.
+     *
+     * So the left of the frame is washed back to paper. Not a scrim across the
+     * whole picture, which would turn a lit room into a grey one: the wash is
+     * full strength at the left margin, three-quarters under the headline, and
+     * gone by the time the shelves start, so the room is still a photograph
+     * everywhere the eye actually looks at it.
+     */}
+    <div className="relative isolate">
+      <Image
+        src="/home/hero-room.jpg"
+        alt=""
+        aria-hidden
+        fill
+        priority
+        sizes="100vw"
+        className="-z-10 object-cover object-left sm:object-center"
+      />
+
+      {/*
+       * `paper/0` rather than `transparent` for the last stop. Tailwind's
+       * `transparent` is the CSS keyword, which is transparent *black*, and a
+       * white-to-that ramp fades through grey in any engine that interpolates
+       * un-premultiplied — a dirty smear across the middle of the room. Fading
+       * white to zero-alpha white can only ever be white.
+       *
+       * The wash runs further right on a phone, where the headline spans most
+       * of the frame, and pulls back from `sm` once the type has a column of
+       * its own.
+       */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-gradient-to-r from-paper via-paper/75 via-45% to-paper/0 to-92% sm:via-40% sm:to-70%"
+      />
+
+      {/*
+       * One column, not two. The buy block used to take a fixed 20rem column to
+       * the right of the headline, which on a wide screen put it out over the
+       * middle of the photograph and left the headline's own margin ending in
+       * nothing. Stacked, both start on the page gutter: the headline sets the
+       * left edge and the button and its price hang off it.
+       *
+       * `items-start` rather than a width — the block is as wide as the button,
+       * wherever the button lands.
+       */}
+      <div className="container-page flex flex-col items-start gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:justify-center lg:gap-10 lg:pb-16 lg:pt-24">
+        <h1 className="max-w-[13ch] text-balance text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-ink xsmall:text-5xl sm:text-6xl lg:text-7xl">
+          A home for your <span className="text-accent">digital life</span>
+        </h1>
+
+        <BuyFlow countryCode={countryCode} />
+      </div>
     </div>
 
     {/*
@@ -67,7 +135,9 @@ const Hero = () => (
      */}
     <div className="border-b border-line">
       <p className="container-page py-4 text-sm leading-6 text-muted">
-        Automatically back up every device, stream your media anywhere, share files securely, and access your data from anywhere, all from one compact server. 
+        Automatically back up every device, stream your media anywhere, share
+        files securely, and access your data from anywhere, all from one compact
+        server.{" "}
         <a
           href="#apps"
           className="font-medium text-accent underline decoration-accent/35 underline-offset-4 transition-colors hover:decoration-accent"
@@ -75,34 +145,6 @@ const Hero = () => (
           Most popular apps
         </a>
       </p>
-    </div>
-
-    {/*
-     * The action sits in the left margin and the argument runs beside it in two
-     * columns. On a phone the same source order puts the buttons above the
-     * prose, which is where they belong when the reader has already seen the
-     * wall.
-     */}
-    <div className="container-page grid grid-cols-1 gap-x-12 gap-y-8 py-12 lg:grid-cols-12 lg:py-16">
-      <div className="flex flex-col gap-3 lg:col-span-4 lg:pr-6">
-        <Button asChild size="large" block>
-          <LocalizedClientLink href="/categories/machines">
-            Find your server
-          </LocalizedClientLink>
-        </Button>
-        <Button asChild variant="secondary" size="large" block>
-          <LocalizedClientLink href="/getting-started">
-            What is a homelab?
-          </LocalizedClientLink>
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-6 text-base leading-7 text-muted md:gap-10 lg:col-span-8">
-        <p>
-          As more of life moves online, owning your data has never been more important. Valy makes self-hosting accessible with ready-to-use home servers that combine private cloud storage, automated backups, and powerful applications into one seamless experience without the complexity.
-        </p>
-        
-      </div>
     </div>
   </section>
 )

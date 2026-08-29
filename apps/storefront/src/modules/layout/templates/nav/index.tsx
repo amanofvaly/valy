@@ -27,11 +27,21 @@ import { Suspense } from "react"
  * this store uses it for the opposite.
  */
 
+/*
+ * Flow leads, and it points at the machine rather than at a category holding
+ * one product.
+ *
+ * Machines and Services are deliberately absent. There is one machine, so a
+ * category page for it is a list of length one standing between the visitor and
+ * the thing they came for. And a service is an add-on to a machine — "Photo
+ * library migration" is not a purchase that means anything to someone who does
+ * not own a Flow yet — so services are sold where they apply, in the
+ * configurator and on the machine page, not browsed in the catalogue.
+ */
 const NAV_LINKS = [
-  { href: "/store", label: "All Products" },
-  { href: "/categories/machines", label: "Machines" },
+  { href: "/products/valy-flow", label: "Flow" },
   { href: "/categories/parts", label: "Parts" },
-  { href: "/categories/services", label: "Services" },
+  { href: "/store", label: "All Products" },
   { href: "/compatibility", label: "Compatibility" },
   { href: "/getting-started", label: "Getting started" },
 ]

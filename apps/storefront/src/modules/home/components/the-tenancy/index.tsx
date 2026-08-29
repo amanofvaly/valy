@@ -1,45 +1,45 @@
 /**
- * The four commitments.
+ * The story, stated once, immediately after the headline.
  *
- * The wording is a promise to customers and is reused verbatim — in the footer,
- * on the product pages and here. Only the presentation changed: the figures now
- * carry the weight they are worth, and the band is the page's first dark
- * chapter rather than a thin ink stripe.
+ * This band was four cells — a GST note, a burn-in schedule, a warranty term
+ * and a return window — and then four differently-worded cells that were still
+ * about the transaction: what arrives, what it costs, who to call. Both
+ * versions answered questions a visitor has not asked yet. A person who has
+ * read "A home for your digital life" and nothing else does not want the terms
+ * of sale. They want to be told what is wrong with how they live now, because
+ * until somebody says it out loud, nothing is wrong: paying four companies
+ * every month for the right to look at your own photographs is simply how
+ * things are, and a machine that fixes it is a solution to a problem the
+ * reader does not have.
  *
- * Set in the sans rather than the data face. "48 h" and "7 day" contain a
- * space, and a monospaced space is a full character wide — at heading scale the
- * unit drifts far enough from the number to read as a typing error.
+ * So this is the only chapter on the page that sells nothing. No feature, no
+ * figure, no button. It names the tenancy, and every chapter under it — the
+ * software, the arithmetic, the machines, the parts — is the answer to it.
+ *
+ * One statement, centred, on ink. Not a grid: four short cells side by side is
+ * a specification sheet whatever is written in them, and the eye reads the
+ * shape before it reads a word of it.
  */
-const assurances = [
-  { value: "GST", label: "Invoice on every order, input credit ready" },
-  { value: "48 h", label: "Burn-in and SMART pass before dispatch" },
-  { value: "3 yr", label: "Warranty with service inside India" },
-  { value: "7 day", label: "Return window, no questions asked" },
-]
-
-const AssuranceStrip = () => (
+const TheTenancy = () => (
   <section className="bg-ink">
-    {/*
-     * The rules are the paper ground showing through one-pixel gaps, so the
-     * cells divide horizontally on a phone and into a four-across row on a wide
-     * screen without a single border declaration changing direction.
-     */}
-    <ul className="grid grid-cols-1 gap-px bg-paper/12 sm:grid-cols-2 lg:grid-cols-4">
-      {assurances.map((item) => (
-        <li
-          key={item.value}
-          className="flex flex-col gap-2 bg-ink px-5 py-7 sm:px-8 sm:py-9"
-        >
-          <span className="text-3xl font-semibold tabular tracking-tight text-paper sm:text-4xl">
-            {item.value}
-          </span>
-          <span className="max-w-[26ch] text-sm leading-6 text-paper/60">
-            {item.label}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="container-page flex flex-col items-center gap-6 py-16 text-center sm:gap-8 lg:py-24">
+      {/*
+       * The hero says "home". This says what you have instead, in the same
+       * vocabulary, so the two sentences are one thought split across the fold.
+       */}
+      <h2 className="max-w-[20ch] text-balance text-3xl font-semibold leading-[1.08] tracking-tight text-paper sm:text-4xl lg:text-5xl">
+        Exit your <span className="text-accent-inverse">rented</span> digital life.
+      </h2>
+
+      <p className="max-w-[54ch] text-pretty text-base leading-7 text-paper/70 sm:text-lg sm:leading-8">
+        The photographs sit on one company&apos;s computer, the films on
+        another&apos;s, the backups on a plan that renews on the 4th. Twenty
+        years of your life, and not one shelf of it in your house. A Valy is the
+        shelf — and it keeps holding all of it whether or not anybody remembers
+        to pay.
+      </p>
+    </div>
   </section>
 )
 
-export default AssuranceStrip
+export default TheTenancy

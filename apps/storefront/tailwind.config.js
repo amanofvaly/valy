@@ -37,7 +37,14 @@ module.exports = {
         DEFAULT: "rgb(var(--accent) / <alpha-value>)",
         strong: "rgb(var(--accent-strong) / <alpha-value>)",
         wash: "rgb(var(--accent-wash) / <alpha-value>)",
+        /* Only on ink. See the token comment in globals.css. */
+        inverse: "rgb(var(--accent-inverse) / <alpha-value>)",
       },
+      /*
+       * The action colour. Flat, for focus rings and small marks; the gradient
+       * itself is `.action-surface` in globals.css.
+       */
+      action: "rgb(var(--action) / <alpha-value>)",
       signal: {
         DEFAULT: "rgb(var(--signal) / <alpha-value>)",
         wash: "rgb(var(--signal-wash) / <alpha-value>)",

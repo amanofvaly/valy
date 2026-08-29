@@ -411,3 +411,37 @@ export const listFlowProducts = cache(
     )
   }
 )
+
+/**
+ * The lowest price a Valy Flow can actually be bought for.
+ *
+ * The cheapest base kit plus the boot drive, because the boot drive has no
+ * "none" option — a machine cannot ship without an operating system on it. A
+ * "from" price quoting the bare kit would be a figure no order can ever total,
+ * which is exactly the kind of claim PRODUCT.md asks to be checkable against
+ * the catalogue.
+ *
+ * Returns `amount: 0` rather than throwing when the catalogue is unreachable,
+ * so the hero renders its button without a price instead of failing.
+ */
+export const priceOfCheapestKit = (
+  products: Record<string, HttpTypes.StoreProduct>
+): { amount: number; currencyCode: string } => {
+  const kits = products["valy-flow"]?.variants ?? []
+  const boot = products["flow-boot-media"]?.variants ?? []
+
+  const amountOf = (v: HttpTypes.StoreProductVariant) =>
+    (v.calculated_price?.calculated_amount as number) ?? 0
+
+  if (!kits.length) {
+    return { amount: 0, currencyCode: "inr" }
+  }
+
+  const cheapestKit = Math.min(...kits.map(amountOf))
+  const bootPrice = boot.length ? Math.min(...boot.map(amountOf)) : 0
+
+  return {
+    amount: cheapestKit + bootPrice,
+    currencyCode: kits[0].calculated_price?.currency_code ?? "inr",
+  }
+}
