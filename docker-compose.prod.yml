@@ -64,6 +64,25 @@ services:
       - STORE_CORS=${STORE_CORS}
       - ADMIN_CORS=${ADMIN_CORS}
       - AUTH_CORS=${AUTH_CORS}
+      # Cashfree. The payment module refuses to load without an app id and a
+      # secret key, which takes the whole backend down at boot, so these are
+      # not optional. Values come from Portainer stack variables, not this file.
+      #
+      # NODE_ENV=production above makes the provider default to production
+      # mode, and it refuses to boot on a TEST key in that mode. Use live keys,
+      # or set CASHFREE_MODE=sandbox in Portainer to run the test keys.
+      - CASHFREE_APP_ID=${CASHFREE_APP_ID}
+      - CASHFREE_SECRET_KEY=${CASHFREE_SECRET_KEY}
+      # Where the bank's 3-D Secure page returns the shopper. Unset, the
+      # provider builds a localhost return URL and every payment dead-ends on
+      # a page the shopper's browser cannot reach.
+      - STOREFRONT_URL=${STOREFRONT_URL}
+      # Optional, and listed without a value on purpose: the bare form passes
+      # them through only when Portainer sets them, where `${VAR}` would send
+      # an empty string and override the provider's own defaults with "".
+      - CASHFREE_MODE
+      - CASHFREE_API_VERSION
+      - CASHFREE_NOTIFY_URL
       # Readable timestamps in `docker logs`; the default is UTC.
       - TZ=${TZ:-Asia/Kolkata}
 

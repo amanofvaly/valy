@@ -66,15 +66,22 @@ module.exports = defineConfig({
             options: {
               appId: process.env.CASHFREE_APP_ID,
               secretKey: process.env.CASHFREE_SECRET_KEY,
+              /*
+               * `||` rather than `??` throughout: a container orchestrator
+               * that declares a variable it has no value for sets it to the
+               * empty string, not to undefined. Under `??` that empty string
+               * wins, and the fallbacks below — including the API version the
+               * client picks — get overridden with "".
+               */
               mode:
-                process.env.CASHFREE_MODE ??
+                process.env.CASHFREE_MODE ||
                 (process.env.NODE_ENV === "production"
                   ? "production"
                   : "sandbox"),
-              apiVersion: process.env.CASHFREE_API_VERSION,
+              apiVersion: process.env.CASHFREE_API_VERSION || undefined,
               // Where the bank's 3-D Secure page or the UPI app returns to.
-              returnUrl: `${process.env.STOREFRONT_URL ?? "http://localhost:8000"}/order/confirmed/{order_id}`,
-              notifyUrl: process.env.CASHFREE_NOTIFY_URL,
+              returnUrl: `${process.env.STOREFRONT_URL || "http://localhost:8000"}/order/confirmed/{order_id}`,
+              notifyUrl: process.env.CASHFREE_NOTIFY_URL || undefined,
             },
           },
         ],
