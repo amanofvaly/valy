@@ -47,6 +47,40 @@ module.exports = defineConfig({
       resolve: "./src/modules/shipping-orchestrator",
     },
     {
+      /*
+       * Payments.
+       *
+       * `mode` is derived from NODE_ENV rather than set by hand: the two
+       * environments take different keys, and the failure mode of getting it
+       * wrong is a store that looks like it is taking money and is not. The
+       * provider refuses to boot on a mismatched key pair, so a stray test key
+       * in production is a crash at deploy rather than a silent hole in the
+       * takings.
+       */
+      resolve: "@medusajs/payment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/cashfree",
+            id: "cashfree",
+            options: {
+              appId: process.env.CASHFREE_APP_ID,
+              secretKey: process.env.CASHFREE_SECRET_KEY,
+              mode:
+                process.env.CASHFREE_MODE ??
+                (process.env.NODE_ENV === "production"
+                  ? "production"
+                  : "sandbox"),
+              apiVersion: process.env.CASHFREE_API_VERSION,
+              // Where the bank's 3-D Secure page or the UPI app returns to.
+              returnUrl: `${process.env.STOREFRONT_URL ?? "http://localhost:8000"}/order/confirmed/{order_id}`,
+              notifyUrl: process.env.CASHFREE_NOTIFY_URL,
+            },
+          },
+        ],
+      },
+    },
+    {
       resolve: "@medusajs/tax",
       options: {
         providers: [

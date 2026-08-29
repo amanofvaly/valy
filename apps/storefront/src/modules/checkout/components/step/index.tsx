@@ -48,7 +48,8 @@ const Step = ({
   return (
     <section
       className={cn(
-        "border-b border-line pb-8",
+        "pb-8",
+        step !== "payment" && "border-b border-line",
         !isOpen && !complete && "opacity-60"
       )}
       aria-current={isOpen ? "step" : undefined}

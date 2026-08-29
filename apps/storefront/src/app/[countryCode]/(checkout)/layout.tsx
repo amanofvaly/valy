@@ -1,6 +1,8 @@
 import CheckoutIdentity from "@modules/checkout/components/checkout-identity"
+import CheckoutWordmark from "@modules/checkout/components/checkout-wordmark"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
+import Image from "next/image"
 import { Suspense } from "react"
 
 /**
@@ -27,13 +29,7 @@ export default function CheckoutLayout({
             <span className="sm:hidden">Back</span>
           </LocalizedClientLink>
 
-          <LocalizedClientLink
-            href="/"
-            className="pressable rounded px-1 text-lg font-semibold tracking-tight text-ink"
-            data-testid="store-link"
-          >
-            Valy
-          </LocalizedClientLink>
+          <CheckoutWordmark />
 
           {/*
            * Streamed, so the header paints with the rest of the page. The
@@ -53,9 +49,16 @@ export default function CheckoutLayout({
       </div>
 
       <footer className="border-t border-line py-5">
-        <p className="container-page text-2xs text-muted">
-          Prices include GST. A tax invoice is raised on every order.
-        </p>
+        <div className="container-page flex items-center justify-center gap-2 text-xs text-muted">
+          <span>Secured by</span>
+          <Image
+            src="/images/cashfree-mark.svg"
+            width={18}
+            height={18}
+            alt=""
+          />
+          <span className="font-medium text-ink">Cashfree Payments</span>
+        </div>
       </footer>
     </div>
   )

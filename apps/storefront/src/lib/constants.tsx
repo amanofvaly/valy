@@ -33,6 +33,10 @@ export const paymentInfoMap: Record<
     title: "Manual Payment",
     icon: <CreditCard />,
   },
+  pp_cashfree_cashfree: {
+    title: "Card or UPI",
+    icon: <CreditCard />,
+  },
   // Add more payment providers here
 }
 
@@ -41,6 +45,18 @@ export const isStripeLike = (providerId?: string) => {
   return (
     providerId?.startsWith("pp_stripe_") || providerId?.startsWith("pp_medusa-")
   )
+}
+
+/**
+ * Cashfree, which on this store is every card and every UPI app.
+ *
+ * The id is `pp_{identifier}_{id}` — the identifier from the provider service
+ * and the id it is registered under in `medusa-config.ts`, which are both
+ * "cashfree". Matched by prefix so a second Cashfree provider (a separate
+ * account for a second region, say) still resolves.
+ */
+export const isCashfree = (providerId?: string) => {
+  return providerId?.startsWith("pp_cashfree")
 }
 
 export const isPaypal = (providerId?: string) => {

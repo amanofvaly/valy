@@ -1,6 +1,7 @@
 "use client"
 
-import { isManual, isStripeLike } from "@lib/constants"
+import { isCashfree, isManual, isStripeLike } from "@lib/constants"
+import { useCashfree } from "@modules/checkout/components/cashfree/context"
 import { placeOrder } from "@lib/data/cart-actions"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -11,11 +12,13 @@ import ErrorMessage from "../error-message"
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
   "data-testid": string
+  label?: string
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   "data-testid": dataTestId,
+  label,
 }) => {
   const notReady =
     !cart ||
@@ -35,6 +38,15 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           data-testid={dataTestId}
         />
       )
+    case isCashfree(paymentSession?.provider_id):
+      return (
+        <CashfreePaymentButton
+          notReady={notReady}
+          cart={cart}
+          label={label}
+          data-testid={dataTestId}
+        />
+      )
     case isManual(paymentSession?.provider_id):
       return (
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
@@ -46,6 +58,91 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         </Button>
       )
   }
+}
+
+/**
+ * Pay with Cashfree, then place the order.
+ *
+ * Two calls in one press, and the order matters. `pay()` runs first and only
+ * resolves once Cashfree has an outcome — a card authorised, a 3-D Secure
+ * challenge answered, a UPI request approved in the customer's app. Only then
+ * is the cart completed, and completing it makes Medusa ask our provider what
+ * happened, which asks Cashfree. So the order is created against Cashfree's
+ * answer rather than against the browser's claim about it: a customer who
+ * closes the 3-D Secure modal gets an error here and no order, and a payment
+ * that succeeded but whose browser never came back is picked up by the
+ * webhook.
+ */
+const CashfreePaymentButton = ({
+  cart,
+  notReady,
+  "data-testid": dataTestId,
+  label = "Place order",
+}: {
+  cart: HttpTypes.StoreCart
+  notReady: boolean
+  label?: string
+  "data-testid"?: string
+}) => {
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const cashfree = useCashfree()
+
+  if (cashfree?.usesInlineQrAction) {
+    return null
+  }
+
+  const session = cart.payment_collection?.payment_sessions?.find(
+    (s) => s.status === "pending"
+  )
+  const paymentSessionId = (session?.data as Record<string, unknown>)
+    ?.payment_session_id as string | undefined
+
+  const handlePayment = async () => {
+    if (!cashfree || !paymentSessionId) {
+      setErrorMessage("The payment form is not ready yet.")
+      return
+    }
+
+    setSubmitting(true)
+    setErrorMessage(null)
+
+    const result = await cashfree.pay(paymentSessionId)
+
+    if (!result.ok) {
+      setErrorMessage(result.message)
+      setSubmitting(false)
+      return
+    }
+
+    /*
+     * Not reset on the way out: `placeOrder` navigates to the confirmation
+     * page, and re-enabling the button first gives a customer a live "Place
+     * order" to press twice while the redirect is in flight.
+     */
+    await placeOrder().catch((error: Error) => {
+      setErrorMessage(error.message)
+      setSubmitting(false)
+    })
+  }
+
+  return (
+    <>
+      <Button
+        variant="action"
+        block
+        className="lg:w-auto"
+        size="large"
+        disabled={notReady || !cashfree?.ready}
+        isLoading={submitting}
+        onClick={handlePayment}
+        data-testid={dataTestId}
+      >
+        {label}
+      </Button>
+      <ErrorMessage error={errorMessage} data-testid="cashfree-payment-error" />
+    </>
+  )
 }
 
 const StripePaymentButton = ({

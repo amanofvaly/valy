@@ -1,5 +1,6 @@
 "use client"
 
+import { isCashfree } from "@lib/constants"
 import { HttpTypes } from "@medusajs/types"
 import Step from "@modules/checkout/components/step"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -20,6 +21,10 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
   const searchParams = useSearchParams()
   const isOpen = searchParams.get("step") === "review"
 
+  const activeSession = cart.payment_collection?.payment_sessions?.find(
+    (session) => session.status === "pending"
+  )
+
   const paidByGiftcard =
     !!(cart as unknown as Record<string, unknown>)?.gift_cards &&
     ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
@@ -30,6 +35,20 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
     cart.shipping_address &&
     (cart.shipping_methods?.length ?? 0) > 0 &&
     (cart.payment_collection || paidByGiftcard)
+
+  /*
+   * Cashfree has no review step.
+   *
+   * Its card and UPI inputs are iframes, and an iframe that is unmounted takes
+   * the half-typed card with it — so the fields cannot be filled in one step
+   * and paid from the next. That leaves two honest arrangements: ask for the
+   * card under "Review", which is not what the word means, or let the payment
+   * step be the last one. This is the second. The consent line and the button
+   * move up there with the fields, and nothing is left here to show.
+   */
+  if (isCashfree(activeSession?.provider_id)) {
+    return null
+  }
 
   return (
     <Step index={4} title="Review" step="review" enabled={false}>
