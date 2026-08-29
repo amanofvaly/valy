@@ -73,3 +73,21 @@ export const listNavCategories = cache(
     return categories.filter((c) => !c.parent_category_id)
   }
 )
+
+/**
+ * Every category id, for a browse surface that is not scoped to one.
+ *
+ * `/store` lists the whole catalogue, and "the whole catalogue" is not the same
+ * thing as "every published product". The Flow configurator's components — the
+ * unbranded drive, the memory, the setup service — have to stay published so
+ * they can be added to a cart, but they belong to no category and have no
+ * meaning outside a build. Scoping the query to categories excludes them with a
+ * correct count and correct pagination, which post-filtering a page of results
+ * cannot do: it leaves holes in some pages and drops products off the end.
+ */
+export const listBrowsableCategoryIds = cache(
+  async (): Promise<string[]> => {
+    const categories = await listCategories({ limit: 100 })
+    return categories.map((c) => c.id)
+  }
+)

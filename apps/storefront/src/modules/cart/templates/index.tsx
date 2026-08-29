@@ -1,5 +1,6 @@
 import EmptyCartMessage from "@modules/cart/components/empty-cart-message"
 import SignInPrompt from "@modules/cart/components/sign-in-prompt"
+import { cartItemCount } from "@lib/util/cart-builds"
 import { HttpTypes } from "@medusajs/types"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
@@ -25,7 +26,7 @@ const CartTemplate = ({
     )
   }
 
-  const itemCount = cart.items.reduce((n, item) => n + item.quantity, 0)
+  const itemCount = cartItemCount(cart.items)
 
   return (
     <div className="container-page py-8 lg:py-12" data-testid="cart-container">

@@ -7,6 +7,7 @@ import {
   shippingTotal,
 } from "@lib/util/cart-totals"
 import { convertToLocale } from "@lib/util/money"
+import { cartItemCount } from "@lib/util/cart-builds"
 import { HttpTypes } from "@medusajs/types"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -75,7 +76,7 @@ const Summary = ({ cart }: SummaryProps) => {
 
   const shippingMethod = cart.shipping_methods?.at(-1)
   const destination = formatDestination(cart.shipping_address)
-  const itemCount = cart.items?.length ?? 0
+  const itemCount = cartItemCount(cart.items)
 
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-line p-5">

@@ -29,13 +29,13 @@ const INTERFACES = [
   {
     slot: "3.5 inch drive bays",
     accepts: "Any SATA drive, any manufacturer, any capacity",
-    machines: "Flow 2, Flow 4, Hike 4, Hike 6, Summit 8",
+    machines: "Valy Flow, Hike 4, Hike 6, Summit 8",
     note: "CMR drives rebuild an array in reasonable time; SMR ones do not. That is the only recommendation we make, and it is about the recording method, not the brand.",
   },
   {
     slot: "M.2 NVMe slots",
     accepts: "Any M.2 2280 NVMe SSD",
-    machines: "Flow 4, Hike 4, Hike 6, Summit 8",
+    machines: "Valy Flow, Hike 4, Hike 6, Summit 8",
     note: "Used for app storage, photo thumbnails and cache. A cheap one is fine for a boot drive; the array is where the speed matters.",
   },
   {

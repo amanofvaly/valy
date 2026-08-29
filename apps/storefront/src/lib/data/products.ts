@@ -356,3 +356,58 @@ export const listProductsOfType = cache(
     return products
   }
 )
+
+/**
+ * The seven products a Valy Flow build is assembled from, keyed by handle.
+ *
+ * One request, not seven. The store list endpoint takes repeated `handle`
+ * parameters, so the machine, its boot drive, memory, drives, network, graphics
+ * and setup service all arrive together with their prices calculated for the
+ * region — which is what the configurator needs to print a delta beside every
+ * row without a round trip per stage.
+ *
+ * Cached on the country code, a primitive, so the page body and
+ * `generateMetadata` share one fetch. A handle that is missing or unpublished
+ * is simply absent from the map; the configurator renders the stages it has
+ * data for rather than throwing, so one drafted component degrades a section
+ * instead of taking the page down.
+ */
+export const listFlowProducts = cache(
+  async (
+    countryCode: string
+  ): Promise<Record<string, HttpTypes.StoreProduct>> => {
+    const region = await getRegion(countryCode)
+
+    if (!region) {
+      return {}
+    }
+
+    const handles = [
+      "valy-flow",
+      "flow-boot-media",
+      "flow-memory",
+      "flow-storage-drive",
+      "flow-network",
+      "flow-graphics",
+      "flow-setup",
+    ]
+
+    const { products } = await sdk.client.fetch<{
+      products: HttpTypes.StoreProduct[]
+    }>(`/store/products`, {
+      method: "GET",
+      query: {
+        handle: handles,
+        limit: handles.length,
+        region_id: region.id,
+        fields: PRODUCT_FIELDS,
+      },
+      headers: { ...(await getAuthHeaders()) },
+      cache: "no-store",
+    })
+
+    return Object.fromEntries(
+      products.filter((p) => p.handle).map((p) => [p.handle!, p])
+    )
+  }
+)

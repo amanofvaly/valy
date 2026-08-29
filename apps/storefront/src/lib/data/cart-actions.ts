@@ -122,6 +122,70 @@ export async function addToCart({
     .catch(medusaError)
 }
 
+/**
+ * Adds a configured Valy Flow to the cart as a group of line items.
+ *
+ * The machine, its memory, its drives and its setup are separate products —
+ * see the note at the top of `valy-flow-catalogue.ts` for why a variant matrix
+ * was not an option — so a build is several lines rather than one. What holds
+ * them together is `build_id`: a single random id written into every line's
+ * metadata, which the cart and the checkout summary group on so the visitor
+ * sees one machine with its specification under it rather than six unrelated
+ * products that happen to be in the basket together.
+ *
+ * The lines are created in sequence, not in parallel. Medusa recalculates cart
+ * totals, tax and promotions on every line item write, and firing six of those
+ * concurrently at one cart is how you get lost updates.
+ */
+export async function addFlowBuildToCart({
+  lines,
+  summary,
+  countryCode,
+}: {
+  lines: { variantId: string; quantity: number; role: string; label: string }[]
+  summary: string
+  countryCode: string
+}) {
+  if (!lines.length) {
+    throw new Error("Cannot add an empty build to the cart")
+  }
+
+  const cart = await getOrSetCart(countryCode)
+
+  if (!cart) {
+    throw new Error("Error retrieving or creating cart")
+  }
+
+  const buildId = `bld_${crypto.randomUUID()}`
+  const headers = { ...(await getAuthHeaders()) }
+
+  try {
+    for (const line of lines) {
+      await sdk.store.cart.createLineItem(
+        cart.id,
+        {
+          variant_id: line.variantId,
+          quantity: line.quantity,
+          metadata: {
+            build_id: buildId,
+            build_role: line.role,
+            build_label: line.label,
+            // Only the machine carries the summary, so a template reading it
+            // off the group's lead line gets exactly one answer.
+            ...(line.role === "kit" ? { build_summary: summary } : {}),
+          },
+        },
+        {},
+        headers
+      )
+    }
+  } catch (error) {
+    return medusaError(error)
+  }
+
+  refreshCartSurfaces()
+}
+
 export async function updateLineItem({
   lineId,
   quantity,
@@ -160,6 +224,49 @@ export async function deleteLineItem(lineId: string) {
     .deleteLineItem(cartId, lineId, {}, { ...(await getAuthHeaders()) })
     .then(refreshCartSurfaces)
     .catch(medusaError)
+}
+
+/**
+ * Removes a whole configured build.
+ *
+ * The lines of a build are not independently meaningful — a Flow without its
+ * boot drive is not a cheaper Flow, it is an incomplete one — so a build has no
+ * per-line quantity control and is removed as a unit. Someone who wants two
+ * machines configures twice, which is also the only way to have them differ.
+ *
+ * Deletes run in sequence for the same reason the adds do: every line item
+ * write recalculates the cart, and concurrent writes to one cart lose updates.
+ */
+export async function removeBuildFromCart(buildId: string) {
+  if (!buildId) {
+    throw new Error("Missing build ID when removing a build")
+  }
+
+  const cart = await retrieveCart(undefined, "id,*items,*items.metadata")
+
+  if (!cart) {
+    throw new Error("No cart to remove a build from")
+  }
+
+  const lineIds = (cart.items ?? [])
+    .filter((item) => item.metadata?.["build_id"] === buildId)
+    .map((item) => item.id)
+
+  if (!lineIds.length) {
+    return
+  }
+
+  const headers = { ...(await getAuthHeaders()) }
+
+  try {
+    for (const lineId of lineIds) {
+      await sdk.store.cart.deleteLineItem(cart.id, lineId, {}, headers)
+    }
+  } catch (error) {
+    return medusaError(error)
+  }
+
+  refreshCartSurfaces()
 }
 
 export async function setShippingMethod({

@@ -34,7 +34,7 @@ const STEPS = [
   {
     title: "Start with two bays if money is tight",
     detail:
-      "A Flow 2 with two drives mirrored is the cheapest thing that is not reckless. When it fills, the drives come out and go into a larger machine and the pool imports — nothing is copied twice, nothing is thrown away.",
+      "A Flow with two drives mirrored is the cheapest thing that is not reckless. When it fills, the drives come out and go into a larger machine and the pool imports — nothing is copied twice, nothing is thrown away.",
   },
   {
     title: "Move the photos first, then stop",
@@ -154,15 +154,17 @@ export default function GettingStartedPage() {
           </h2>
           <Prose className="mt-3">
             <p>
-              A Flow 2 with two 4TB drives mirrored is <strong>₹42,000</strong>,
-              GST included, and gives you about 3.6TB of usable space with one
-              drive of redundancy. That is roughly seven hundred thousand phone
-              photographs, which is more than most people will take in a
-              lifetime.
+              A Valy Flow on the i3 base kit, with 8GB of memory and two 4TB
+              drives mirrored, is <strong>₹53,999</strong>, GST included. That
+              is 4TB of usable space with one drive of redundancy — roughly
+              eight hundred thousand phone photographs, which is more than most
+              people will take in a lifetime.
             </p>
             <p>
-              Operating system installation is included. If you would rather not
-              do the Google Takeout export and the timestamp repair yourself,{" "}
+              TrueNAS arrives installed on its own boot drive. Having us build
+              the storage pool and set up the applications is ₹5,000 on top. If
+              you would rather not do the Google Takeout export and the
+              timestamp repair yourself,{" "}
               <LocalizedClientLink href="/products/photo-library-migration">
                 we will do it
               </LocalizedClientLink>{" "}
@@ -177,8 +179,8 @@ export default function GettingStartedPage() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="large">
-              <LocalizedClientLink href="/products/flow-2">
-                See the Flow 2
+              <LocalizedClientLink href="/products/valy-flow">
+                Configure a Flow
               </LocalizedClientLink>
             </Button>
             <Button asChild variant="secondary" size="large">

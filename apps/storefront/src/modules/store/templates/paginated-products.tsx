@@ -1,3 +1,4 @@
+import { listBrowsableCategoryIds } from "@lib/data/categories"
 import { listProductsWithSort } from "@lib/data/products"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
@@ -33,6 +34,17 @@ export default async function PaginatedProducts({
   }
   if (productsIds) {
     queryParams.id = productsIds
+  }
+
+  /*
+   * An unscoped grid — `/store` — is still scoped to the categories rather
+   * than being left to mean "every published product". Configurator components
+   * are published and buyable but deliberately uncategorised, so this is what
+   * keeps a nameless drive out of the catalogue while keeping the count and
+   * the page numbers honest.
+   */
+  if (!collectionId && !categoryId && !productsIds) {
+    queryParams.category_id = await listBrowsableCategoryIds()
   }
 
   const {

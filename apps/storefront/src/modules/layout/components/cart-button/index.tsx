@@ -1,4 +1,5 @@
 import { retrieveCart } from "@lib/data/cart"
+import { cartItemCount } from "@lib/util/cart-builds"
 import CartCount from "./cart-count"
 
 /**
@@ -9,8 +10,10 @@ import CartCount from "./cart-count"
 export default async function CartButton() {
   const cart = await retrieveCart().catch(() => null)
 
-  const count =
-    cart?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
+  // A configured machine counts as one, matching the cart page and the
+  // checkout summary. Seven lines and nine units for one purchase would make
+  // the badge disagree with every screen it leads to.
+  const count = cartItemCount(cart?.items)
 
   return <CartCount serverCount={count} />
 }

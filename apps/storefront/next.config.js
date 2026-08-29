@@ -108,6 +108,16 @@ const nextConfig = {
         protocol: "https",
         hostname: "medusa-public-images.s3.eu-west-1.amazonaws.com",
       },
+      {
+        // The production file store, named explicitly rather than left to
+        // `backendPattern`. Product images uploaded through admin carry an
+        // absolute api.valy.in URL baked in at upload time, so a developer
+        // pointed at localhost:9000 still has to be able to render them —
+        // otherwise every seeded photograph 400s in local development only.
+        protocol: "https",
+        hostname: "api.valy.in",
+        pathname: "/static/**",
+      },
       ...backendPattern,
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
