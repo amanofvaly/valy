@@ -1,7 +1,16 @@
-import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import { isCashfree, isStripeLike, paymentInfoMap } from "@lib/constants"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import SyncCashfreePayment from "./sync-cashfree"
 
+/**
+ * What was paid, and with what.
+ *
+ * One statement rather than a "Method" field and a "Details" field. Splitting
+ * it produced a row that read "Method: Cashfree" beside "Details: ₹2,772.70
+ * paid on 29 Aug" — two labels and a heading to carry one sentence, on a page
+ * that already had a "Method" of its own under delivery.
+ */
 const PaymentDetails = ({ order }: { order: HttpTypes.StoreOrder }) => {
   const payment = order.payment_collections?.[0]?.payments?.[0]
 
@@ -9,47 +18,62 @@ const PaymentDetails = ({ order }: { order: HttpTypes.StoreOrder }) => {
     return null
   }
 
-  const info = paymentInfoMap[payment.provider_id]
+  const paidOn = new Date(payment.created_at ?? "").toLocaleDateString(
+    "en-IN",
+    { day: "numeric", month: "short", year: "numeric" }
+  )
+
+  let instrument: string | null = null
+  let hasCashfreeDetails = false
+  const isCashfreePayment = isCashfree(payment.provider_id)
+
+  if (isStripeLike(payment.provider_id) && payment.data?.card_last4) {
+    instrument = `Card ending ${payment.data.card_last4}`
+  } else if (isCashfreePayment) {
+    if (Array.isArray(payment.data?.payments) && payment.data.payments.length > 0) {
+      hasCashfreeDetails = true
+      const pm = (payment.data.payments[0] as any)?.payment_method
+      if (pm) {
+        if (pm.card) instrument = `Card ending ${pm.card.card_number?.slice(-4) || '****'}`
+        else if (pm.upi) instrument = `UPI (${pm.upi.upi_id})`
+        else if (pm.netbanking) instrument = `${pm.netbanking.netbanking_bank_name} Netbanking`
+        else if (pm.wallet) instrument = `Wallet`
+        else if (pm.app) instrument = `App`
+        else {
+          const key = Object.keys(pm)[0]
+          instrument = key ? key.charAt(0).toUpperCase() + key.slice(1) : 'Cashfree'
+        }
+      }
+    }
+  }
 
   return (
     <section aria-labelledby="payment-details">
-      <h2 id="payment-details" className="mb-3 text-lg font-semibold text-ink">
+      {isCashfreePayment && (
+        <SyncCashfreePayment 
+          orderId={order.id} 
+          hasPaymentDetails={hasCashfreeDetails} 
+        />
+      )}
+      <h2 id="payment-details" className="mb-3 text-base font-semibold text-ink">
         Payment
       </h2>
 
-      <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-3">
-        <div className="flex flex-col gap-0.5">
-          <dt className="text-xs font-medium text-ink">Method</dt>
-          <dd className="text-muted" data-testid="payment-method">
-            {info?.title ?? payment.provider_id}
-          </dd>
-        </div>
-
-        <div className="flex flex-col gap-0.5 sm:col-span-2">
-          <dt className="text-xs font-medium text-ink">Details</dt>
-          <dd className="flex items-center gap-2 text-muted">
-            {info?.icon && (
-              <span className="grid h-7 w-9 place-items-center rounded border border-line bg-surface">
-                {info.icon}
-              </span>
-            )}
-            <span data-testid="payment-amount">
-              {isStripeLike(payment.provider_id) && payment.data?.card_last4
-                ? `Card ending ${payment.data.card_last4}`
-                : `${convertToLocale({
-                    amount: payment.amount,
-                    currency_code: order.currency_code,
-                  })} paid on ${new Date(
-                    payment.created_at ?? ""
-                  ).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}`}
-            </span>
-          </dd>
-        </div>
-      </dl>
+      <p className="text-sm leading-6 text-muted" data-testid="payment-amount">
+        <span className="font-mono tabular text-ink">
+          {convertToLocale({
+            amount: payment.amount,
+            currency_code: order.currency_code,
+          })}
+        </span>{" "}
+        paid on {paidOn}
+        {instrument && (
+          <>
+            <br />
+            <span data-testid="payment-method">{instrument}</span>
+          </>
+        )}
+      </p>
     </section>
   )
 }

@@ -314,7 +314,10 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
     input: AuthorizePaymentInput
   ): Promise<AuthorizePaymentOutput> {
     const orderId = this.#orderIdFrom(input.data)
-    const order = await this.#order(orderId)
+    const [order, payments] = await Promise.all([
+      this.#order(orderId),
+      this.#client.getOrderPayments(orderId).catch(() => []),
+    ])
 
     return {
       status: this.#statusOf(order),
@@ -323,6 +326,7 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
         order_status: order.order_status,
         order_amount: order.order_amount,
         cf_order_id: order.cf_order_id,
+        payments,
       },
     }
   }
