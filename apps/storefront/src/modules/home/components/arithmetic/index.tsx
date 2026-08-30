@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Section } from "@modules/home/components/section"
 import {
   si1password,
@@ -7,7 +8,6 @@ import {
   siAudible,
   siBackblaze,
   siDropbox,
-  siGoogle,
   siHomeassistant,
   siIcloud,
   siNetflix,
@@ -25,8 +25,7 @@ type Subscription = {
   monthly: number
   category: "Files and home" | "Film and TV" | "Music and books"
   icon?: SimpleIcon
-  mark?: string
-  color?: string
+  image?: { src: string; width: number; height: number; bleed?: boolean }
 }
 
 const SUBSCRIPTIONS: Subscription[] = [
@@ -36,7 +35,7 @@ const SUBSCRIPTIONS: Subscription[] = [
     substitute: "Cloud and photo storage",
     monthly: 749,
     category: "Files and home",
-    icon: siGoogle,
+    image: { src: "/images/services/google.svg", width: 24, height: 24 },
   },
   {
     id: "icloud",
@@ -100,8 +99,7 @@ const SUBSCRIPTIONS: Subscription[] = [
     substitute: "Your own video library",
     monthly: 299,
     category: "Film and TV",
-    mark: "JH",
-    color: "#0B57D0",
+    image: { src: "/images/services/jiohotstar.png", width: 160, height: 160 },
   },
   {
     id: "sonyliv",
@@ -109,8 +107,12 @@ const SUBSCRIPTIONS: Subscription[] = [
     substitute: "Your own video library",
     monthly: 399,
     category: "Film and TV",
-    mark: "S",
-    color: "#531D8F",
+    image: {
+      src: "/images/services/sonyliv.png",
+      width: 160,
+      height: 160,
+      bleed: true,
+    },
   },
   {
     id: "zee5",
@@ -118,8 +120,7 @@ const SUBSCRIPTIONS: Subscription[] = [
     substitute: "Your own video library",
     monthly: 299,
     category: "Film and TV",
-    mark: "Z",
-    color: "#6D28D9",
+    image: { src: "/images/services/zee5.svg", width: 50, height: 50 },
   },
   {
     id: "prime",
@@ -127,8 +128,12 @@ const SUBSCRIPTIONS: Subscription[] = [
     substitute: "Your own video library",
     monthly: 299,
     category: "Film and TV",
-    mark: "a",
-    color: "#00A8E1",
+    image: {
+      src: "/images/services/prime-video.svg",
+      width: 32,
+      height: 32,
+      bleed: true,
+    },
   },
   {
     id: "spotify",
@@ -172,23 +177,29 @@ const MAXIMUM_MONTHLY = SUBSCRIPTIONS.reduce(
 const formatRupees = (value: number) => `₹${value.toLocaleString("en-IN")}`
 
 const ServiceMark = ({ service }: { service: Subscription }) => {
-  const color = service.icon ? `#${service.icon.hex}` : service.color
+  const { icon, image } = service
 
   return (
     <span
       aria-hidden="true"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-paper"
-      style={{ color }}
+      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-paper"
+      style={icon ? { color: `#${icon.hex}` } : undefined}
     >
-      {service.icon ? (
+      {image ? (
+        <Image
+          src={image.src}
+          width={image.width}
+          height={image.height}
+          alt=""
+          className={
+            image.bleed ? "h-full w-full object-cover" : "h-6 w-6 object-contain"
+          }
+        />
+      ) : icon ? (
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-          <path d={service.icon.path} />
+          <path d={icon.path} />
         </svg>
-      ) : (
-        <span className="text-sm font-semibold tracking-tight">
-          {service.mark}
-        </span>
-      )}
+      ) : null}
     </span>
   )
 }
@@ -248,7 +259,7 @@ const Arithmetic = () => {
           </div>
         </div>
 
-        <div className="mt-16 border-t border-paper/25 sm:mt-20">
+        <div className="hidden border-t border-paper/25 lg:mt-20 lg:block">
           <div className="grid lg:grid-cols-3">
             {CATEGORIES.map((category) => (
               <div
