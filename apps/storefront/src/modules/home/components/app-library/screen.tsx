@@ -67,7 +67,7 @@ const cellPaint = (i: number) =>
   ({
     "--app-c1": `${Math.round(6 + scatter(i, 1) * 58)}%`,
     "--app-c2": `${Math.round(4 + scatter(i, 2) * 46)}%`,
-  }) as React.CSSProperties
+  } as React.CSSProperties)
 
 const DOT: Record<NonNullable<ScreenRow["state"]>, string> = {
   on: "bg-signal",
@@ -93,7 +93,7 @@ const Rows = ({
       <div
         key={row.label}
         style={step(i + 1)}
-        className="flex min-h-[3.25rem] animate-screen-in items-center gap-3 border-b border-line py-3 last:border-b-0 sm:gap-4 lg:flex-1"
+        className="flex min-h-[3.25rem] flex-1 animate-screen-in items-center gap-4 border-b border-line py-3 last:border-b-0"
       >
         {row.done !== undefined ? (
           <span
@@ -128,7 +128,7 @@ const Rows = ({
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              "truncate text-sm font-medium text-ink sm:text-base",
+              "truncate text-base font-medium text-ink",
               row.done && "text-muted line-through decoration-line-strong"
             )}
           >
@@ -188,7 +188,7 @@ const Photos = ({
       <span>{body.count_label}</span>
     </div>
 
-    <div className="grid min-h-0 flex-1 grid-cols-4 gap-1 overflow-hidden sm:grid-cols-6 lg:grid-cols-8 lg:gap-1.5">
+    <div className="grid min-h-0 flex-1 grid-cols-8 gap-1.5 overflow-hidden">
       {Array.from({ length: body.count }).map((_, i) => (
         <div
           key={i}
@@ -227,7 +227,7 @@ const Covers = ({
       </p>
     )}
 
-    <div className="grid min-h-0 flex-1 grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
+    <div className="grid min-h-0 flex-1 grid-cols-5 gap-4">
       {body.items.map((item, i) => (
         <figure
           key={item.title}
@@ -277,14 +277,14 @@ const Cameras = ({
 }: {
   body: Extract<AppScreen["body"], { kind: "cameras" }>
 }) => (
-  <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:h-full lg:grid-cols-3 lg:grid-rows-2">
+  <div className="grid h-full grid-cols-3 grid-rows-2 gap-4">
     {body.tags.map((tag, i) => (
       <figure
         key={tag}
         style={step(i)}
-        className="flex animate-screen-in flex-col lg:min-h-0"
+        className="flex min-h-0 animate-screen-in flex-col"
       >
-        <div className="relative aspect-[16/9] overflow-hidden rounded bg-surface lg:aspect-auto lg:min-h-0 lg:flex-1">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded bg-surface">
           <Image
             src={camera(i)}
             alt=""
@@ -339,7 +339,7 @@ const Room = ({
       className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/25 to-ink/10"
     />
 
-    <ul className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-2 p-4 sm:grid-cols-3 sm:gap-3 sm:p-5">
+    <ul className="absolute inset-x-0 bottom-0 grid grid-cols-3 gap-3 p-5">
       {body.chips.map((chip, i) => (
         <li
           key={chip.label}
@@ -351,7 +351,10 @@ const Room = ({
           </p>
           <p className="mt-0.5 flex items-center gap-2 truncate text-base font-medium tabular-nums text-white">
             {chip.on && (
-              <span aria-hidden className="app-fill h-1.5 w-1.5 shrink-0 rounded-full" />
+              <span
+                aria-hidden
+                className="app-fill h-1.5 w-1.5 shrink-0 rounded-full"
+              />
             )}
             {chip.value}
           </p>
@@ -369,7 +372,7 @@ const Meter = ({
   <div className="flex h-full flex-col gap-6">
     <div>
       <p className="flex animate-screen-in flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-4xl font-semibold tabular-nums tracking-tight text-ink sm:text-5xl">
+        <span className="text-5xl font-semibold tabular-nums tracking-tight text-ink">
           {body.value}
         </span>
         <span className="text-sm text-muted">{body.unit}</span>
@@ -387,10 +390,7 @@ const Meter = ({
      * transform, which is one composited property and stays smooth at thirty
      * bars on a phone.
      */}
-    <div
-      aria-hidden
-      className="flex h-24 min-h-0 flex-1 items-end gap-[2px] sm:h-32 sm:gap-[3px]"
-    >
+    <div aria-hidden className="flex h-32 min-h-0 flex-1 items-end gap-[3px]">
       {body.bars.map((v, i) => (
         <span
           key={i}
@@ -406,7 +406,10 @@ const Meter = ({
       ))}
     </div>
 
-    <dl className="grid animate-screen-in grid-cols-3 gap-4 border-t border-line pt-4" style={step(2)}>
+    <dl
+      className="grid animate-screen-in grid-cols-3 gap-4 border-t border-line pt-4"
+      style={step(2)}
+    >
       {body.foot.map(([label, value]) => (
         <div key={label}>
           <dt className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">
@@ -426,13 +429,13 @@ const Tiles = ({
 }: {
   body: Extract<AppScreen["body"], { kind: "tiles" }>
 }) => (
-  <div className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-3 lg:h-full lg:grid-rows-2">
+  <div className="grid h-full grid-cols-3 grid-rows-2 gap-px overflow-hidden rounded border border-line bg-line">
     {body.tiles.map((tile, i) => (
       <div
         key={tile.label}
         style={step(i)}
         className={cn(
-          "relative flex animate-screen-in flex-col justify-between gap-6 p-4 sm:p-5",
+          "relative flex animate-screen-in flex-col justify-between gap-6 p-5",
           tile.on ? "app-tile-on" : "bg-paper"
         )}
       >
@@ -441,7 +444,7 @@ const Tiles = ({
         </p>
         <p
           className={cn(
-            "truncate text-xl font-medium tabular-nums tracking-tight sm:text-2xl",
+            "truncate text-2xl font-medium tabular-nums tracking-tight",
             tile.on ? "text-ink" : "text-muted"
           )}
         >
@@ -473,8 +476,10 @@ const Graph = ({
   app: SelfHostedApp
   body: Extract<AppScreen["body"], { kind: "graph" }>
 }) => {
-  const left = body.layout === "hub" ? body.nodes.slice(0, 2) : body.nodes.slice(0, 1)
-  const right = body.layout === "hub" ? body.nodes.slice(2) : body.nodes.slice(1)
+  const left =
+    body.layout === "hub" ? body.nodes.slice(0, 2) : body.nodes.slice(0, 1)
+  const right =
+    body.layout === "hub" ? body.nodes.slice(2) : body.nodes.slice(1)
 
   const W = 880
   const H = 330
@@ -522,7 +527,9 @@ const Graph = ({
   const link = (x1: number, y1: number, x2: number, y2: number, i: number) => (
     <path
       key={`${x1}-${y1}-${i}`}
-      d={`M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`}
+      d={`M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${
+        (x1 + x2) / 2
+      } ${y2}, ${x2} ${y2}`}
       fill="none"
       stroke={app.brand}
       strokeWidth={1.5}
@@ -539,7 +546,9 @@ const Graph = ({
         viewBox={`0 0 ${W} ${H}`}
         className="h-full max-h-[22rem] w-full"
         role="img"
-        aria-label={`${body.hub} connected to ${body.nodes.map((n) => n.label).join(", ")}`}
+        aria-label={`${body.hub} connected to ${body.nodes
+          .map((n) => n.label)
+          .join(", ")}`}
       >
         {left.map((_, i) =>
           link(158, yFor(left.length, i), hubX - 86, hubY, i)
@@ -548,9 +557,18 @@ const Graph = ({
           link(hubX + 86, hubY, W - 158, yFor(right.length, i), left.length + i)
         )}
 
-        {left.map((n, i) => box(n.label, n.meta, 6, yFor(left.length, i), "start", i))}
+        {left.map((n, i) =>
+          box(n.label, n.meta, 6, yFor(left.length, i), "start", i)
+        )}
         {right.map((n, i) =>
-          box(n.label, n.meta, W - 6, yFor(right.length, i), "end", left.length + i)
+          box(
+            n.label,
+            n.meta,
+            W - 6,
+            yFor(right.length, i),
+            "end",
+            left.length + i
+          )
         )}
 
         <g className="animate-screen-in" style={step(1)}>
@@ -592,16 +610,16 @@ const Player = ({
   body: Extract<AppScreen["body"], { kind: "player" }>
 }) => (
   <div className="flex h-full flex-col justify-between gap-6">
-    <div className="flex animate-screen-in gap-5 sm:gap-7">
+    <div className="flex animate-screen-in gap-7">
       <div
         style={cellPaint(3)}
-        className="app-cell hidden aspect-[2/3] w-28 shrink-0 rounded sm:block lg:w-36"
+        className="app-cell block aspect-[2/3] w-36 shrink-0 rounded"
       />
       <div className="flex min-w-0 flex-col gap-3">
         <p className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">
           Now playing · {body.where}
         </p>
-        <p className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">
+        <p className="text-3xl font-semibold tracking-tight text-ink">
           {body.title}
         </p>
         <ul className="flex flex-wrap gap-2">
@@ -637,7 +655,7 @@ const Player = ({
       <p className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">
         Up next
       </p>
-      <ul className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+      <ul className="mt-3 grid grid-cols-4 gap-5">
         {body.queue.map((item, i) => (
           <li
             key={item.title}
@@ -731,7 +749,10 @@ export const AppScreenView = ({
 }) => (
   <div
     style={
-      { "--app-brand": app.brand, "--app-wash": app.wash } as React.CSSProperties
+      {
+        "--app-brand": app.brand,
+        "--app-wash": app.wash,
+      } as React.CSSProperties
     }
     className="flex h-full min-h-0 flex-col"
   >
@@ -740,26 +761,26 @@ export const AppScreenView = ({
      * the address it answers on inside your house. The address is the quietest
      * argument on the page — `photos.home` is not a URL anyone else can reach.
      */}
-    <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-7 sm:py-5">
+    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-7 py-5">
       <div className="flex min-w-0 items-center gap-3">
-        <AppIcon app={app} className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
+        <AppIcon app={app} className="h-8 w-8 shrink-0" />
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold tracking-tight text-ink sm:text-lg">
+          <p className="truncate text-lg font-semibold tracking-tight text-ink">
             {app.name}
           </p>
-          <p className="truncate text-xs text-muted sm:text-sm">{app.line}</p>
+          <p className="truncate text-sm text-muted">{app.line}</p>
         </div>
       </div>
-      <span className="hidden shrink-0 rounded border border-line bg-surface px-2 py-1 font-mono text-2xs tracking-wide text-muted sm:inline-block">
+      <span className="inline-block shrink-0 rounded border border-line bg-surface px-2 py-1 font-mono text-2xs tracking-wide text-muted">
         {screen.host}
       </span>
     </div>
 
-    <div className="min-h-0 flex-1 overflow-hidden px-5 py-5 sm:px-7 sm:py-6">
+    <div className="min-h-0 flex-1 overflow-hidden px-7 py-6">
       <Body app={app} screen={screen} />
     </div>
 
-    <p className="border-t border-line px-5 py-3.5 text-xs leading-5 text-muted sm:px-7 sm:text-sm">
+    <p className="shrink-0 border-t border-line px-7 py-3.5 text-sm leading-5 text-muted">
       {screen.strip}
     </p>
   </div>

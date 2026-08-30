@@ -39,7 +39,7 @@ import AppMachine from "./machine"
  */
 
 const AppLibrary = () => (
-  <Section id="apps" rule="accent" bleed>
+  <Section id="apps" rule="accent" bleed className="pb-0 sm:pb-0 lg:pb-0">
     <div className="container-page">
       <SectionHeading
         title={`Start simple. Grow when you're ready.`}
@@ -53,12 +53,9 @@ const AppLibrary = () => (
         }
       />
 
-
       <div className="mt-10 lg:mt-12">
         <AppMachine />
       </div>
-
-      
     </div>
   </Section>
 )

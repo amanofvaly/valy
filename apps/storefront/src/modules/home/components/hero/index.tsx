@@ -96,7 +96,7 @@ const Hero = ({ countryCode }: { countryCode: string }) => (
       <div className="container-page relative flex flex-col items-start gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:justify-center lg:gap-10 lg:pb-16 lg:pt-24">
         <div className="relative z-10 flex flex-col items-start gap-8 lg:gap-10">
           <h1 className="max-w-[13ch] text-balance text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-ink xsmall:text-5xl sm:text-6xl lg:text-7xl">
-            A private home for your <span className="text-accent">digital life</span>
+            A Private Home For Your <span className="text-accent">Digital Life</span>
           </h1>
 
           <BuyFlow countryCode={countryCode} />

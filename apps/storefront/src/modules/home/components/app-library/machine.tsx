@@ -43,17 +43,36 @@ import { AppScreenView } from "./screen"
 /** How long each application holds the screen before the next one takes it. */
 const DWELL = 4200
 
+/**
+ * The screen is drawn once, at one size, and then scaled to whatever room it
+ * has. Everything inside it is laid out against these two numbers and nothing
+ * inside it reflows — a phone gets the same screen a desktop gets, smaller,
+ * the way a monitor across the room is the same monitor.
+ *
+ * The alternative was a second layout for narrow viewports, which is what this
+ * had, and it produced a portrait box with the launcher stacked on top: not a
+ * shape any display has ever been made in.
+ *
+ * 16:9, because that is what a monitor is.
+ */
+const DESIGN_W = 1120
+const DESIGN_H = 630
+
 const GROUP_OF = new Map(
-  APP_GROUPS.flatMap((group) => group.apps.map((app) => [app.slug, group] as const))
+  APP_GROUPS.flatMap((group) =>
+    group.apps.map((app) => [app.slug, group] as const)
+  )
 )
 
 const AppMachine = () => {
   const [slug, setSlug] = useState(APPS[0].slug)
   const [auto, setAuto] = useState(true)
   const [seen, setSeen] = useState(false)
+  const [scale, setScale] = useState(1)
 
   const frameRef = useRef<HTMLDivElement>(null)
   const railRef = useRef<HTMLDivElement>(null)
+  const screenRef = useRef<HTMLDivElement>(null)
 
   const group = GROUP_OF.get(slug)
 
@@ -71,6 +90,21 @@ const AppMachine = () => {
     const observer = new IntersectionObserver(
       ([entry]) => setSeen(entry.isIntersecting),
       { threshold: 0.35 }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  /*
+   * How much of its drawn size the screen gets to be here. The glass keeps a
+   * 16:9 box at any width, so measuring the width is enough.
+   */
+  useEffect(() => {
+    const node = screenRef.current
+    if (!node) return
+
+    const observer = new ResizeObserver(([entry]) =>
+      setScale(entry.contentRect.width / DESIGN_W)
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -134,125 +168,169 @@ const AppMachine = () => {
         onPointerDown={takeOver}
         onKeyDown={takeOver}
         onFocus={takeOver}
-        className="overflow-hidden rounded-xl border border-line-strong bg-paper"
+        className="rounded-[1.25rem] border border-line-strong bg-surface-strong p-2 sm:p-3"
       >
-        {/*
-         * The machine's own bar, not the application's. It says the same thing
-         * the section says, in the register of a device: this is one box, on
-         * your network, with everything already running on it.
-         */}
-        <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2.5 sm:px-5">
-          <span className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">
-            valy.local
-          </span>
-
-          <div className="flex items-center gap-3 sm:gap-5">
+        <div
+          ref={screenRef}
+          className="relative aspect-[16/9] overflow-hidden rounded-md border border-line bg-paper"
+        >
+          <div
+            className="absolute left-0 top-0 flex origin-top-left flex-col"
+            style={{
+              width: DESIGN_W,
+              height: DESIGN_H,
+              transform: `scale(${scale})`,
+            }}
+          >
             {/*
-             * The tour, with a switch on it. Content that changes on its own
-             * needs a way to stop it that is not "guess that touching the page
-             * works", and the switch belongs in the machine's own bar rather
-             * than under the frame as a caption.
-             *
-             * `pointerdown` is swallowed here because the frame uses it to end
-             * the tour: without this the wrapper would set `auto` false and the
-             * click would immediately toggle it back true, so pausing would
-             * resume.
+             * The machine's own bar, not the application's. It says the same thing
+             * the section says, in the register of a device: this is one box, on
+             * your network, with everything already running on it.
              */}
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={() => setAuto((current) => !current)}
-              aria-label={
-                auto
-                  ? "Stop moving through the applications on its own"
-                  : "Move through the applications on its own"
-              }
-              className="pressable flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-2xs uppercase tracking-[0.12em] text-muted outline-none hover:bg-surface-strong hover:text-ink focus-visible:shadow-focus"
-            >
-              <svg aria-hidden viewBox="0 0 10 10" className="h-2.5 w-2.5">
-                {auto ? (
-                  <path d="M1.5 1h2.4v8H1.5zM6.1 1h2.4v8H6.1z" fill="currentColor" />
-                ) : (
-                  <path d="M2 1l6.5 4L2 9z" fill="currentColor" />
-                )}
-              </svg>
-              {auto ? "pause" : "play"}
-            </button>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-5 py-2.5">
+              <span className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">
+                valy.local
+              </span>
 
-            <span className="flex items-center gap-2 font-mono text-2xs uppercase tracking-[0.12em] text-muted">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-signal" />
-              {APP_COUNT} running
-            </span>
+              <div className="flex items-center gap-5">
+                {/*
+                 * The tour, with a switch on it. Content that changes on its own
+                 * needs a way to stop it that is not "guess that touching the page
+                 * works", and the switch belongs in the machine's own bar rather
+                 * than under the frame as a caption.
+                 *
+                 * `pointerdown` is swallowed here because the frame uses it to end
+                 * the tour: without this the wrapper would set `auto` false and the
+                 * click would immediately toggle it back true, so pausing would
+                 * resume.
+                 */}
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setAuto((current) => !current)}
+                  aria-label={
+                    auto
+                      ? "Stop moving through the applications on its own"
+                      : "Move through the applications on its own"
+                  }
+                  className="pressable flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-2xs uppercase tracking-[0.12em] text-muted outline-none hover:bg-surface-strong hover:text-ink focus-visible:shadow-focus"
+                >
+                  <svg aria-hidden viewBox="0 0 10 10" className="h-2.5 w-2.5">
+                    {auto ? (
+                      <path
+                        d="M1.5 1h2.4v8H1.5zM6.1 1h2.4v8H6.1z"
+                        fill="currentColor"
+                      />
+                    ) : (
+                      <path d="M2 1l6.5 4L2 9z" fill="currentColor" />
+                    )}
+                  </svg>
+                  {auto ? "pause" : "play"}
+                </button>
+
+                <span className="flex items-center gap-2 font-mono text-2xs uppercase tracking-[0.12em] text-muted">
+                  <span
+                    aria-hidden
+                    className="h-1.5 w-1.5 rounded-full bg-signal"
+                  />
+                  {APP_COUNT} running
+                </span>
+              </div>
+            </div>
+
+            <Tabs.Root
+              value={slug}
+              onValueChange={(next) => {
+                setAuto(false)
+                setSlug(next)
+              }}
+              orientation="vertical"
+              activationMode="automatic"
+              className="grid min-h-0 flex-1 grid-cols-[16rem_1fr]"
+            >
+              {/*
+               * The launcher. A column of twenty-eight on a desktop, a thumb-driven
+               * strip on a phone. Every mark keeps its own colour at rest — a
+               * greyed-out launcher that blooms on selection tests well and reads
+               * as a smaller catalogue, which is the opposite of the claim.
+               */}
+              <Tabs.List
+                ref={railRef}
+                aria-label="Applications installed on the machine"
+                className={cn(
+                  "no-scrollbar flex flex-col gap-0 overflow-y-auto overflow-x-hidden border-r border-line p-2.5"
+                )}
+              >
+                {APP_GROUPS.map((appGroup) => (
+                  <div
+                    key={appGroup.id}
+                    role="presentation"
+                    className="contents"
+                  >
+                    <p
+                      role="presentation"
+                      className="px-2.5 pb-1.5 pt-4 font-mono text-2xs uppercase tracking-[0.12em] text-muted first:pt-1.5"
+                    >
+                      {appGroup.title}
+                    </p>
+                    {appGroup.apps.map((app) => (
+                      <Tabs.Trigger
+                        key={app.slug}
+                        value={app.slug}
+                        data-slug={app.slug}
+                        className={cn(
+                          "pressable flex w-full shrink-0 items-center gap-2.5 rounded-md px-2.5 py-2 text-left",
+                          "text-sm text-muted outline-none",
+                          "hover:bg-surface hover:text-ink",
+                          "focus-visible:shadow-focus",
+                          "radix-state-active:bg-surface-strong radix-state-active:font-medium radix-state-active:text-ink",
+                          "text-[0.9375rem]"
+                        )}
+                      >
+                        <AppIcon
+                          app={app}
+                          className="h-[1.375rem] w-[1.375rem]"
+                        />
+                        <span className="truncate">{app.name}</span>
+                      </Tabs.Trigger>
+                    ))}
+                  </div>
+                ))}
+              </Tabs.List>
+
+              <div className="min-h-0 min-w-0">
+                {APPS.map((app) => (
+                  <Tabs.Content
+                    key={app.slug}
+                    value={app.slug}
+                    forceMount
+                    className="hidden h-full outline-none radix-state-active:block focus-visible:shadow-focus"
+                  >
+                    <AppScreenView app={app} screen={APP_SCREENS[app.slug]} />
+                  </Tabs.Content>
+                ))}
+              </div>
+            </Tabs.Root>
           </div>
         </div>
 
-        <Tabs.Root
-          value={slug}
-          onValueChange={(next) => {
-            setAuto(false)
-            setSlug(next)
-          }}
-          orientation="vertical"
-          activationMode="automatic"
-          className="lg:grid lg:h-[36rem] lg:grid-cols-[16rem_1fr] xlarge:h-[38rem] xlarge:grid-cols-[18rem_1fr]"
+        {/* The power light, on the chin, where a monitor keeps it. */}
+        <div
+          aria-hidden
+          className="flex h-4 items-center justify-center sm:h-6"
         >
-          {/*
-           * The launcher. A column of twenty-eight on a desktop, a thumb-driven
-           * strip on a phone. Every mark keeps its own colour at rest — a
-           * greyed-out launcher that blooms on selection tests well and reads
-           * as a smaller catalogue, which is the opposite of the claim.
-           */}
-          <Tabs.List
-            ref={railRef}
-            aria-label="Applications installed on the machine"
-            className={cn(
-              "no-scrollbar flex snap-x snap-mandatory gap-1.5 overflow-x-auto border-b border-line p-2",
-              "lg:snap-none lg:flex-col lg:gap-0 lg:overflow-y-auto lg:overflow-x-hidden lg:border-b-0 lg:border-r lg:p-2.5"
-            )}
-          >
-            {APP_GROUPS.map((appGroup) => (
-              <div key={appGroup.id} role="presentation" className="contents">
-                <p
-                  role="presentation"
-                  className="hidden px-2.5 pb-1.5 pt-4 font-mono text-2xs uppercase tracking-[0.12em] text-muted first:pt-1.5 lg:block"
-                >
-                  {appGroup.title}
-                </p>
-                {appGroup.apps.map((app) => (
-                  <Tabs.Trigger
-                    key={app.slug}
-                    value={app.slug}
-                    data-slug={app.slug}
-                    className={cn(
-                      "pressable flex shrink-0 snap-start items-center gap-2.5 rounded-md px-2.5 py-2 text-left",
-                      "text-sm text-muted outline-none",
-                      "hover:bg-surface hover:text-ink",
-                      "focus-visible:shadow-focus",
-                      "radix-state-active:bg-surface-strong radix-state-active:font-medium radix-state-active:text-ink",
-                      "lg:w-full lg:text-[0.9375rem]"
-                    )}
-                  >
-                    <AppIcon app={app} className="h-5 w-5 lg:h-[1.375rem] lg:w-[1.375rem]" />
-                    <span className="whitespace-nowrap lg:truncate">{app.name}</span>
-                  </Tabs.Trigger>
-                ))}
-              </div>
-            ))}
-          </Tabs.List>
+          <span className="h-1 w-1 rounded-full bg-signal" />
+        </div>
+      </div>
 
-          <div className="min-w-0">
-            {APPS.map((app) => (
-              <Tabs.Content
-                key={app.slug}
-                value={app.slug}
-                forceMount
-                className="hidden h-full outline-none radix-state-active:block focus-visible:shadow-focus"
-              >
-                <AppScreenView app={app} screen={APP_SCREENS[app.slug]} />
-              </Tabs.Content>
-            ))}
-          </div>
-        </Tabs.Root>
+      {/*
+       * Neck and foot. Two rectangles and a rule — enough for the eye to read
+       * the box above as a display standing on a desk, and not one line more.
+       * It carries nothing, so it is hidden from anyone being read to.
+       */}
+      <div aria-hidden className="flex flex-col items-center">
+        <div className="h-6 w-20 border-x border-line-strong bg-surface-strong sm:h-9 sm:w-28" />
+        <div className="h-1.5 w-44 rounded-full border border-line-strong bg-surface-strong sm:w-64" />
       </div>
 
       {/*
