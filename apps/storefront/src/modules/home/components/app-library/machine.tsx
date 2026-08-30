@@ -260,7 +260,7 @@ const AppMachine = () => {
        * the sentence explaining why this handful of applications belongs
        * together, changing with what is on the screen.
        */}
-      {group && (
+      {/* group && (
         <div
           key={group.id}
           className="mt-7 flex animate-screen-in flex-col gap-2 lg:mt-8 lg:flex-row lg:items-baseline lg:gap-10"
@@ -272,7 +272,7 @@ const AppMachine = () => {
             {group.blurb}
           </p>
         </div>
-      )}
+      ) */}
     </div>
   )
 }

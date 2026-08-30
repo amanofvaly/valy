@@ -62,89 +62,89 @@ export const FLOW_STAGES: FlowStage[] = [
   {
     id: "kit",
     handle: "valy-flow",
-    name: "The machine.",
-    lede: "How much it can do at the same time, and how many drives it holds.",
+    name: "Base Kit.",
+    lede: "Processing power and how many drives it holds.",
     caption:
-      "A home server built out of ordinary desktop parts, in an ordinary desktop cabinet.",
+      "Match your processor and drive bays to your expected workload.",
     fit: "contain",
     notes: {
       "i3 2 Bay":
-        "Files, backups and a photo library, with room for two drives. The right machine if this is the first one you have owned.",
+        "Files, backups and a photo library, with room for two drives. ",
       "i5 3 Bay":
-        "More cores for running several services at once, and a third bay, which is what lets a pool survive a drive failure without giving up half its capacity.",
+        "Good for running multiple apps at once, and a third bay for redundancy.",
     },
   },
   {
     id: "boot",
     handle: "flow-boot-media",
-    name: "Where the system lives.",
-    lede: "TrueNAS gets its own drive, so reinstalling it never touches yours.",
+    name: "Boot Drive.",
+    lede: "Dedicated boot media for the operating system.",
     caption:
-      "TrueNAS SCALE, installed and updated before the machine leaves us.",
+      "Keeps TrueNAS separate from your data pool.",
     locked: true,
     notes: {
       "TrueNAS 128GB SSD":
-        "Included with every Flow. Keeping the operating system off the data drives is what lets a pool be exported from a dead machine and imported into a new one with its permissions and snapshots intact.",
+        "Included. Ensures your data pool can be cleanly imported to a new machine if the hardware fails.",
     },
   },
   {
     id: "memory",
     handle: "flow-memory",
-    name: "How much runs at once.",
-    lede: "Every application holds memory while it runs. ZFS caches files with whatever is left.",
+    name: "Memory.",
+    lede: "RAM capacity for applications and file caching.",
     caption:
-      "Enough memory and the services stop taking turns with each other.",
+      "Select based on the number of concurrent services you intend to run.",
     notes: {
-      "8GB": "Comfortable for a photo library, file shares and backups.",
+      "8GB": "Sufficient for basic file shares, backups, video streaming, and a photo library.",
       "16GB":
-        "The point at which a media server, an ad blocker, a VPN and a download client all stay running without competing.",
+        "Recommended for running multiple services like web servers, VPNs, virtual machines simultaneously.",
     },
   },
   {
     id: "storage",
     handle: "flow-storage-drive",
-    name: "Where your files live.",
-    lede: "Pick one capacity. Every drive in a Flow is the same size, because a pool is only ever as large as its smallest member.",
-    caption: "The drives, and how much of them you actually get to use.",
+    name: "Storage Drives.",
+    lede: "All selected drives will be identical in size.",
+    caption: "Select how much storage you need.",
   },
   {
     id: "setup",
     handle: "flow-setup",
-    name: "Arrives ready to use.",
-    lede: "Whether we build the storage pool and install the applications, or hand you a machine with TrueNAS on it and let you.",
-    caption: "The applications, installed, signed in and reachable.",
+    name: "Configuration Service.",
+    lede: "Opt-in for software configuration.",
+    caption: "We can pre-configure your storage pool and core applications.",
     notes: {
-      "Storage pool and basic apps":
-        "The pool laid out the way you choose below, plus shares, snapshots and eight applications configured and checked before the machine ships.",
+      "Storage pool and apps":
+        "Pool built with shares, snapshots, and core apps pre-configured before shipping.",
     },
   },
   {
     id: "network",
     handle: "flow-network",
-    name: "How fast it moves.",
-    lede: "The number that decides how long a large copy takes. All three are wired.",
-    caption: "A file server is only as quick as the cable going into it.",
+    name: "Networking.",
+    lede: "Wired network interface speed.",
+    caption: "Matches maximum throughput to your local network.",
     notes: {
       "100MB":
-        "About 12MB a second. Fine for streaming, slow for backing up a laptop.",
+        "~12MB/s. Sufficient for basic streaming and small file transfers.",
       "1GB LAN":
-        "About 110MB a second, which is roughly what a single mechanical drive can supply.",
+        "~110MB/s. Standard gigabit speed, matching single-drive mechanical throughput.",
       "2.5GB LAN":
-        "Worth buying if you edit files directly off the machine, or if several people pull from it at once.",
+        "~275MB/s. Recommended for direct video editing and heavy multi-user environments.",
     },
   },
   {
     id: "transcode",
     handle: "flow-graphics",
-    name: "Media transcoding.",
-    lede: "What happens when a television asks for a format the file is not in.",
+    name: "Media Transcoding.",
+    lede: "Hardware acceleration for on-the-fly video format conversion.",
     caption:
-      "Most of the time a film is sent to the screen untouched. This is for the rest of the time.",
+      "Required if streaming high-bitrate media to incompatible client devices.",
     notes: {
       Onboard:
-        "The processor's built-in Quick Sync re-encodes a stream or two while they play. Enough for one television.",
+        "CPU Quick Sync. Sufficient for 1-2 concurrent 1080p streams.",
       "Dedicated 2GB":
-        "A separate card that takes the work off the processor. Add it if several people watch different things at once, or if the library is largely 4K.",
+        "Dedicated GPU. Required for 4K transcoding or 3+ concurrent streams.",
     },
   },
 ]
@@ -428,11 +428,11 @@ export const buildLines = (
     )
     push(
       "flow-setup",
-      "Storage pool and basic apps",
+      "Storage pool and apps",
       "setup",
       layout
-        ? `Storage pool and basic apps, ${layout.name}`
-        : "Storage pool and basic apps"
+        ? `Storage pool and apps, ${layout.name}`
+        : "Storage pool and apps"
     )
   }
 

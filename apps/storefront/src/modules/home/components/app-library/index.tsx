@@ -40,21 +40,21 @@ import AppMachine from "./machine"
 
 const AppLibrary = () => (
   <Section id="apps" rule="accent" bleed>
-    <div className="container-wide">
+    <div className="container-page">
       <SectionHeading
         title={`Start simple. Grow when you're ready.`}
         lede="Whether you're backing up family photos, building a media library, running AI locally, hosting a website, or simply replacing cloud subscriptions, it adapts to your needs without becoming complicated."
         action={
           <Button asChild variant="secondary" size="large">
-            <LocalizedClientLink href="/categories/services">
-              Have us set them up
+            <LocalizedClientLink href="/products/valy-flow">
+              Configure your first homelab
             </LocalizedClientLink>
           </Button>
         }
       />
 
 
-      <div className="mt-20 lg:mt-24">
+      <div className="mt-10 lg:mt-12">
         <AppMachine />
       </div>
 

@@ -1,13 +1,6 @@
 import { RENTED_LIFE_ICONS } from "@lib/data/streamline-icons"
 
 /**
- * A person who has
- * read "A home for your digital life" and nothing else does not want the terms
- * of sale. They want to be told what is wrong with how they live now, because
- * until somebody says it out loud, nothing is wrong: paying four companies
- * every month for the right to look at your own photographs is simply how
- * things are, and a machine that fixes it is a solution to a problem the
- * reader does not have.
  *
  * So this is the only chapter on the page that sells nothing. No feature, no
  * figure, no button. It names the tenancy, and every chapter under it — the
@@ -61,7 +54,7 @@ const STREAK = [
     at: "left-[1%] bottom-[-6%]",
     size: "size-14 sm:size-16",
     tilt: "-rotate-12",
-    dim: "opacity-70",
+    dim: "opacity-20",
   },
   /*
    * films — high and clear, the largest thing floating.
@@ -75,21 +68,21 @@ const STREAK = [
     at: "left-[10%] bottom-[26%]",
     size: "size-16 sm:size-20",
     tilt: "rotate-6",
-    dim: "opacity-25 sm:opacity-55",
+    dim: "opacity-5 sm:opacity-15",
   },
   /* music — nearly gone, tucked close to the films */
   {
     at: "left-[18%] bottom-[-10%]",
     size: "size-10 sm:size-12",
     tilt: "rotate-[14deg]",
-    dim: "opacity-45",
+    dim: "opacity-10",
   },
   /* books — low, barely lifted */
   {
     at: "left-[3%] bottom-[58%]",
     size: "size-14 sm:size-[4.5rem]",
     tilt: "-rotate-3",
-    dim: "opacity-60",
+    dim: "opacity-15",
   },
   /*
    * the cloud — the biggest mark, half of it under.
@@ -103,49 +96,49 @@ const STREAK = [
     at: "left-[33%] bottom-[-4%]",
     size: "size-20 sm:size-24",
     tilt: "rotate-[8deg]",
-    dim: "opacity-10 sm:opacity-80",
+    dim: "opacity-5 sm:opacity-20",
   },
   /* the database behind it — small, and the highest of all */
   {
     at: "left-[45%] bottom-[16%]",
     size: "size-10 sm:size-12",
     tilt: "-rotate-[18deg]",
-    dim: "opacity-35",
+    dim: "opacity-10",
   },
   /* the subscription — the deepest cut */
   {
     at: "left-[56%] bottom-[-12%]",
     size: "size-14 sm:size-[4.5rem]",
     tilt: "rotate-3",
-    dim: "opacity-55",
+    dim: "opacity-15",
   },
   /* the card — mid-air, after the widest gap in the field */
   {
     at: "left-[69%] bottom-[11%]",
     size: "size-12 sm:size-14",
     tilt: "-rotate-[10deg]",
-    dim: "opacity-40",
+    dim: "opacity-10",
   },
   /* the receipt — a sliver */
   {
     at: "left-[77%] bottom-[-8%]",
     size: "size-10 sm:size-12",
     tilt: "rotate-[20deg]",
-    dim: "opacity-65",
+    dim: "opacity-15",
   },
   /* the vault — sitting on the edge, whole */
   {
     at: "left-[90%] bottom-[62%]",
     size: "size-16 sm:size-20",
     tilt: "-rotate-6",
-    dim: "opacity-50",
+    dim: "opacity-10",
   },
   /* the drive — high, and off the right edge */
   {
     at: "left-[94%] bottom-[4%]",
     size: "size-12 sm:size-16",
     tilt: "rotate-[12deg]",
-    dim: "opacity-75",
+    dim: "opacity-20",
   },
 ]
 

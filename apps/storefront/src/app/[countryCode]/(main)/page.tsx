@@ -40,7 +40,7 @@ export default async function Home(props: {
       <AppLibrary />
       <Arithmetic />
 
-      <TheRange />
+      {/* <TheRange /> */}
       <PartsProof />
       <Faq />
     </>

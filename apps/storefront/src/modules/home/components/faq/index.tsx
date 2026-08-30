@@ -50,7 +50,7 @@ const Faq = () => (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
       <SectionHeading
         className="lg:col-span-4"
-        title="The questions we get every week."
+        title="Frequently Asked Questions."
       />
 
       <Accordion.Root

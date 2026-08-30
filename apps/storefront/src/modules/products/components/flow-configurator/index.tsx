@@ -518,8 +518,8 @@ const StorageStage = ({
   const capacityChoices: Choice[] = [
     {
       value: "none",
-      name: "No drives",
-      note: "A machine with TrueNAS on it and nothing to store yet. Drives can go in later.",
+      name: "Diskless",
+      note: "Install your own drives later.",
       price: "Included",
     },
     ...variants.map((variant) => ({

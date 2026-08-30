@@ -56,7 +56,7 @@ const Hero = ({ countryCode }: { countryCode: string }) => (
      * gone by the time the shelves start, so the room is still a photograph
      * everywhere the eye actually looks at it.
      */}
-    <div className="relative isolate">
+    <div className="relative isolate overflow-hidden">
       <Image
         src="/home/hero-room.jpg"
         alt=""
@@ -93,12 +93,30 @@ const Hero = ({ countryCode }: { countryCode: string }) => (
        * `items-start` rather than a width — the block is as wide as the button,
        * wherever the button lands.
        */}
-      <div className="container-page flex flex-col items-start gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:justify-center lg:gap-10 lg:pb-16 lg:pt-24">
-        <h1 className="max-w-[13ch] text-balance text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-ink xsmall:text-5xl sm:text-6xl lg:text-7xl">
-          A home for your <span className="text-accent">digital life</span>
-        </h1>
+      <div className="container-page relative flex flex-col items-start gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:justify-center lg:gap-10 lg:pb-16 lg:pt-24">
+        <div className="relative z-10 flex flex-col items-start gap-8 lg:gap-10">
+          <h1 className="max-w-[13ch] text-balance text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-ink xsmall:text-5xl sm:text-6xl lg:text-7xl">
+            A private home for your <span className="text-accent">digital life</span>
+          </h1>
 
-        <BuyFlow countryCode={countryCode} />
+          <BuyFlow countryCode={countryCode} />
+        </div>
+        
+        {/*
+         * Server overlay, clipped at the base.
+         * Pushed down slightly via translate-y to ground the feet and correct
+         * the floating effect caused by the photograph's perspective.
+         */}
+        <div className="pointer-events-none absolute bottom-0 right-4 z-0 w-1/2 max-w-[200px] translate-y-12   sm:right-8 sm:max-w-[260px] sm:translate-y-8 lg:right-12 lg:w-full lg:max-w-[320px] lg:translate-y-8 xl:max-w-[360px] xl:translate-y-8">
+          <Image
+            src="/home/hero-valy-cabinet-trimmed.png"
+            alt="Valy Server"
+            width={1068}
+            height={1291}
+            className="block h-auto w-full object-contain object-bottom"
+            priority
+          />
+        </div>
       </div>
     </div>
 
