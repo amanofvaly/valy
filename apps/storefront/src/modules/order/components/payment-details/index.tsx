@@ -1,4 +1,4 @@
-import { isCashfree, isStripeLike, paymentInfoMap } from "@lib/constants"
+import { isCashfree, isStripeLike } from "@lib/constants"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import SyncCashfreePayment from "./sync-cashfree"
@@ -32,7 +32,11 @@ const PaymentDetails = ({ order }: { order: HttpTypes.StoreOrder }) => {
   } else if (isCashfreePayment) {
     if (Array.isArray(payment.data?.payments) && payment.data.payments.length > 0) {
       hasCashfreeDetails = true
-      const pm = (payment.data.payments[0] as any)?.payment_method
+      const pm = (
+        payment.data.payments[0] as
+          | { payment_method?: Record<string, Record<string, string>> }
+          | undefined
+      )?.payment_method
       if (pm) {
         if (pm.card) instrument = `Card ending ${pm.card.card_number?.slice(-4) || '****'}`
         else if (pm.upi) instrument = `UPI (${pm.upi.upi_id})`

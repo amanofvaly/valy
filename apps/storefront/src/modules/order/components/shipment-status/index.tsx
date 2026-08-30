@@ -32,8 +32,23 @@ type ShipmentData = {
   tracking_courier?: string
 }
 
+/**
+ * The shape this component needs off the order.
+ *
+ * `StoreOrder` types a fulfilment's `data` as an open record, so the named
+ * fields below are asserted once here rather than at every read.
+ */
+type OrderFulfillment = {
+  canceled_at?: string | Date | null
+  data?: Record<string, unknown> | null
+}
+
 const ShipmentStatus = ({ order }: { order: HttpTypes.StoreOrder }) => {
-  const shipments = (((order as any).fulfillments ?? []) as any[])
+  const fulfillments = ((order as unknown as {
+    fulfillments?: OrderFulfillment[]
+  }).fulfillments ?? []) as OrderFulfillment[]
+
+  const shipments: ShipmentData[] = fulfillments
     .filter((fulfillment) => !fulfillment.canceled_at)
     .map((fulfillment) => (fulfillment.data ?? {}) as ShipmentData)
     .filter((data) => !!data.shiprocket_awb_codes)
