@@ -74,7 +74,8 @@ const AppMachine = () => {
   const railRef = useRef<HTMLDivElement>(null)
   const screenRef = useRef<HTMLDivElement>(null)
 
-  const group = GROUP_OF.get(slug)
+  /* Read by the chapter caption under the frame, which is currently off. */
+  const _group = GROUP_OF.get(slug)
 
   /**
    * Any deliberate act ends the tour — a press, an arrow key, or focus landing

@@ -3,7 +3,7 @@ import Arithmetic from "@modules/home/components/arithmetic"
 import Faq from "@modules/home/components/faq"
 import Hero from "@modules/home/components/hero"
 import PartsProof from "@modules/home/components/parts-proof"
-import TheRange from "@modules/home/components/the-range"
+// import TheRange from "@modules/home/components/the-range"
 import TheTenancy from "@modules/home/components/the-tenancy"
 import { Metadata } from "next"
 
