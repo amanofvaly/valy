@@ -87,7 +87,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
        * actually runs keeps that out of the boot path.
        */
       const { createOrderFulfillmentWorkflow } = await import(
-        "@medusajs/core-flows"
+        "@medusajs/medusa/core-flows"
       )
 
       const { result } = await createOrderFulfillmentWorkflow(req.scope).run({

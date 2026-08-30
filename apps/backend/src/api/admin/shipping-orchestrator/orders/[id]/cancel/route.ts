@@ -64,7 +64,12 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     const { cancelOrderFulfillmentWorkflow, cancelOrderWorkflow } =
       // Lazily, like the ship route: a static core-flows import re-registers
       // the core workflows and stops the server booting.
-      await import("@medusajs/core-flows")
+      //
+      // Via `@medusajs/medusa`, which re-exports core-flows and depends on it
+      // directly. Importing "@medusajs/core-flows" resolves locally only
+      // through hoisting — under a strict install it is not a dependency of
+      // this app and the Docker build cannot find it.
+      await import("@medusajs/medusa/core-flows")
 
     for (const fulfillment of live) {
       await cancelOrderFulfillmentWorkflow(req.scope).run({
