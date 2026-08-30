@@ -4,6 +4,7 @@ import CheckCircle from "@modules/common/icons/check-circle"
 import Help from "@modules/order/components/help"
 import Items from "@modules/order/components/items"
 import PaymentDetails from "@modules/order/components/payment-details"
+import ShipmentStatus from "@modules/order/components/shipment-status"
 import ShippingDetails from "@modules/order/components/shipping-details"
 
 /**
@@ -75,6 +76,8 @@ export default function OrderCompletedTemplate({
         <div className="grid grid-cols-1 gap-8 border-t border-line pt-8 sm:grid-cols-2">
           <ShippingDetails order={order} />
           <PaymentDetails order={order} />
+          {/* Renders itself away until a courier has actually been booked. */}
+          <ShipmentStatus order={order} />
         </div>
 
         <Help />

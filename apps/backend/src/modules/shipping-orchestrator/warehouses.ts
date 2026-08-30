@@ -20,6 +20,17 @@ export type Warehouse = {
   is_primary: boolean
   is_drop_ship: boolean
   vendor_webhook_url: string | null
+  /**
+   * The nickname this warehouse has in Shiprocket, which is what their API
+   * means by `pickup_location`.
+   *
+   * It is a separate field because the two systems name the same shelf
+   * differently and neither can rename the other: a location called "India
+   * Warehouse" here may be tagged "Primary" there, and sending the Medusa name
+   * gets the order rejected for an unknown pickup location. Empty falls back to
+   * the name, which is right for the case where they do happen to match.
+   */
+  shiprocket_pickup_location: string | null
 }
 
 /** Everything a warehouse needs from a stock location, for query.graph. */
@@ -40,6 +51,8 @@ export const toWarehouse = (location: any): Warehouse => {
     is_primary: metadata.is_primary === true,
     is_drop_ship: metadata.is_drop_ship === true,
     vendor_webhook_url: (metadata.vendor_webhook_url as string) ?? null,
+    shiprocket_pickup_location:
+      (metadata.shiprocket_pickup_location as string) || null,
   }
 }
 
@@ -66,6 +79,7 @@ export const toStockLocationInput = (
     is_primary: warehouse.is_primary === true,
     is_drop_ship: warehouse.is_drop_ship === true,
     vendor_webhook_url: warehouse.vendor_webhook_url ?? null,
+    shiprocket_pickup_location: warehouse.shiprocket_pickup_location ?? null,
   },
 })
 
@@ -126,6 +140,10 @@ export const demoteOtherPrimaries = async (
         is_primary: false,
         is_drop_ship: warehouse.is_drop_ship,
         vendor_webhook_url: warehouse.vendor_webhook_url,
+        // Carried, not omitted: metadata is written whole here, so leaving
+        // this out would silently clear the Shiprocket pickup name of every
+        // warehouse that gets demoted.
+        shiprocket_pickup_location: warehouse.shiprocket_pickup_location,
       },
     })
     demoted++

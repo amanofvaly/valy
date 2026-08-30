@@ -161,6 +161,14 @@ class ShippingOrchestratorService extends MedusaService({
       height: number
       weight: number
       quantity: number
+      /**
+       * Optional caller reference, carried through packing and returned on the
+       * box the item landed in. Pricing does not need it — it only wants a
+       * weight per parcel — but fulfilment does: it has to tell Shiprocket
+       * which goods are in which box, and without this it would have to guess
+       * at a split that has already been decided here.
+       */
+      ref?: string
     }>,
     divisor: number
   ) {
@@ -179,6 +187,9 @@ class ShippingOrchestratorService extends MedusaService({
       return [
         {
           box: null,
+          items: items.flatMap((item) =>
+            item.ref ? Array(item.quantity).fill(item.ref) : []
+          ),
           totalWeight,
           volumetricWeight,
           chargeableWeight: Math.max(totalWeight, volumetricWeight),
@@ -199,6 +210,7 @@ class ShippingOrchestratorService extends MedusaService({
       width: number
       height: number
       weight: number
+      ref?: string
     }> = []
     for (const item of items) {
       for (let i = 0; i < item.quantity; i++) {
@@ -207,6 +219,7 @@ class ShippingOrchestratorService extends MedusaService({
           width: item.width,
           height: item.height,
           weight: item.weight,
+          ref: item.ref,
         })
       }
     }
@@ -219,6 +232,7 @@ class ShippingOrchestratorService extends MedusaService({
 
     const packedBoxes: Array<{
       box: any
+      items: string[]
       totalWeight: number
       volumetricWeight: number
       chargeableWeight: number
@@ -253,6 +267,9 @@ class ShippingOrchestratorService extends MedusaService({
 
       packedBoxes.push({
         box: bestBox,
+        items: boxItems
+          .map((item) => item.ref)
+          .filter((ref): ref is string => !!ref),
         totalWeight: currentWeight,
         volumetricWeight,
         chargeableWeight: Math.max(currentWeight, volumetricWeight),
@@ -260,6 +277,65 @@ class ShippingOrchestratorService extends MedusaService({
     }
 
     return packedBoxes
+  }
+
+  /**
+   * Pick the courier to actually book, given the one the customer was quoted.
+   *
+   * The quote named a carrier and the customer accepted a price against it, so
+   * that carrier is what should turn up. It may no longer be offered by the
+   * time the parcel is packed — serviceability changes by the day — so this
+   * degrades in the order a person would: the same carrier, then the same
+   * carrier by another name, then whatever is cheapest.
+   *
+   * Returns the chosen courier and how it was chosen, because "we booked
+   * someone else" is something the operator needs to be able to see rather
+   * than discover from an invoice.
+   */
+  async resolveCourier(
+    couriers: Array<{
+      courier_company_id: number
+      courier_name: string
+      rate: number
+      [k: string]: any
+    }>,
+    quotedName?: string | null
+  ): Promise<{
+    courier: { courier_company_id: number; courier_name: string; rate: number }
+    match: "exact" | "partial" | "cheapest"
+  } | null> {
+    if (!couriers?.length) {
+      return null
+    }
+
+    const cheapest = [...couriers].sort((a, b) => a.rate - b.rate)
+
+    if (quotedName) {
+      const wanted = quotedName.trim().toLowerCase()
+
+      const exact = couriers.find(
+        (c) => c.courier_name?.trim().toLowerCase() === wanted
+      )
+      if (exact) {
+        return { courier: exact, match: "exact" }
+      }
+
+      /*
+       * "Shadowfax Surface" against "Shadowfax": the same carrier offering a
+       * differently-labelled service. Cheapest first, so a carrier listed under
+       * several services gives its least expensive one rather than whichever
+       * happened to be first in the response.
+       */
+      const partial = cheapest.find((c) => {
+        const name = c.courier_name?.trim().toLowerCase() ?? ""
+        return name.includes(wanted) || wanted.includes(name)
+      })
+      if (partial) {
+        return { courier: partial, match: "partial" }
+      }
+    }
+
+    return { courier: cheapest[0], match: "cheapest" }
   }
 
   /**

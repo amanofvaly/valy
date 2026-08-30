@@ -20,8 +20,15 @@ import { getAuthHeaders } from "./cookies"
  * confirmation runs the same totals helpers, and without that field it would
  * show a net subtotal above gross line items on the one page a customer keeps.
  */
+/*
+ * `*fulfillments` is what lets the order page say where the parcel is. The
+ * courier and AWB are written onto the fulfilment when it is booked, and the
+ * tracking webhook keeps `shipment_state` current, so asking for fulfilments
+ * here is the difference between "we will email you" and a status the customer
+ * can actually read.
+ */
 const ORDER_FIELDS =
-  "*payment_collections.payments,*items,*items.metadata,+items.is_tax_inclusive,*items.variant,*items.product,*items.product.type,*shipping_methods"
+  "*payment_collections.payments,*items,*items.metadata,+items.is_tax_inclusive,*items.variant,*items.product,*items.product.type,*shipping_methods,*fulfillments"
 
 export const retrieveOrder = cache(
   async (id: string): Promise<HttpTypes.StoreOrder> =>

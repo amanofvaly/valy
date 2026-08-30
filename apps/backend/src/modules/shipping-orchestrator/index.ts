@@ -24,6 +24,9 @@ export {
 } from "./warehouses"
 export type { Warehouse } from "./warehouses"
 
+export { bookShipment } from "./book-shipment"
+export type { BookedShipment } from "./book-shipment"
+
 export default Module(SHIPPING_ORCHESTRATOR_MODULE, {
   service: ShippingOrchestratorService,
 })

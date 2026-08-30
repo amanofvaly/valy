@@ -807,6 +807,7 @@ const ShippingOrchestrator = () => {
                       is_primary: warehouses.length === 0,
                       is_drop_ship: false,
                       vendor_webhook_url: null,
+                      shiprocket_pickup_location: null,
                     },
                   ])
                 }
@@ -950,6 +951,29 @@ const ShippingOrchestrator = () => {
                         />
                         <Label>Drop-Ship Vendor</Label>
                       </div>
+                    </div>
+
+                    <div>
+                      <Label>Shiprocket pickup tag</Label>
+                      <Input
+                        placeholder="Primary"
+                        value={wh.shiprocket_pickup_location || ""}
+                        onChange={(e) => {
+                          const updated = [...warehouses]
+                          updated[idx] = {
+                            ...updated[idx],
+                            shiprocket_pickup_location: e.target.value,
+                          }
+                          setWarehouses(updated)
+                        }}
+                      />
+                      <Text className="text-ui-fg-subtle text-sm mt-1">
+                        The tag this address carries in Shiprocket, under
+                        Settings &rarr; Pickup Addresses. Shiprocket identifies
+                        the pickup point by that tag, not by the name above, and
+                        rejects an order whose tag it does not recognise. Leave
+                        empty only if the two already match.
+                      </Text>
                     </div>
 
                     {wh.is_drop_ship && (
@@ -1952,7 +1976,7 @@ const ShippingOrchestrator = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Shipping Orchestrator",
+  label: "Settings",
 })
 
 export default ShippingOrchestrator

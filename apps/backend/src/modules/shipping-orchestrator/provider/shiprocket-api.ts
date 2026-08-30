@@ -234,4 +234,58 @@ export class ShiprocketAPI {
 
     return await response.json()
   }
+
+  /**
+   * Ask the courier to collect. This is the step that turns an AWB into a van
+   * arriving, and it is free — the freight was charged when the AWB was
+   * assigned, so a shipment left unscheduled has already cost money without
+   * anyone coming to fetch it.
+   */
+  async generatePickup(
+    shipmentIds: number[],
+    settings: any
+  ): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(`${this.API_URL}/courier/generate/pickup`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ shipment_id: shipmentIds }),
+    })
+
+    const body = await response.text()
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Generate Pickup Failed: ${body}`
+      )
+    }
+
+    return body ? JSON.parse(body) : {}
+  }
+
+  /**
+   * The pickup addresses configured in the seller's panel.
+   *
+   * Used to check that a warehouse's configured tag is one Shiprocket actually
+   * knows, because the alternative is finding out when an order is rejected.
+   */
+  async listPickupLocations(settings: any): Promise<any> {
+    const headers = await this.authHeaders(settings)
+
+    const response = await fetch(
+      `${this.API_URL}/settings/company/pickup`,
+      { method: "GET", headers }
+    )
+
+    if (!response.ok) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Shiprocket Pickup Locations Failed: ${await response.text()}`
+      )
+    }
+
+    return await response.json()
+  }
 }

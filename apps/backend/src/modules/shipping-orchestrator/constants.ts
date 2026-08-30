@@ -64,3 +64,18 @@ export const SHIPPING_CONTEXT_ATTRIBUTES = [
   ...BASE_CONTEXT_RULES.map((r) => r.attribute),
   ...Object.values(TIER_CONTEXT_RULES).map((r) => r.attribute),
 ]
+
+/**
+ * The size assumed for a variant with no dimensions recorded.
+ *
+ * Pricing and fulfilment both need a number here, and they have to be the same
+ * number: quote a parcel at one size and declare it at another, and Shiprocket
+ * reweighs on collection and bills the difference. It lived as a bare `|| 10`
+ * in two places, which is exactly how those two numbers drift apart.
+ *
+ * It is a floor, not a default worth relying on — 10cm is smaller than most
+ * things worth shipping, so an unmeasured variant is quoted cheap and invoiced
+ * at the real volumetric weight. Filling in real dimensions is what fixes that;
+ * this only keeps the arithmetic honest until they are.
+ */
+export const FALLBACK_DIMENSION_CM = 10

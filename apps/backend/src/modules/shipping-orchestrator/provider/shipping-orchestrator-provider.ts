@@ -17,7 +17,10 @@ import {
   ValidateFulfillmentDataContext,
   Logger,
 } from "@medusajs/framework/types"
-import { SHIPPING_ORCHESTRATOR_MODULE } from "../constants"
+import {
+  FALLBACK_DIMENSION_CM,
+  SHIPPING_ORCHESTRATOR_MODULE,
+} from "../constants"
 import { listWarehouses, primaryWarehouse } from "../warehouses"
 import {
   addressIncomplete,
@@ -507,9 +510,9 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
         // --- P1.1: Ships Separately ---
         const weight =
           item.variant?.weight || settings.fallback_weight_grams
-        const length = item.variant?.length || 10
-        const width = item.variant?.width || 10
-        const height = item.variant?.height || 10
+        const length = item.variant?.length || FALLBACK_DIMENSION_CM
+        const width = item.variant?.width || FALLBACK_DIMENSION_CM
+        const height = item.variant?.height || FALLBACK_DIMENSION_CM
 
         if (
           metadata.ships_separately === "true" ||
@@ -1042,47 +1045,233 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
     const warehouses = await listWarehouses(appContainer)
     const originWarehouse = primaryWarehouse(warehouses)
 
-    // Classify items
-    const standardItems: any[] = []
-    const separateItems: any[] = []
+    /*
+     * Measure the parcel the same way the quote did.
+     *
+     * This used to declare every shipment as a 10cm cube weighing half a kilo
+     * per unit, while `calculatePrice` above priced the same order from real
+     * variant weights and dimensions, bin-packed into configured boxes. So the
+     * customer was quoted for one parcel and the courier was handed another —
+     * a weight dispute on arrival, every time, and one that Shiprocket settles
+     * by reweighing and charging the difference.
+     *
+     * Reading the same fields with the same fallbacks is what keeps the price
+     * that was charged and the parcel that ships describing one object.
+     * Medusa stores variant weight in grams and dimensions in centimetres;
+     * Shiprocket wants kilograms and centimetres.
+     */
+    type ParcelItem = {
+      shiprocket: {
+        name: string
+        sku: string
+        units: number
+        selling_price: number
+        discount: string
+        tax: string
+        hsn: string
+      }
+      /** Grams, per unit. */
+      weight: number
+      length: number
+      width: number
+      height: number
+      quantity: number
+      /** What this line actually contributes to the declared value. */
+      value: number
+      ref: string
+    }
+
+    const standardItems: ParcelItem[] = []
+    const separateItems: ParcelItem[] = []
+
+    /*
+     * The fulfilment items are not enough on their own.
+     *
+     * `FulfillmentItemDTO` carries only id, title, sku, quantity, barcode and
+     * `line_item_id` — no variant, no price. The order's line items add the
+     * money and a `variant_id`, but still no weight or dimensions. So this
+     * reads across all three: the fulfilment item says what is being shipped,
+     * the order line says what it was sold for, and the variant has to be
+     * fetched to find out how big it is.
+     *
+     * The previous code read `item.variant.product.metadata` straight off the
+     * fulfilment item. That is always undefined, which is why `ships_separately`
+     * has never once taken effect here and every order shipped as a single
+     * parcel with `selling_price: 0` on every line.
+     */
+    const orderLines = new Map<string, any>(
+      ((order.items as any[]) ?? []).map((line) => [line.id, line])
+    )
+
+    const variantIds = [
+      ...new Set(
+        items
+          .map(
+            (i) => orderLines.get((i as any).line_item_id ?? "")?.variant_id
+          )
+          .filter(Boolean)
+      ),
+    ] as string[]
+
+    const variants = new Map<string, any>()
+    const query = this.query_()
+
+    if (query && variantIds.length > 0) {
+      try {
+        const { data } = await query.graph({
+          entity: "product_variant",
+          filters: { id: variantIds },
+          fields: [
+            "id",
+            "weight",
+            "length",
+            "width",
+            "height",
+            "hs_code",
+            "metadata",
+            "product.metadata",
+          ],
+        })
+
+        for (const variant of data ?? []) {
+          variants.set(variant.id, variant)
+        }
+      } catch (e: any) {
+        /*
+         * Soft, because a parcel measured by fallback still ships, and refusing
+         * to fulfil an order because a lookup failed is the worse outcome. The
+         * warning matters though: every parcel in this fulfilment is about to be
+         * declared at the fallback size.
+         */
+        this.logger_.warn(
+          `[ShippingOrchestrator] Could not load variant dimensions for order ${order.id}, ` +
+            `declaring fallback sizes: ${e.message}`
+        )
+      }
+    }
 
     for (const i of items) {
-      const srItem = {
-        name: i.title || "Item",
-        sku: i.sku || i.id,
-        units: i.quantity,
-        selling_price: (i as any).unit_price || 0,
-        discount: "",
-        tax: "",
-        hsn: "",
-      }
+      const orderLine = orderLines.get((i as any).line_item_id ?? "") ?? {}
+      const variant = variants.get(orderLine.variant_id) ?? {}
 
-      const productMeta = (i as any).variant?.product?.metadata || {}
-      const variantMeta = (i as any).variant?.metadata || {}
+      /*
+       * `total` is what the line came to after discounts and — on this
+       * tax-inclusive store — including GST, so it is what the customer
+       * actually paid and therefore what the parcel is worth. `unit_price`
+       * times quantity is the fallback for an order line that carried no
+       * totals.
+       */
+      const orderedQuantity = orderLine.quantity || i.quantity || 1
+      const shippedQuantity = i.quantity ?? 1
+
+      const lineTotal =
+        typeof orderLine.total === "number"
+          ? orderLine.total
+          : (orderLine.unit_price || 0) * orderedQuantity
+
+      /*
+       * Per unit, because a fulfilment can ship part of a line. Declaring the
+       * whole line's value on a parcel carrying two of five units overstates
+       * what is in the box, which matters when the courier loses it.
+       */
+      const perUnitValue = lineTotal / orderedQuantity
+
+      standardOrSeparate(variant, {
+        shiprocket: {
+          name: i.title || "Item",
+          sku: i.sku || i.id || "",
+          units: shippedQuantity,
+          // Consistent with the declared value below, so Shiprocket's own sum
+          // of the lines agrees with `sub_total`.
+          selling_price: Number(perUnitValue.toFixed(2)),
+          discount: "",
+          tax: "",
+          hsn: (variant.hs_code as string) || "",
+        },
+        weight: variant.weight || settings.fallback_weight_grams,
+        length: variant.length || FALLBACK_DIMENSION_CM,
+        width: variant.width || FALLBACK_DIMENSION_CM,
+        height: variant.height || FALLBACK_DIMENSION_CM,
+        quantity: shippedQuantity,
+        value: perUnitValue * shippedQuantity,
+        ref: i.id || i.sku || i.title || "item",
+      })
+    }
+
+    function standardOrSeparate(variant: any, parcelItem: ParcelItem) {
+      const productMeta = variant?.product?.metadata || {}
+      const variantMeta = variant?.metadata || {}
+      // Variant wins over product, so one variant of a product can be flagged
+      // without flagging the rest.
       const metadata = { ...productMeta, ...variantMeta }
+
       if (
         metadata.ships_separately === "true" ||
         metadata.ships_separately === true
       ) {
-        separateItems.push(srItem)
+        separateItems.push(parcelItem)
       } else {
-        standardItems.push(srItem)
+        standardItems.push(parcelItem)
       }
     }
 
     const allResponses: any[] = []
+    // Carried onto the fulfilment so the ship action can re-check
+    // serviceability for the parcel that actually exists, rather than
+    // guessing a weight all over again.
+    let totalChargeableKg = 0
 
     const pushToShiprocket = async (
-      orderItems: any[],
+      parcelItems: ParcelItem[],
       suffix: string,
-      warehouse: any
+      warehouse: any,
+      /** The box this parcel was packed into, when one is configured. */
+      box: { length_cm: number; width_cm: number; height_cm: number } | null
     ) => {
-      const pickupLocation = warehouse?.name || "Primary"
-      const weight =
-        orderItems.reduce(
-          (sum: number, item: any) => sum + (item.units || 1) * 0.5,
-          0
-        ) || 0.5
+      /*
+       * Shiprocket identifies a pickup point by the nickname it holds in their
+       * panel, which is rarely the name Medusa gives the same location. Sending
+       * the Medusa name gets the order rejected for an unknown pickup location,
+       * so the mapped nickname wins and the name is only the fallback for when
+       * the two already agree.
+       */
+      const pickupLocation =
+        warehouse?.shiprocket_pickup_location || warehouse?.name || "Primary"
+
+      // Grams to kilograms, and never zero — Shiprocket rejects a weightless
+      // parcel, and a missing weight is a data gap rather than a free shipment.
+      const grams = parcelItems.reduce(
+        (sum, item) => sum + item.weight * item.quantity,
+        0
+      )
+      const weight = Math.max(grams / 1000, 0.01)
+
+      /*
+       * The box the goods are packed in decides the volumetric weight, so its
+       * dimensions are what Shiprocket must be told. With no box configured
+       * there is nothing to pack into, and the parcel is described by the goods
+       * themselves: widest and longest item, stacked heights.
+       */
+      const dimensions = box
+        ? { length: box.length_cm, breadth: box.width_cm, height: box.height_cm }
+        : {
+            length: Math.max(...parcelItems.map((i) => i.length)),
+            breadth: Math.max(...parcelItems.map((i) => i.width)),
+            height: parcelItems.reduce(
+              (sum, i) => sum + i.height * i.quantity,
+              0
+            ),
+          }
+
+      // What the goods in this parcel are worth, which is not the order total:
+      // a split shipment declares only its own share, and shipping is not goods.
+      const subTotal = Number(
+        parcelItems.reduce((sum, item) => sum + item.value, 0).toFixed(2)
+      )
+
+      const volumetricWeight =
+        (dimensions.length * dimensions.breadth * dimensions.height) /
+        (settings.volumetric_divisor || 5000)
 
       const payload = {
         order_id: `SR-${order.id}-${suffix}`,
@@ -1100,29 +1289,81 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
         billing_email: order.email,
         billing_phone: deliveryAddress.phone || "0000000000",
         shipping_is_billing: true,
-        order_items: orderItems,
+        order_items: parcelItems.map((item) => item.shiprocket),
         payment_method: "Prepaid",
-        sub_total: 0,
-        length: 10,
-        breadth: 10,
-        height: 10,
+        sub_total: subTotal,
+        ...dimensions,
         weight,
       }
 
+      /*
+       * Both weights are logged because Shiprocket bills on the greater of the
+       * two, and which one wins is the difference between the quoted price and
+       * the invoice. When a light, bulky machine is charged on volume, this
+       * line is where that becomes visible without opening their panel.
+       */
       this.logger_.info(
-        `[ShippingOrchestrator] Creating Shiprocket order: ${payload.order_id}`
+        `[ShippingOrchestrator] Creating Shiprocket order ${payload.order_id}: ` +
+          `${weight.toFixed(2)}kg dead, ${volumetricWeight.toFixed(2)}kg volumetric ` +
+          `(${dimensions.length}x${dimensions.breadth}x${dimensions.height}cm), ` +
+          `declared ${subTotal}, pickup "${pickupLocation}"`
       )
+
+      totalChargeableKg += Math.max(weight, volumetricWeight)
+
       return await this.svc_.shiprocketApi.createOrder(payload, settings)
     }
 
-    // Standard items in one box
+    /*
+     * One Shiprocket order per box the goods were actually packed into, using
+     * the same packer that priced them. It used to be one order for all
+     * standard items regardless: an order the quote had split across two boxes
+     * shipped as a single parcel whose declared size fitted neither.
+     */
     if (standardItems.length > 0) {
-      const response = await pushToShiprocket(
-        standardItems,
-        "STD",
-        originWarehouse
+      const packedBoxes = await this.svc_.getBoxFit(
+        standardItems.map((item) => ({
+          length: item.length,
+          width: item.width,
+          height: item.height,
+          weight: item.weight,
+          quantity: item.quantity,
+          ref: item.ref,
+        })),
+        settings.volumetric_divisor
       )
-      allResponses.push(response)
+
+      for (const [index, packed] of packedBoxes.entries()) {
+        // The packer works in units, so a line split across boxes appears in
+        // each of them; the counts here are what actually went in this one.
+        const contents = standardItems
+          .map((item) => {
+            const units = packed.items.filter((ref) => ref === item.ref).length
+            if (units === 0) {
+              return null
+            }
+
+            return {
+              ...item,
+              quantity: units,
+              value: (item.value / item.quantity) * units,
+              shiprocket: { ...item.shiprocket, units },
+            }
+          })
+          .filter((item): item is ParcelItem => item !== null)
+
+        if (contents.length === 0) {
+          continue
+        }
+
+        const response = await pushToShiprocket(
+          contents,
+          packedBoxes.length > 1 ? `STD${index + 1}` : "STD",
+          originWarehouse,
+          packed.box
+        )
+        allResponses.push(response)
+      }
     }
 
     // Separate items each in their own box
@@ -1131,7 +1372,8 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
       const response = await pushToShiprocket(
         [sepItem],
         `SPLIT${splitCounter}`,
-        originWarehouse
+        originWarehouse,
+        null
       )
       allResponses.push(response)
       splitCounter++
@@ -1189,6 +1431,7 @@ export default class ShippingOrchestratorProvider extends AbstractFulfillmentPro
           .map((r) => r.awb_code)
           .filter(Boolean)
           .join(","),
+        chargeable_weight_kg: Number(totalChargeableKg.toFixed(3)),
         // Both raw (for support / auditing) and masked (for customer display)
         courier_names_raw: rawCouriers.join(","),
         courier_names_display: maskedCouriers.join(","),
