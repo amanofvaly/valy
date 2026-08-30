@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" fill-rule="evenodd" clip-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2">
+  <g transform="matrix(0.5,0,0,0.75,0,0)">
+    <g transform="matrix(3.41463,-2.27642,3.41463,2.27642,-3170.057654,1199.132551)">
+      <path d="M683,254L753,394L613,394L683,254Z" fill="#0066ff"/>
+    </g>
+    <g transform="matrix(3.41463,2.27642,-3.41463,2.27642,305.673148,-1913.676463)">
+      <path d="M683,254L753,394L613,394L683,254Z" fill="#0066ff"/>
+    </g>
+    <g transform="matrix(-4.182051,1.609672,-2.414508,-2.788034,4370.376175,589.425539)">
+      <path d="M683,254L753,394L613,394L683,254Z" fill="#0066ff"/>
+    </g>
+    <g transform="matrix(-4.182051,-1.609672,2.414508,-2.788034,3143.806116,2788.237482)">
+      <path d="M683,254L753,394L613,394L683,254Z" fill="#0066ff"/>
+    </g>
+  </g>
+</svg>

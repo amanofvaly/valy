@@ -10,6 +10,7 @@ import {
 } from "@modules/layout/components/header-status"
 import LanguageSelect from "@modules/layout/components/language-select"
 import SideMenu from "@modules/layout/components/side-menu"
+import { ValyMark } from "@modules/common/components/valy-mark"
 import { Suspense } from "react"
 
 /**
@@ -73,9 +74,10 @@ export default function Nav() {
          */}
         <LocalizedClientLink
           href="/"
-          className="pressable -ml-1 shrink-0 rounded px-1 text-lg font-semibold tracking-tight text-ink"
+          className="pressable -ml-1 flex shrink-0 items-center gap-2 rounded px-1 text-lg font-semibold tracking-tight text-ink"
           data-testid="nav-store-link"
         >
+          <ValyMark className="h-5 w-5 shrink-0" />
           <HeaderWordmark />
         </LocalizedClientLink>
 
