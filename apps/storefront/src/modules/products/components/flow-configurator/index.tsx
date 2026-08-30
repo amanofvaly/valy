@@ -96,6 +96,7 @@ export default function FlowConfigurator({
   const [selection, setSelection] = useState<FlowSelection>(INITIAL_SELECTION)
   const [activeStage, setActiveStage] = useState<FlowStageId>("kit")
   const [error, setError] = useState<string | null>(null)
+  const [barReady, setBarReady] = useState(false)
 
   const set = useCallback(
     <K extends keyof FlowSelection>(key: K, value: FlowSelection[K]) =>
@@ -179,6 +180,41 @@ export default function FlowConfigurator({
     )
 
     nodes.forEach(([, el]) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
+  /*
+   * The phone's price bar is fixed to the bottom of the viewport, so on a
+   * phone it covers the foot of whatever is on screen. Showing it from the
+   * first paint put it over the first stage's options — a reader who never
+   * scrolled saw a checkout button and no evidence there was anything to
+   * choose. It arrives once the last stage has been reached, by which point
+   * every decision has been seen and a running total is what the reader wants
+   * kept in front of them.
+   *
+   * Without `IntersectionObserver` it shows immediately: a phone with no way
+   * to check out is a worse failure than a bar arriving early.
+   */
+  useEffect(() => {
+    const last = FLOW_STAGES[FLOW_STAGES.length - 1]
+    const node = last ? stageRefs.current[last.id] : null
+
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setBarReady(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setBarReady(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0 }
+    )
+
+    observer.observe(node)
     return () => observer.disconnect()
   }, [])
 
@@ -350,14 +386,16 @@ export default function FlowConfigurator({
         </div>
       </div>
 
-      {/* The phone's running price. */}
-      <MobileBar
-        total={total}
-        currencyCode={currencyCode}
-        complete={complete}
-        pending={isPending}
-        onContinue={onContinue}
-      />
+      {/* The phone's running price, once the last decision has been seen. */}
+      {barReady && (
+        <MobileBar
+          total={total}
+          currencyCode={currencyCode}
+          complete={complete}
+          pending={isPending}
+          onContinue={onContinue}
+        />
+      )}
     </div>
   )
 }

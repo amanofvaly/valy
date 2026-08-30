@@ -56,12 +56,12 @@ const FlowTemplate = async ({
 
   return (
     <>
-      <header className="container-page pb-10 pt-10 sm:pt-14">
-        <h1 className="max-w-[16ch] text-balance text-4xl font-semibold leading-[1.04] tracking-tight text-ink sm:text-5xl lg:text-6xl">
+      <header className="container-page pb-6 pt-6 sm:pb-8 sm:pt-12">
+        <h1 className="max-w-[16ch] text-balance text-2xl font-semibold leading-[1.08] tracking-tight text-ink xsmall:text-3xl sm:text-4xl lg:text-5xl">
           {product.title}
         </h1>
         {product.subtitle && (
-          <p className="mt-5 max-w-prose text-lg leading-8 text-muted">
+          <p className="mt-2.5 max-w-prose text-sm leading-6 text-muted sm:mt-4 sm:text-base sm:leading-7">
             {product.subtitle}
           </p>
         )}
