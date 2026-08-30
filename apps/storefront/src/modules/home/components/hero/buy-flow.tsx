@@ -37,7 +37,7 @@ const BuyFlow = ({ countryCode }: { countryCode: string }) => (
 
    
     
-    <p className="min-h-6 text-sm font-medium leading-6 text-ink lg:text-base lg:leading-7">
+    <p className="hidden min-h-6 text-sm font-medium leading-6 text-ink sm:block lg:text-base lg:leading-7">
       <Suspense fallback={null}>
         A permanent space for all your media, files and apps
       </Suspense>
