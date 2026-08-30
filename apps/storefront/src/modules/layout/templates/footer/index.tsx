@@ -1,6 +1,7 @@
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { ValyMark } from "@modules/common/components/valy-mark"
 import { Envelope, Phone } from "@medusajs/icons"
 
 /**
@@ -52,8 +53,9 @@ export default async function Footer() {
         <div className="col-span-2 flex flex-col gap-3 sm:col-span-3 lg:col-span-1">
           <LocalizedClientLink
             href="/"
-            className="text-lg font-semibold tracking-tight text-ink"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-ink"
           >
+            <ValyMark className="h-5 w-5 shrink-0" />
             Valy Homelabs
           </LocalizedClientLink>
           <p className="max-w-xs text-sm leading-6 text-muted">
@@ -155,22 +157,11 @@ export default async function Footer() {
       <div className="border-t border-line">
         <div className="container-page flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-2xs text-muted">
-            <li>GST invoice on every order</li>
-            <li>48-hour burn-in before dispatch</li>
-            <li>3-year warranty, serviced in India</li>
-            <li>7-day returns</li>
+            <li>Powered by Medusa, Cashfree, Shiprocket, Mastercard, ICICI Bank, TrueNAS</li>
+            
           </ul>
           <p className="text-2xs text-muted">
-            Icons by{" "}
-            <a
-              href="https://www.streamlinehq.com/icons/flex-gradient-free"
-              rel="noreferrer nofollow"
-              target="_blank"
-              className="underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
-            >
-              Streamline
-            </a>{" "}
-            (CC BY 4.0) · © {new Date().getFullYear()} Valy Homelabs
+             © {new Date().getFullYear()} Valy Homelabs
           </p>
         </div>
       </div>
