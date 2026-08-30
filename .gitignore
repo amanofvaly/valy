@@ -46,6 +46,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# nitro / tanstack start build output
+.output
+.tanstack
+
 # macOS system files
 .DS_Store
 .DS_Store?

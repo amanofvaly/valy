@@ -1,0 +1,378 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* -------------------------------------------------------------------------- */
+/*  Tokens                                                                     */
+/*                                                                             */
+/*  The single source of colour, spacing rhythm and elevation for the site.     */
+/*  `tailwind.config.js` maps these into `theme` (not `extend`), so the only    */
+/*  colours Tailwind can emit are the ones named here — a stray zinc or gray    */
+/*  fails to compile rather than quietly reintroducing a fourth palette.        */
+/*                                                                             */
+/*  Values are unwrapped RGB channels, not hex, so Tailwind's alpha modifiers   */
+/*  work: `bg-ink/90` compiles to `rgb(var(--ink) / 0.9)`. With a hex value it   */
+/*  compiles to something invalid, and the element renders transparent — which  */
+/*  is a failure that looks like a missing element rather than a broken colour. */
+/*  In hand-written CSS below, read them back as `rgb(var(--token))`.            */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --ink: 21 24 28;
+  --paper: 255 255 255;
+  --surface: 245 246 247;
+  --surface-strong: 236 238 240;
+  --line: 226 228 231;
+  --line-strong: 203 207 212;
+  --muted: 102 108 117;
+  /*
+   * The accent is the action colour, flattened.
+   *
+   * It used to be a red, which put the site's one emphasis colour in a
+   * different family from its one button — a red headline word, a red link and
+   * a blue-to-violet "Buy your Flow" is two themes sharing a page. Accent is
+   * now the midpoint of the action sweep, so an accented word, an accented
+   * rule and the button all read as the same brand mark at different weights.
+   *
+   * Red survives only as `--danger`, which is what a red should be reserved
+   * for: it can no longer be mistaken for emphasis, because nothing else on
+   * the page is red.
+   *
+   * White on `--accent` is 6.4:1 and `--accent` on paper is 6.4:1;
+   * `--accent-strong`, the hover, is 8.9:1.
+   */
+  --accent: 59 79 215;
+  --accent-strong: 44 60 172;
+  --accent-wash: 238 241 253;
+
+  /*
+   * The accent again, for ink grounds.
+   *
+   * `--accent` is dark on purpose — it has to clear white paper — and on ink it
+   * measures 2.8:1, under even the 3:1 floor a large heading is allowed. That
+   * is not a mistake in the value, it is the hue: luminance weights green at
+   * 71.5% and red at 21.3% against blue's 7.2%, so a saturated blue keeps
+   * almost all of its colour in the channel the eye counts least.
+   *
+   * Which channel supplies the missing light decides whether the result is
+   * still blue, and two attempts got it wrong in opposite directions. Raising
+   * red and green together — lightening `--accent` itself — gave a periwinkle:
+   * bright, and barely blue, because red pulls it toward violet. Raising green
+   * far enough to clear 7:1 gave a sky blue: bright, and washed, because
+   * saturation is what is spent to buy that luminance.
+   *
+   * The value that reads as *blue* is the one that keeps saturation and takes
+   * the contrast it can get. This is a 216° blue at full chroma — the button
+   * gradient's own hue, two stops brighter than `--action-from` — and it
+   * measures 4.9:1 on ink, which is AA at any size, not merely at heading size.
+   *
+   * It is strictly a dark-ground token. On paper it is 3.1:1, so
+   * `text-accent-inverse` belongs only where `text-paper` already does.
+   */
+  --accent-inverse: 47 128 255;
+  --signal: 15 122 82;
+  --signal-wash: 234 245 240;
+  --warn: 138 90 0;
+  --warn-wash: 253 245 230;
+  --danger: 155 34 38;
+  --danger-wash: 251 239 240;
+
+  /*
+   * The action colour: one gradient, for the single button on a page that is
+   * the reason the page exists. Currently that is "Buy your Flow" and nothing
+   * else.
+   *
+   * It is a blue-to-violet sweep in the manner of Canva's, and it is
+   * deliberately not Canva's own values. Their gradient runs from #00C4CC, on
+   * which white type sits at 2.15:1 — unreadable, and they get away with it
+   * because their marks are shapes rather than words. Ours carries a label, so
+   * both stops are darkened until white clears 4.5:1 across the whole sweep:
+   * 4.80 at the blue end, 6.43 at the midpoint, 7.06 at the violet end.
+   *
+   * `--action` is the midpoint, flattened, for the places a gradient cannot go
+   * — a focus ring, a link, a small mark. It clears 6.4:1 on paper, and it is
+   * the value `--accent` above carries, so the two are one colour by
+   * construction rather than by two hex values that agree today.
+   */
+  --action: 59 79 215;
+  --action-from: 11 114 212;
+  --action-to: 107 43 217;
+  --action-from-strong: 8 92 172;
+  --action-to-strong: 86 33 176;
+
+  /* Focus is one ring everywhere, so keyboard position is never ambiguous. */
+  --focus-ring: 0 0 0 2px rgb(var(--paper)), 0 0 0 4px rgb(var(--accent));
+}
+
+@layer base {
+  /*
+   * The Medusa preset used to set a default border colour on `*`. It is gone,
+   * so re-establish one: Tailwind's own default is `currentColor`, which would
+   * make every `border` in the app take the text colour.
+   */
+  *,
+  ::before,
+  ::after {
+    border-color: rgb(var(--line));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-feature-settings: "cv05" 1, "ss03" 1;
+  }
+
+  /*
+   * Prices, capacities and order numbers are compared down a column far more
+   * often than they are read in a sentence.
+   */
+  .tabular,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: rgb(var(--accent-wash));
+    color: rgb(var(--ink));
+  }
+
+  /*
+   * Anyone who has asked their system for less motion gets none of the
+   * transitions and view transitions this site otherwise leans on.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * One page gutter. 1280px keeps a 12-column grid at a readable measure on a
+   * 1440 screen without the content drifting to the far edges.
+   */
+  .container-page {
+    @apply mx-auto w-full max-w-[1280px] px-5 sm:px-8;
+  }
+
+  /*
+   * The wide container. One chapter on the homepage — the application library —
+   * deliberately outgrows the 1280px page and runs to 1680px, so the catalogue
+   * physically breaks the frame the rest of the page keeps to. Nothing else in
+   * the app is allowed to use it.
+   */
+  .container-wide {
+    @apply mx-auto w-full max-w-[1680px] px-5 sm:px-8;
+  }
+
+  .container-prose {
+    @apply mx-auto w-full max-w-[68ch] px-5 sm:px-8;
+  }
+
+  /*
+   * Borrowed colour, applied from the stylesheet rather than from a style
+   * attribute.
+   *
+   * Twenty-eight applications each supply their own mark colour, and the
+   * application library is a client component — so every declaration it writes
+   * inline is compared against the browser's parsed value during hydration.
+   * `#4250AF` comes back as `rgb(66 80 175)` and `color-mix(… 33.4470148%…)`
+   * comes back rounded, and React calls both a mismatch. Passing only the raw
+   * custom properties inline and doing the arithmetic here means there is
+   * nothing left to disagree about.
+   *
+   * `--app-brand` and `--app-wash` are set once per screen and inherited.
+   */
+  /*
+   * The action button's ground.
+   *
+   * Here rather than in a component for the same reason `.app-mark` is here:
+   * nothing that renders a button should have to reason about which two stops
+   * make the sweep, and a gradient expressed as Tailwind arbitrary values in
+   * six call sites is six places to get it wrong.
+   *
+   * The hover state darkens both stops rather than shifting the angle, so the
+   * button gets heavier under the cursor without appearing to move.
+   */
+  .action-surface {
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--action-from)) 0%,
+      rgb(var(--action-to)) 100%
+    );
+  }
+
+  .action-surface:hover {
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--action-from-strong)) 0%,
+      rgb(var(--action-to-strong)) 100%
+    );
+  }
+
+  /*
+   * The same sweep, as an outline.
+   *
+   * There is no `border-image` that survives a rounded corner, so the border is
+   * transparent and two backgrounds are painted through it: a flat paper fill
+   * clipped to the padding box, and the gradient clipped to the border box.
+   * What shows through the transparent border is the gradient; what shows
+   * inside it is paper. The order matters — the fill is listed first because
+   * the first background paints on top.
+   *
+   * The consequence to know: the fill is paper, so this belongs on paper. On
+   * surface or ink the inside of the button stays white and it reads as a
+   * filled button of the wrong colour. `--action-outline-fill` is there for a
+   * call site that has to put one on another ground.
+   */
+  .action-outline-surface {
+    border-color: transparent;
+    background-image: linear-gradient(
+        rgb(var(--action-outline-fill, var(--paper))),
+        rgb(var(--action-outline-fill, var(--paper)))
+      ),
+      linear-gradient(
+        100deg,
+        rgb(var(--action-from)) 0%,
+        rgb(var(--action-to)) 100%
+      );
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  .action-outline-surface:hover {
+    background-image: linear-gradient(
+        rgb(var(--accent-wash)),
+        rgb(var(--accent-wash))
+      ),
+      linear-gradient(
+        100deg,
+        rgb(var(--action-from-strong)) 0%,
+        rgb(var(--action-to-strong)) 100%
+      );
+  }
+
+  .app-mark {
+    color: var(--app-brand);
+  }
+
+  .app-fill {
+    background-color: var(--app-brand);
+  }
+
+  /*
+   * A picture cell: two tints of the application's own colour. Where
+   * `color-mix` is missing the whole declaration drops and the precomputed
+   * wash behind it stands in.
+   */
+  .app-cell {
+    background-color: var(--app-wash);
+    background-image: linear-gradient(
+      148deg,
+      color-mix(in oklab, var(--app-brand) var(--app-c1), white),
+      color-mix(in oklab, var(--app-brand) var(--app-c2), white)
+    );
+  }
+
+  /* A tile that is currently on, tinted by the thing that turned it on. */
+  .app-tile-on {
+    background-color: var(--app-wash);
+    background-color: color-mix(in oklab, var(--app-brand) 7%, white);
+  }
+
+  /*
+   * Hairline. Used instead of `border` in dense tables so the rule sits on the
+   * device pixel grid at any DPR.
+   */
+  .rule {
+    @apply border-0 border-b border-line;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /*
+   * A press state that works on a touchscreen, where `hover:` does nothing.
+   * Applied by the Button and by every hand-rolled interactive surface.
+   */
+  .pressable {
+    @apply transition-[transform,background-color,border-color,color] duration-100 ease-out;
+    @apply active:scale-[0.985];
+  }
+
+  .pressable-tint {
+    @apply pressable active:bg-surface-strong;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: rgb(var(--ink));
+    -webkit-box-shadow: 0 0 0 1000px rgb(var(--paper)) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  View transitions                                                           */
+/*                                                                             */
+/*  An enhancement, not a dependency: with the flag off or the API missing,     */
+/*  navigation is an ordinary cut and nothing below applies.                    */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-fade-out 90ms ease-out both;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-fade-in 140ms ease-out both;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}

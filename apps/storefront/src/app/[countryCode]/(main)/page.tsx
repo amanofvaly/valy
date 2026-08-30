@@ -8,7 +8,6 @@ import TheTenancy from "@modules/home/components/the-tenancy"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Easy homelabs and NAS - Valy",
   description:
     "Photo backup and sync, media streaming, home automation, network monitoring, virtualization and more - all on a machine you own. Free and open source apps to run your home on your terms.",
 }
