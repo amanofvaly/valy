@@ -34,8 +34,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     links: [
       /* Next generated these from `app/icon.svg` and `app/favicon.ico`; here
        * they are declared, so the SVG mark is used where it is supported. */
+      /*
+       * The SVG only, which is what the old store shipped. A `favicon.ico`
+       * link alongside it wins in Chrome, and the .ico in `public/` is not
+       * this mark.
+       */
       { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:opsz,wght@14..32,100..900&display=swap" },
