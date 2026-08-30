@@ -22,7 +22,7 @@ export default defineConfig({
     viteReact(),
     tsconfigPaths(),
   ],
-  envDir: "../storefront",
+  
   envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   ssr: {
     noExternal: ["lodash", /^@radix-ui\//, /^@headlessui\//],
@@ -56,10 +56,17 @@ export default defineConfig({
         "app/lib/customer-actions.client.ts"
       ),
       "next/headers": path.resolve(import.meta.dirname, "app/shims/next-headers.ts"),
+      "next/cache": path.resolve(import.meta.dirname, "app/shims/next-cache.ts"),
+      "next/font/google": path.resolve(import.meta.dirname, "app/shims/next-font-google.ts"),
       "next/link": shim("next-link"),
       "next/navigation": shim("next-navigation"),
       "next/image": shim("next-image"),
       "next/dynamic": shim("next-dynamic"),
+      /*
+       * Last on purpose. A "next" key also matches "next/…", so it must be
+       * considered only after every specific subpath above.
+       */
+      next: path.resolve(import.meta.dirname, "app/shims/next.ts"),
     },
   },
 })
