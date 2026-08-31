@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 import { absoluteUrl, DEFAULT_COUNTRY } from "../../app/lib/market"
-import { RoutePending } from "../components/route-pending"
+import { ProductPending } from "../components/route-pending"
 import { productQuery, productExtrasQuery } from "../data/catalogue"
 import { ProductScreen } from "../screens/catalogue-screens"
 
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/products/$handle")({
     if (!data.product || !data.region) throw notFound()
     return data
   },
-  pendingComponent: RoutePending,
+  pendingComponent: ProductPending,
   head: ({ loaderData, params }) => {
     const product = loaderData?.product
     const description =

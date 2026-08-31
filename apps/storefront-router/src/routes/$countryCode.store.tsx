@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
-import { RoutePending } from "../components/route-pending"
+import { BrowsePending } from "../components/route-pending"
 import { browseQuery } from "../data/catalogue"
 import { StoreScreen } from "../screens/catalogue-screens"
 
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/$countryCode/store")({
   }),
   loader: ({ context, deps, params }) =>
     context.queryClient.ensureQueryData(browseQuery({ countryCode: params.countryCode.toLowerCase(), ...deps })),
-  pendingComponent: RoutePending,
+  pendingComponent: BrowsePending,
   head: () => ({ meta: [
     { title: "All Products · Valy" },
     { name: "description", content: "Preconfigured servers, storage, cases, network parts, and a lot more to setup your homelab." },

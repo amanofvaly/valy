@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
-import { RoutePending } from "../components/route-pending"
+import { BrowsePending } from "../components/route-pending"
 import { browseQuery, categoryQuery } from "../data/catalogue"
 import { CategoryScreen } from "../screens/catalogue-screens"
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/$countryCode/categories/$handle")({
     )
     return record
   },
-  pendingComponent: RoutePending,
+  pendingComponent: BrowsePending,
   head: ({ loaderData }) => ({ meta: [
     { title: `${loaderData?.category?.name || "Category"} · Valy` },
     ...(loaderData?.category?.description

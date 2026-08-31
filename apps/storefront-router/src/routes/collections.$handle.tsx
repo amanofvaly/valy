@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 import { DEFAULT_COUNTRY } from "../../app/lib/market"
-import { RoutePending } from "../components/route-pending"
+import { BrowsePending } from "../components/route-pending"
 import { browseQuery, collectionQuery } from "../data/catalogue"
 import { CollectionScreen } from "../screens/catalogue-screens"
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/collections/$handle")({
     )
     return record
   },
-  pendingComponent: RoutePending,
+  pendingComponent: BrowsePending,
   head: ({ loaderData }) => ({ meta: [
     { title: `${loaderData?.collection?.title || "Collection"} · Valy` },
   ] }),

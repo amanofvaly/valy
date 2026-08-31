@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, notFound } from "@tanstack/react-router"
-import { RoutePending } from "../components/route-pending"
+import { OrderPending } from "../components/route-pending"
 import { orderQuery } from "../data/session"
 import { OrderScreen } from "../screens/session-screens"
 
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/order/$id/confirmed")({
     if (!order) throw notFound()
     return order
   },
-  pendingComponent: RoutePending,
+  pendingComponent: OrderPending,
   head: () => ({ meta: [{ title: "Order Confirmed · Valy" }, { name: "description", content: "You purchase was successful" }] }),
   component: OrderRoute,
 })
