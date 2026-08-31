@@ -1,10 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { OptionValueIds } from "@lib/util/product-option-filters"
-import CategoryIndex, {
-  CategoryIndexFallback,
-} from "@modules/store/components/category-index"
+import CategoryIndex from "@modules/store/components/category-index"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { Suspense } from "react"
 import BrowsePage from "./browse-page"
 
 /**
@@ -45,13 +42,8 @@ const StoreTemplate = ({
     titleTestId="store-page-title"
     hideCategoryRail
   >
-    {/*
-     * The table of contents. Streamed, because it needs the catalogue and the
-     * heading above it does not.
-     */}
-    <Suspense fallback={<CategoryIndexFallback />}>
-      <CategoryIndex />
-    </Suspense>
+    {/* The table of contents. Read by the route loader, not streamed. */}
+    <CategoryIndex categories={categories} />
   </BrowsePage>
 )
 

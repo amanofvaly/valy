@@ -290,19 +290,23 @@ export default function ProductActions({
       {children}
 
       <div ref={buyRef} className="flex flex-col gap-3 border-t border-line pt-5">
-        <ProductPrice product={product} variant={selectedVariant} />
+        {/* Price and the button share a row on every width. The button sizes
+            to its label rather than stretching, so a phone does not give a
+            twelve-unit-tall block to two words. */}
+        <div className="flex items-center justify-between gap-4">
+          <ProductPrice product={product} variant={selectedVariant} />
 
-        <Button
-          variant="action"
-          size="large"
-          block
-          onClick={handleAddToCart}
-          disabled={!selectedVariant || !inStock || !!disabled}
-          data-testid="add-product-button"
-          className={cn(added && "bg-signal hover:bg-signal")}
-        >
-          {label}
-        </Button>
+          <Button
+            variant="action"
+            size="large"
+            onClick={handleAddToCart}
+            disabled={!selectedVariant || !inStock || !!disabled}
+            data-testid="add-product-button"
+            className={cn("shrink-0", added && "bg-signal hover:bg-signal")}
+          >
+            {label}
+          </Button>
+        </div>
 
         {error && (
           <p
@@ -311,15 +315,6 @@ export default function ProductActions({
             data-testid="add-to-cart-error"
           >
             {error}
-          </p>
-        )}
-
-        {selectedVariant && inStock && !error && (
-          <p className="text-2xs text-muted">
-            {selectedVariant.sku && (
-              <span className="font-mono">{selectedVariant.sku} · </span>
-            )}
-            Price includes GST. Shipping calculated at checkout.
           </p>
         )}
 

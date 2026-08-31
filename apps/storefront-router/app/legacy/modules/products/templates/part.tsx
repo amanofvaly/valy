@@ -38,15 +38,23 @@ export default function PartTemplate({
   return (
     <div className="container-page py-8 lg:py-12" data-testid="product-container">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
-        <ImageGallery
-          images={images}
-          title={product.title}
-          metadata={product.metadata}
-        />
+        {/*
+         * Image and buy action together, and they stay put: a part page is
+         * mostly description and specification, and the price and the button
+         * used to scroll away with the photograph, so buying meant scrolling
+         * back up.
+         */}
+        <div className="flex flex-col gap-8 lg:sticky lg:top-24 lg:self-start">
+          <ImageGallery
+            images={images}
+            title={product.title}
+            metadata={product.metadata}
+          />
+          <ProductActions product={product} />
+        </div>
 
         <div className="flex flex-col gap-8">
           <ProductInfo product={product} />
-          <ProductActions product={product} />
           <ProductDescription product={product} className="flex flex-col gap-4" />
 
           <section aria-labelledby="specification">
