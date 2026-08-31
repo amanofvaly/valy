@@ -38,7 +38,13 @@ import Image from "next/image"
  */
 
 const Hero = ({ price }: { price?: FlowPrice }) => (
-  <section className="bg-paper">
+  /*
+   * The hero owns the first screen: full viewport height minus the sticky
+   * header, so the band below it never creeps into view. `svh` rather than
+   * `vh` because mobile browser chrome makes `100vh` taller than what is
+   * actually visible.
+   */
+  <section className="flex min-h-[calc(100svh-3.5rem)] flex-col bg-paper sm:min-h-[calc(100svh-4rem)]">
     <AppIconSprite />
 
     {/*
@@ -56,7 +62,7 @@ const Hero = ({ price }: { price?: FlowPrice }) => (
      * gone by the time the shelves start, so the room is still a photograph
      * everywhere the eye actually looks at it.
      */}
-    <div className="relative isolate overflow-hidden">
+    <div className="relative isolate flex flex-1 flex-col overflow-hidden">
       <Image
         src="/home/hero-room.jpg"
         alt=""
@@ -93,7 +99,7 @@ const Hero = ({ price }: { price?: FlowPrice }) => (
        * `items-start` rather than a width — the block is as wide as the button,
        * wherever the button lands.
        */}
-      <div className="container-page relative flex flex-col items-start gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:justify-center lg:gap-10 lg:pb-16 lg:pt-24">
+      <div className="container-page relative flex flex-1 flex-col items-start justify-center gap-8 pb-10 pt-10 sm:pb-14 sm:pt-16 lg:min-h-[30rem] lg:gap-10 lg:pb-16 lg:pt-24">
         <div className="relative z-10 flex flex-col items-start gap-8 lg:gap-10">
           <h1 className="max-w-[13ch] text-balance text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-ink xsmall:text-5xl sm:text-6xl lg:text-7xl">
             A Private Home For Your{" "}
