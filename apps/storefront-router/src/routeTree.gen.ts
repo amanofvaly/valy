@@ -13,9 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCodeRouteImport } from './routes/$countryCode'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as CompatibilityRouteImport } from './routes/compatibility'
 import { Route as ContactRouteImport } from './routes/contact'
-import { Route as GettingStartedRouteImport } from './routes/getting-started'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundCancellationsRouteImport } from './routes/refund-cancellations'
 import { Route as ShippingDeliveryRouteImport } from './routes/shipping-delivery'
@@ -25,9 +23,7 @@ import { Route as VerifyAccountRouteImport } from './routes/verify-account'
 import { Route as CountryCodeIndexRouteImport } from './routes/$countryCode.index'
 import { Route as CountryCodeCartRouteImport } from './routes/$countryCode.cart'
 import { Route as CountryCodeCheckoutRouteImport } from './routes/$countryCode.checkout'
-import { Route as CountryCodeCompatibilityRouteImport } from './routes/$countryCode.compatibility'
 import { Route as CountryCodeContactRouteImport } from './routes/$countryCode.contact'
-import { Route as CountryCodeGettingStartedRouteImport } from './routes/$countryCode.getting-started'
 import { Route as CountryCodePrivacyRouteImport } from './routes/$countryCode.privacy'
 import { Route as CountryCodeRefundCancellationsRouteImport } from './routes/$countryCode.refund-cancellations'
 import { Route as CountryCodeShippingDeliveryRouteImport } from './routes/$countryCode.shipping-delivery'
@@ -84,19 +80,9 @@ const CheckoutRoute = CheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompatibilityRoute = CompatibilityRouteImport.update({
-  id: '/compatibility',
-  path: '/compatibility',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GettingStartedRoute = GettingStartedRouteImport.update({
-  id: '/getting-started',
-  path: '/getting-started',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -144,23 +130,11 @@ const CountryCodeCheckoutRoute = CountryCodeCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => CountryCodeRoute,
 } as any)
-const CountryCodeCompatibilityRoute =
-  CountryCodeCompatibilityRouteImport.update({
-    id: '/compatibility',
-    path: '/compatibility',
-    getParentRoute: () => CountryCodeRoute,
-  } as any)
 const CountryCodeContactRoute = CountryCodeContactRouteImport.update({
   id: '/contact',
   path: '/contact',
   getParentRoute: () => CountryCodeRoute,
 } as any)
-const CountryCodeGettingStartedRoute =
-  CountryCodeGettingStartedRouteImport.update({
-    id: '/getting-started',
-    path: '/getting-started',
-    getParentRoute: () => CountryCodeRoute,
-  } as any)
 const CountryCodePrivacyRoute = CountryCodePrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -359,9 +333,7 @@ export interface FileRoutesByFullPath {
   '/$countryCode': typeof CountryCodeRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
-  '/compatibility': typeof CompatibilityRoute
   '/contact': typeof ContactRoute
-  '/getting-started': typeof GettingStartedRoute
   '/privacy': typeof PrivacyRoute
   '/refund-cancellations': typeof RefundCancellationsRoute
   '/shipping-delivery': typeof ShippingDeliveryRoute
@@ -370,9 +342,7 @@ export interface FileRoutesByFullPath {
   '/verify-account': typeof VerifyAccountRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
-  '/$countryCode/compatibility': typeof CountryCodeCompatibilityRoute
   '/$countryCode/contact': typeof CountryCodeContactRoute
-  '/$countryCode/getting-started': typeof CountryCodeGettingStartedRoute
   '/$countryCode/privacy': typeof CountryCodePrivacyRoute
   '/$countryCode/refund-cancellations': typeof CountryCodeRefundCancellationsRoute
   '/$countryCode/shipping-delivery': typeof CountryCodeShippingDeliveryRoute
@@ -414,9 +384,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
-  '/compatibility': typeof CompatibilityRoute
   '/contact': typeof ContactRoute
-  '/getting-started': typeof GettingStartedRoute
   '/privacy': typeof PrivacyRoute
   '/refund-cancellations': typeof RefundCancellationsRoute
   '/shipping-delivery': typeof ShippingDeliveryRoute
@@ -425,9 +393,7 @@ export interface FileRoutesByTo {
   '/verify-account': typeof VerifyAccountRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
-  '/$countryCode/compatibility': typeof CountryCodeCompatibilityRoute
   '/$countryCode/contact': typeof CountryCodeContactRoute
-  '/$countryCode/getting-started': typeof CountryCodeGettingStartedRoute
   '/$countryCode/privacy': typeof CountryCodePrivacyRoute
   '/$countryCode/refund-cancellations': typeof CountryCodeRefundCancellationsRoute
   '/$countryCode/shipping-delivery': typeof CountryCodeShippingDeliveryRoute
@@ -471,9 +437,7 @@ export interface FileRoutesById {
   '/$countryCode': typeof CountryCodeRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
-  '/compatibility': typeof CompatibilityRoute
   '/contact': typeof ContactRoute
-  '/getting-started': typeof GettingStartedRoute
   '/privacy': typeof PrivacyRoute
   '/refund-cancellations': typeof RefundCancellationsRoute
   '/shipping-delivery': typeof ShippingDeliveryRoute
@@ -482,9 +446,7 @@ export interface FileRoutesById {
   '/verify-account': typeof VerifyAccountRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
-  '/$countryCode/compatibility': typeof CountryCodeCompatibilityRoute
   '/$countryCode/contact': typeof CountryCodeContactRoute
-  '/$countryCode/getting-started': typeof CountryCodeGettingStartedRoute
   '/$countryCode/privacy': typeof CountryCodePrivacyRoute
   '/$countryCode/refund-cancellations': typeof CountryCodeRefundCancellationsRoute
   '/$countryCode/shipping-delivery': typeof CountryCodeShippingDeliveryRoute
@@ -529,9 +491,7 @@ export interface FileRouteTypes {
     | '/$countryCode'
     | '/cart'
     | '/checkout'
-    | '/compatibility'
     | '/contact'
-    | '/getting-started'
     | '/privacy'
     | '/refund-cancellations'
     | '/shipping-delivery'
@@ -540,9 +500,7 @@ export interface FileRouteTypes {
     | '/verify-account'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
-    | '/$countryCode/compatibility'
     | '/$countryCode/contact'
-    | '/$countryCode/getting-started'
     | '/$countryCode/privacy'
     | '/$countryCode/refund-cancellations'
     | '/$countryCode/shipping-delivery'
@@ -584,9 +542,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/checkout'
-    | '/compatibility'
     | '/contact'
-    | '/getting-started'
     | '/privacy'
     | '/refund-cancellations'
     | '/shipping-delivery'
@@ -595,9 +551,7 @@ export interface FileRouteTypes {
     | '/verify-account'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
-    | '/$countryCode/compatibility'
     | '/$countryCode/contact'
-    | '/$countryCode/getting-started'
     | '/$countryCode/privacy'
     | '/$countryCode/refund-cancellations'
     | '/$countryCode/shipping-delivery'
@@ -640,9 +594,7 @@ export interface FileRouteTypes {
     | '/$countryCode'
     | '/cart'
     | '/checkout'
-    | '/compatibility'
     | '/contact'
-    | '/getting-started'
     | '/privacy'
     | '/refund-cancellations'
     | '/shipping-delivery'
@@ -651,9 +603,7 @@ export interface FileRouteTypes {
     | '/verify-account'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
-    | '/$countryCode/compatibility'
     | '/$countryCode/contact'
-    | '/$countryCode/getting-started'
     | '/$countryCode/privacy'
     | '/$countryCode/refund-cancellations'
     | '/$countryCode/shipping-delivery'
@@ -697,9 +647,7 @@ export interface RootRouteChildren {
   CountryCodeRoute: typeof CountryCodeRouteWithChildren
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
-  CompatibilityRoute: typeof CompatibilityRoute
   ContactRoute: typeof ContactRoute
-  GettingStartedRoute: typeof GettingStartedRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundCancellationsRoute: typeof RefundCancellationsRoute
   ShippingDeliveryRoute: typeof ShippingDeliveryRoute
@@ -754,25 +702,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/compatibility': {
-      id: '/compatibility'
-      path: '/compatibility'
-      fullPath: '/compatibility'
-      preLoaderRoute: typeof CompatibilityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/contact': {
       id: '/contact'
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/getting-started': {
-      id: '/getting-started'
-      path: '/getting-started'
-      fullPath: '/getting-started'
-      preLoaderRoute: typeof GettingStartedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -838,25 +772,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CountryCodeCheckoutRouteImport
       parentRoute: typeof CountryCodeRoute
     }
-    '/$countryCode/compatibility': {
-      id: '/$countryCode/compatibility'
-      path: '/compatibility'
-      fullPath: '/$countryCode/compatibility'
-      preLoaderRoute: typeof CountryCodeCompatibilityRouteImport
-      parentRoute: typeof CountryCodeRoute
-    }
     '/$countryCode/contact': {
       id: '/$countryCode/contact'
       path: '/contact'
       fullPath: '/$countryCode/contact'
       preLoaderRoute: typeof CountryCodeContactRouteImport
-      parentRoute: typeof CountryCodeRoute
-    }
-    '/$countryCode/getting-started': {
-      id: '/$countryCode/getting-started'
-      path: '/getting-started'
-      fullPath: '/$countryCode/getting-started'
-      preLoaderRoute: typeof CountryCodeGettingStartedRouteImport
       parentRoute: typeof CountryCodeRoute
     }
     '/$countryCode/privacy': {
@@ -1125,9 +1045,7 @@ const CountryCodeAccountOrdersRouteWithChildren =
 interface CountryCodeRouteChildren {
   CountryCodeCartRoute: typeof CountryCodeCartRoute
   CountryCodeCheckoutRoute: typeof CountryCodeCheckoutRoute
-  CountryCodeCompatibilityRoute: typeof CountryCodeCompatibilityRoute
   CountryCodeContactRoute: typeof CountryCodeContactRoute
-  CountryCodeGettingStartedRoute: typeof CountryCodeGettingStartedRoute
   CountryCodePrivacyRoute: typeof CountryCodePrivacyRoute
   CountryCodeRefundCancellationsRoute: typeof CountryCodeRefundCancellationsRoute
   CountryCodeShippingDeliveryRoute: typeof CountryCodeShippingDeliveryRoute
@@ -1151,9 +1069,7 @@ interface CountryCodeRouteChildren {
 const CountryCodeRouteChildren: CountryCodeRouteChildren = {
   CountryCodeCartRoute: CountryCodeCartRoute,
   CountryCodeCheckoutRoute: CountryCodeCheckoutRoute,
-  CountryCodeCompatibilityRoute: CountryCodeCompatibilityRoute,
   CountryCodeContactRoute: CountryCodeContactRoute,
-  CountryCodeGettingStartedRoute: CountryCodeGettingStartedRoute,
   CountryCodePrivacyRoute: CountryCodePrivacyRoute,
   CountryCodeRefundCancellationsRoute: CountryCodeRefundCancellationsRoute,
   CountryCodeShippingDeliveryRoute: CountryCodeShippingDeliveryRoute,
@@ -1198,9 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   CountryCodeRoute: CountryCodeRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
-  CompatibilityRoute: CompatibilityRoute,
   ContactRoute: ContactRoute,
-  GettingStartedRoute: GettingStartedRoute,
   PrivacyRoute: PrivacyRoute,
   RefundCancellationsRoute: RefundCancellationsRoute,
   ShippingDeliveryRoute: ShippingDeliveryRoute,

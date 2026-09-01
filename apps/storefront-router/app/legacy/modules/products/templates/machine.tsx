@@ -1,6 +1,5 @@
 import { specRows } from "@lib/util/specs"
 import { HttpTypes } from "@medusajs/types"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SpecBlock from "@modules/common/components/spec-block"
 import { Heading } from "@modules/common/components/ui"
 import ImageGallery from "@modules/products/components/image-gallery"
@@ -110,12 +109,6 @@ function CompatibleParts({
             Everything that goes in a {product.title}
           </Heading>
         </div>
-        <LocalizedClientLink
-          href="/compatibility"
-          className="text-sm text-accent hover:text-accent-strong"
-        >
-          The whole compatibility list
-        </LocalizedClientLink>
       </div>
 
       <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 xl:grid-cols-4">

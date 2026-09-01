@@ -31,8 +31,7 @@ const Register = ({
           Create an account
         </h1>
         <p className="text-sm leading-6 text-muted">
-          So your orders, invoices and test sheets stay in one place. Not
-          required to buy anything.
+          Sign up to save products in your cart and get personalized recommendations.
         </p>
       </div>
 

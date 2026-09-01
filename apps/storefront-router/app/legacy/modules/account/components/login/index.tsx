@@ -36,8 +36,7 @@ const Login = ({
           Sign in
         </h1>
         <p className="text-sm leading-6 text-muted">
-          Your orders, your saved addresses, and the test sheet for every
-          machine you have bought.
+          To view and manage your orders.
         </p>
       </div>
 
@@ -108,7 +107,7 @@ const Login = ({
         >
           Create one
         </button>
-        . You can also check out without one.
+        .
       </p>
     </div>
   )

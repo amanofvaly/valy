@@ -31,11 +31,6 @@ const EmptyCartMessage = () => (
       <Button asChild variant="secondary">
         <LocalizedClientLink href="/categories/parts">Parts</LocalizedClientLink>
       </Button>
-      <Button asChild variant="secondary">
-        <LocalizedClientLink href="/getting-started">
-          Start from nothing
-        </LocalizedClientLink>
-      </Button>
     </div>
   </div>
 )

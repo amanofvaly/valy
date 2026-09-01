@@ -27,28 +27,23 @@ import { Suspense } from "react"
  * cart link is already there and already clickable, and the region controls sit
  * inside a panel that is closed.
  *
- * The nav names the five things a visitor might be here for. "Compatibility" is
- * top-level on purpose: Synology uses that slot to express a restriction, and
- * this store uses it for the opposite.
+ * The nav names the one thing a visitor is here for. A store selling a single
+ * configurable machine has nothing to browse, so the header points at that
+ * machine and stops rather than dressing one product up as a catalogue.
  */
 
 /*
- * Flow leads, and it points at the machine rather than at a category holding
- * one product.
+ * Flow points at the machine rather than at a category holding one product.
  *
- * Machines and Services are deliberately absent. There is one machine, so a
- * category page for it is a list of length one standing between the visitor and
- * the thing they came for. And a service is an add-on to a machine — "Photo
- * library migration" is not a purchase that means anything to someone who does
- * not own a Flow yet — so services are sold where they apply, in the
- * configurator and on the machine page, not browsed in the catalogue.
+ * Parts, Machines and Services are deliberately absent. There is one machine,
+ * so a category page for it is a list of length one standing between the
+ * visitor and the thing they came for. And every part and service in the
+ * catalogue is an option on that machine rather than a thing bought on its
+ * own, so they are sold where they apply — in the configurator — and not
+ * browsed separately.
  */
 const NAV_LINKS = [
   { href: "/products/valy-flow", label: "Flow" },
-  { href: "/categories/parts", label: "Parts" },
-  { href: "/store", label: "All Products" },
-  { href: "/compatibility", label: "Compatibility" },
-  { href: "/getting-started", label: "Getting started" },
 ]
 
 export default function Nav() {

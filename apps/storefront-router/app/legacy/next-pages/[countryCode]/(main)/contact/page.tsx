@@ -52,18 +52,6 @@ const FACTS = [
 
 const ELSEWHERE = [
   {
-    href: "/compatibility",
-    title: "What fits what",
-    detail:
-      "Which drives, cards and memory go in which machine, and what changes when you mix them.",
-  },
-  {
-    href: "/getting-started",
-    title: "Getting started",
-    detail:
-      "How much space you actually need, what RAID protects you from, and what it does not.",
-  },
-  {
     href: "/terms",
     title: "Terms of sale",
     detail:

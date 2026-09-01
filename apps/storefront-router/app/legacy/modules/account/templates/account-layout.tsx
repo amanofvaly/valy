@@ -1,5 +1,4 @@
 import { HttpTypes } from "@medusajs/types"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import React from "react"
 import AccountNav from "../components/account-nav"
 
@@ -45,18 +44,6 @@ const AccountLayout: React.FC<{
           </p>
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-          <LocalizedClientLink
-            href="/compatibility"
-            className="text-accent hover:text-accent-strong"
-          >
-            What fits what
-          </LocalizedClientLink>
-          <LocalizedClientLink
-            href="/getting-started"
-            className="text-accent hover:text-accent-strong"
-          >
-            Getting started
-          </LocalizedClientLink>
           <a
             href="mailto:support@valy.in"
             className="text-accent hover:text-accent-strong"

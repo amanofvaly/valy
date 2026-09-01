@@ -1,6 +1,5 @@
 "use client"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import StatusPage from "@modules/common/components/status-page"
 import { Button } from "@modules/common/components/ui"
 import { useEffect } from "react"
@@ -37,11 +36,6 @@ export default function Error({
         <>
           <Button variant="action-outline" onClick={reset}>
             Try again
-          </Button>
-          <Button asChild variant="secondary">
-            <LocalizedClientLink href="/getting-started">
-              Read something instead
-            </LocalizedClientLink>
           </Button>
         </>
       }

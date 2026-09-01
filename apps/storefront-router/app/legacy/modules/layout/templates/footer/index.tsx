@@ -25,13 +25,6 @@ const CONTACT = [
   },
 ]
 
-const LEARN_LINKS = [
-  { href: "/compatibility", label: "What fits what" },
-  { href: "/getting-started", label: "Getting started" },
-  { href: "/getting-started#raid", label: "RAID calculator" },
-  { href: "/getting-started#capacity", label: "How much space do I need" },
-]
-
 const POLICY_LINKS = [
   { href: "/refund-cancellations", label: "Refunds & Cancellations" },
   { href: "/shipping-delivery", label: "Shipping & Delivery" },
@@ -126,14 +119,6 @@ export default async function Footer() {
             ))}
           </FooterColumn>
         )}
-
-        <FooterColumn title="Learn">
-          {LEARN_LINKS.map((link) => (
-            <FooterLink key={link.href} href={link.href}>
-              {link.label}
-            </FooterLink>
-          ))}
-        </FooterColumn>
 
         <FooterColumn title="Policy">
           {POLICY_LINKS.map((link) => (

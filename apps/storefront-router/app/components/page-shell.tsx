@@ -1,4 +1,4 @@
-import { BarsThree, Envelope, Phone, XMark } from "@medusajs/icons"
+import { BarsThree, Envelope, XMark } from "@medusajs/icons"
 import { useQuery } from "@tanstack/react-query"
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
@@ -7,15 +7,10 @@ import { ValyMark } from "@modules/common/components/valy-mark"
 import { countryFromPath, DEFAULT_COUNTRY, marketPath } from "~/lib/market"
 import { shellQuery } from "../../src/data/catalogue"
 import { cartQuery } from "../../src/data/session"
+import { PoweredBy } from "./powered-by"
 
 const navLinks = [
-  ["/products/valy-flow", "Flow"], ["/categories/parts", "Parts"],
-  ["/store", "All Products"], ["/compatibility", "Compatibility"],
-  ["/getting-started", "Getting started"],
-] as const
-const learnLinks = [
-  ["/compatibility", "What fits what"], ["/getting-started", "Getting started"],
-  ["/getting-started#raid", "RAID calculator"], ["/getting-started#capacity", "How much space do I need"],
+  ["/products/valy-flow", "Flow"],
 ] as const
 const policyLinks = [
   ["/refund-cancellations", "Refunds & Cancellations"], ["/shipping-delivery", "Shipping & Delivery"],
@@ -61,26 +56,40 @@ export function PageShell({ children }: { children?: React.ReactNode }) {
         </div></div> : null}
       </header>
       <main id="content" className="flex-1">{children ?? <Outlet />}</main>
+      {/*
+       * A sign-off, not a directory. With one machine in the catalogue there is
+       * nothing here to browse, so the footer carries the two things still
+       * worth reaching for at the foot of a page — a person to talk to, and the
+       * terms the purchase runs on — and gives the brand line the size it was
+       * always writing at.
+       *
+       * The Catalogue and "Where to start" columns that used to sit here were
+       * built from the shell query, so they arrived a beat after the markup and
+       * the grid re-flowed under the reader on first paint. Everything below is
+       * static, which is the other half of why it is laid out this way.
+       */}
       <footer className="mt-20 border-t border-line bg-surface">
-        <div className="container-page grid grid-cols-2 gap-x-6 gap-y-10 py-14 sm:grid-cols-3 lg:grid-cols-5 lg:py-16">
-          <div className="col-span-2 flex flex-col gap-3 sm:col-span-3 lg:col-span-1">
-            <Link to={marketPath(countryCode, "/")} className="flex items-center gap-2 text-lg font-semibold tracking-tight text-ink"><ValyMark className="h-5 w-5" />Valy Homelabs</Link>
-            <p className="max-w-xs text-sm leading-6 text-muted">Home Servers for everyone. Keep your photographs and your films and your work on hardware you own.</p>
-            <a href="mailto:support@valy.in" className="pressable flex w-fit items-center gap-2 rounded text-sm text-ink hover:text-accent"><Envelope className="text-muted" />support@valy.in</a>
-            <a href="tel:+919971779734" className="pressable flex w-fit items-center gap-2 rounded text-sm text-ink hover:text-accent"><Phone className="text-muted" />+91 99717 79734</a>
-            {navLink("/contact", "Contact us", "pressable w-fit rounded text-sm font-medium text-ink underline decoration-line-strong underline-offset-4 hover:text-accent")}
+        <div className="container-page flex flex-col gap-10 py-14 lg:flex-row lg:items-start lg:justify-between lg:gap-20 lg:py-16">
+          <div className="flex max-w-lg flex-col gap-5">
+            <Link to={marketPath(countryCode, "/")} className="pressable flex w-fit items-center gap-2 rounded text-lg font-semibold tracking-tight text-ink"><ValyMark className="h-5 w-5 shrink-0" />Valy Homelabs</Link>
+            <p className="text-pretty text-lg leading-8 text-muted lg:text-xl lg:leading-9">Home servers for everyone. Keep your photographs, films and work on hardware you own.</p>
           </div>
-          {shell?.categories?.filter((category) => !category.parent_category_id).length ? <FooterColumn title="Catalogue">{shell.categories.filter((category) => !category.parent_category_id).map((category) => navLink(`/categories/${category.handle}`, category.name, "text-sm text-muted hover:text-ink"))}</FooterColumn> : null}
-          {shell?.collections?.length ? <FooterColumn title="Where to start">{shell.collections.map((collection) => navLink(`/collections/${collection.handle}`, collection.title, "text-sm text-muted hover:text-ink"))}</FooterColumn> : null}
-          <FooterColumn title="Learn">{learnLinks.map(([href, label]) => navLink(href, label, "text-sm text-muted hover:text-ink"))}</FooterColumn>
-          <FooterColumn title="Policy">{policyLinks.map(([href, label]) => navLink(href, label, "text-sm text-muted hover:text-ink"))}</FooterColumn>
+          <div className="flex flex-col gap-6 lg:items-end">
+            <div className="flex flex-col gap-3 lg:items-end">
+              <a href="mailto:support@valy.in" className="pressable flex w-fit items-center gap-2.5 rounded text-base text-ink hover:text-accent"><Envelope className="shrink-0 text-muted" />support@valy.in</a>
+              {navLink("/contact", "Contact us", "pressable w-fit rounded text-sm font-medium text-ink underline decoration-line-strong underline-offset-4 hover:text-accent")}
+            </div>
+            <nav className="flex flex-wrap gap-x-5 gap-y-2 lg:justify-end" aria-label="Policies">{policyLinks.map(([href, label]) => navLink(href, label, "pressable rounded text-xs text-muted hover:text-ink"))}</nav>
+          </div>
         </div>
-        <div className="border-t border-line"><div className="container-page flex flex-col gap-4 py-6 text-2xs text-muted sm:flex-row sm:justify-between"><p>Powered by Medusa, Cashfree, Shiprocket, Mastercard, ICICI Bank, TrueNAS</p><p>© {new Date().getFullYear()} Valy Homelabs</p></div></div>
+        <div className="border-t border-line">
+          <div className="container-page flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <PoweredBy />
+            <p className="text-xs text-muted">© {new Date().getFullYear()} Valy Homelabs</p>
+          </div>
+        </div>
       </footer>
     </div>
   )
 }
 
-function FooterColumn({ title, children }: { title: string; children: React.ReactNode[] }) {
-  return <div className="flex flex-col gap-3"><h2 className="text-xs font-medium text-ink">{title}</h2><div className="flex flex-col gap-2.5">{children}</div></div>
-}
