@@ -72,6 +72,10 @@ const formatMoney = (value: number, currency?: string) =>
 const cancelEffect = (
   row: Shipment
 ): { allowed: boolean; where: string; reason?: string } => {
+  if (row.bucket === "canceled") {
+    return { allowed: false, where: "—", reason: "Already cancelled" }
+  }
+
   if (row.bucket === "in_transit") {
     return {
       allowed: false,
@@ -757,16 +761,20 @@ const ShipmentsView = () => {
                         <Badge
                           size="2xsmall"
                           color={
-                            row.bucket === "delivered"
-                              ? "green"
-                              : row.bucket === "to_ship"
-                                ? "orange"
-                                : "blue"
+                            row.bucket === "canceled"
+                              ? "grey"
+                              : row.bucket === "delivered"
+                                ? "green"
+                                : row.bucket === "to_ship"
+                                  ? "orange"
+                                  : "blue"
                           }
                         >
-                          {row.shipment_status_label ??
-                            TABS.find((t) => t.value === row.bucket)?.label ??
-                            row.bucket}
+                          {row.bucket === "canceled"
+                            ? "Cancelled"
+                            : (row.shipment_status_label ??
+                              TABS.find((t) => t.value === row.bucket)?.label ??
+                              row.bucket)}
                         </Badge>
                       </Table.Cell>
                     </Table.Row>

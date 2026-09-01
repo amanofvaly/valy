@@ -16,7 +16,20 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  *        &limit=&offset=&q=
  */
 
+/*
+ * Buckets that are not shipping work, and so are hidden from every tab except
+ * "all" and left out of the counts.
+ */
+const HIDDEN_BUCKETS = ["no_shipping", "canceled"]
+
 const bucketOf = (order: any): string => {
+  // A cancelled order is not work. Without this it keeps every unfulfilled
+  // line it had, so `outstanding` stays true and it sits in "to ship" for
+  // good — cancelled, uncancellable again, and still counted.
+  if (order.canceled_at) {
+    return "canceled"
+  }
+
   const live = (order.fulfillments ?? []).filter((f: any) => !f.canceled_at)
 
   // Nothing shippable at all: a services-only order never belongs in a queue
@@ -66,6 +79,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "display_id",
       "email",
       "created_at",
+      "canceled_at",
       "payment_status",
       "total",
       "currency_code",
@@ -137,7 +151,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }
     })
     .filter((row: any) => {
-      if (row.bucket === "no_shipping" && state !== "all") return false
+      if (HIDDEN_BUCKETS.includes(row.bucket) && state !== "all") return false
       if (state !== "all" && row.bucket !== state) return false
 
       if (!search) return true
@@ -157,7 +171,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const counts = (orders ?? []).reduce(
     (acc: Record<string, number>, order: any) => {
       const bucket = bucketOf(order)
-      if (bucket === "no_shipping") return acc
+      if (HIDDEN_BUCKETS.includes(bucket)) return acc
       acc[bucket] = (acc[bucket] ?? 0) + 1
       acc.all = (acc.all ?? 0) + 1
       return acc
