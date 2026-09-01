@@ -1,6 +1,7 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Container, Heading, Text } from "@medusajs/ui"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 // ------------------------------------------------------------------
 // Shipping readiness banner on Settings -> Locations & Shipping.
@@ -25,6 +26,7 @@ type Health = {
 }
 
 const ShippingReadinessWidget = () => {
+  const navigate = useNavigate()
   const [health, setHealth] = useState<Health | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -66,9 +68,7 @@ const ShippingReadinessWidget = () => {
         <Button
           variant="secondary"
           size="small"
-          onClick={() => {
-            window.location.href = "/app/shipping-orchestrator"
-          }}
+          onClick={() => navigate("/fulfillment/settings")}
         >
           Review setup
         </Button>

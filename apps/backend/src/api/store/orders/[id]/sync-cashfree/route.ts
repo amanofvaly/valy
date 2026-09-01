@@ -2,6 +2,23 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { CashfreeClient } from "../../../../../modules/cashfree/client"
 
+/**
+ * POST /store/orders/:id/sync-cashfree
+ *
+ * Backfills the instrument details (which UPI app, which card) onto a Cashfree
+ * payment. `authorizePayment` stamps them, but an order completed by the
+ * webhook instead — the customer's browser never came back — never goes
+ * through that path, so the payment row has a status and no detail. The order
+ * confirmation page calls this once and re-reads the order.
+ *
+ * It answers only `{ synced }`. This route sits under `/store/` and Medusa's
+ * core middlewares do not authenticate `/store/orders/:id/*`, so anyone with
+ * the publishable key — which ships in the storefront bundle — can call it for
+ * any order id. Returning the payment row let them read somebody else's
+ * instrument details; returning a boolean does not. The caller never used the
+ * body anyway.
+ */
+
 export const POST = async (
   req: MedusaRequest,
   res: MedusaResponse
@@ -30,7 +47,7 @@ export const POST = async (
   }
 
   if (cashfreePayment.data?.payments && Array.isArray(cashfreePayment.data.payments) && cashfreePayment.data.payments.length > 0) {
-    return res.json({ message: "Cashfree payment details already synced", payment: cashfreePayment })
+    return res.json({ synced: true })
   }
 
   try {
@@ -48,7 +65,7 @@ export const POST = async (
 
     const payments = await client.getOrderPayments(orderId as string).catch(() => [])
 
-    const updatedPayment = await (paymentModule as any).updatePayments({
+    await (paymentModule as any).updatePayments({
         id: cashfreePayment.id,
         data: {
           ...cashfreePayment.data,
@@ -56,9 +73,9 @@ export const POST = async (
         }
     })
 
-    return res.json({ message: "Cashfree payment details synced successfully", payment: updatedPayment })
+    return res.json({ synced: true })
   } catch (error: any) {
-    const logger = req.scope.resolve("logger")
+    const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
     logger.error(`Failed to sync cashfree payment for order ${id}: ${error.message}`)
     return res.status(500).json({ message: "Failed to sync payment details" })
   }

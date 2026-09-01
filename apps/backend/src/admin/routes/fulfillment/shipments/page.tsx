@@ -1,14 +1,17 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import ShipmentsView from "../../../components/shipments-view"
+import { Navigate } from "react-router-dom"
 
 /**
- * The same view the section lands on, listed as a child so the sidebar names
- * both halves rather than leaving "Shipments" implied by its absence.
+ * The sidebar needs a child that names the queue rather than leaving it
+ * implied by its absence, but mounting the view twice gave two URLs, two
+ * independent copies of a heavy stateful component, and a back button that
+ * moved between them without appearing to change anything. The nav entry
+ * stays; the second mount does not.
  */
-const ShipmentsPage = () => <ShipmentsView />
+const OrdersPage = () => <Navigate to="/fulfillment" replace />
 
 export const config = defineRouteConfig({
-  label: "Shipments",
+  label: "Orders",
 })
 
-export default ShipmentsPage
+export default OrdersPage

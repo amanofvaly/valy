@@ -192,6 +192,29 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
     }
   }
 
+  /**
+   * Cashfree's own errors, in Medusa's vocabulary.
+   *
+   * A raw `CashfreeApiError` reaches the admin as a bare 500 with none of
+   * Cashfree's message, which on a refund means the operator is told "server
+   * error" when the truth was "refund amount exceeds the captured amount".
+   * Mapping it keeps the reason visible and gives the route the right status.
+   */
+  #asMedusaError(error: unknown, context: string): unknown {
+    if (!(error instanceof CashfreeApiError)) {
+      return error
+    }
+
+    const type =
+      error.status === 404
+        ? MedusaError.Types.NOT_FOUND
+        : error.status >= 500
+          ? MedusaError.Types.UNEXPECTED_STATE
+          : MedusaError.Types.INVALID_DATA
+
+    return new MedusaError(type, `${context}: ${error.message}`)
+  }
+
   /* ---------------------------------------------------------------------- */
   /*  Lifecycle                                                              */
   /* ---------------------------------------------------------------------- */
@@ -364,12 +387,37 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
     const orderId = this.#orderIdFrom(input.data)
     const amount = this.#toAmount(input.amount)
 
-    const refund = await this.#client.refund(orderId, {
-      refund_amount: amount,
-      // Unique per refund, and stable for a retry of the same one.
-      refund_id: `${orderId}-r-${Date.now()}`,
-      refund_note: "Refunded from Medusa",
-    })
+    /*
+     * The refund id doubles as Cashfree's idempotency key, so it has to be
+     * stable across retries of the *same* refund and distinct between
+     * different ones. Medusa's refund row id is exactly that, and the payment
+     * module hands it over as `context.idempotency_key`.
+     *
+     * This used to be `${orderId}-r-${Date.now()}` under a comment claiming it
+     * was stable for a retry. It was the opposite: every retry minted a new
+     * key, so Cashfree treated it as a fresh request and refunded the customer
+     * a second time.
+     *
+     * The fallback is unreachable from the payment module, which always sets
+     * the key; it exists only so a direct caller cannot land here with none.
+     */
+    const refundId =
+      input.context?.idempotency_key ?? `${orderId}-r-${Date.now()}`
+
+    let refund: Awaited<ReturnType<CashfreeClient["refund"]>>
+
+    try {
+      refund = await this.#client.refund(orderId, {
+        refund_amount: amount,
+        refund_id: refundId,
+        refund_note: "Refunded from Medusa",
+      })
+    } catch (error) {
+      throw this.#asMedusaError(
+        error,
+        `Cashfree refused to refund ${amount} on order "${orderId}"`
+      )
+    }
 
     return {
       data: {
@@ -379,6 +427,49 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
         refund_status: refund.refund_status,
         refund_amount: refund.refund_amount,
       },
+    }
+  }
+
+  /**
+   * Every refund Cashfree actually holds for this payment.
+   *
+   * Beyond Medusa's provider contract, which has no way to ask. It exists
+   * because a Medusa refund row is not evidence that money moved: the plural
+   * `refundPaymentsWorkflow` swallows provider failures into the log and still
+   * writes its ledger entry, and even a refund the provider accepted comes
+   * back `PENDING` and can later go `FAILED` or `ONHOLD` without telling us.
+   * The only way to know is to ask the provider.
+   *
+   * The three providers due to be added alongside this one should implement
+   * the same shape — `(data) => Promise<ProviderRefund[]>` — so the reconcile
+   * route keeps working without learning any of their names.
+   */
+  async listRefunds(data: Record<string, unknown> | undefined): Promise<
+    {
+      id: string
+      amount: number
+      status: string
+      settled: boolean
+    }[]
+  > {
+    const orderId = this.#orderIdFrom(data)
+
+    try {
+      const refunds = await this.#client.getOrderRefunds(orderId)
+
+      return refunds.map((refund) => ({
+        id: refund.refund_id,
+        amount: Number(refund.refund_amount ?? 0),
+        status: refund.refund_status,
+        // ONHOLD and PENDING are still on their way; only SUCCESS is money
+        // the customer has. CANCELLED and FAILED never will be.
+        settled: refund.refund_status === "SUCCESS",
+      }))
+    } catch (error) {
+      throw this.#asMedusaError(
+        error,
+        `Cashfree could not list refunds for order "${orderId}"`
+      )
     }
   }
 
@@ -511,7 +602,45 @@ class CashfreePaymentService extends AbstractPaymentProvider<CashfreeOptions> {
       data?: {
         order?: { order_id?: string; order_amount?: number }
         payment?: { payment_status?: string; payment_amount?: number }
+        refund?: {
+          refund_id?: string
+          refund_status?: string
+          refund_amount?: number
+        }
       }
+    }
+
+    /*
+     * Refund outcomes arrive here too, and Medusa's webhook contract has no
+     * action for them — `captured`, `failed` and `not_supported` are the whole
+     * vocabulary. So this cannot move Medusa's state, and pretending otherwise
+     * would be worse than saying nothing.
+     *
+     * What it can do is refuse to let a failed refund pass in silence. A
+     * refund that Cashfree later rejects leaves Medusa showing the customer as
+     * repaid, and until this line existed there was nothing anywhere to say
+     * otherwise. The order desk's reconcile route is the mechanism that fixes
+     * it; this is the alarm that tells you to go and run it.
+     */
+    if (body?.type === "REFUND_STATUS_WEBHOOK") {
+      const refund = body.data?.refund
+      const status = String(refund?.refund_status ?? "UNKNOWN")
+
+      if (status === "FAILED" || status === "CANCELLED") {
+        this.#logger.error(
+          `[cashfree] Refund ${refund?.refund_id} on order ` +
+            `${body.data?.order?.order_id} came back ${status}. ` +
+            `${refund?.refund_amount} was NOT returned to the customer, and Medusa ` +
+            `still records it as refunded. Reconcile this order.`
+        )
+      } else {
+        this.#logger.info(
+          `[cashfree] Refund ${refund?.refund_id} on order ` +
+            `${body.data?.order?.order_id} is ${status}.`
+        )
+      }
+
+      return ignored
     }
 
     const orderId = body?.data?.order?.order_id

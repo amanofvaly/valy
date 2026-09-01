@@ -192,4 +192,18 @@ export class CashfreeClient {
       { method: "POST", body, idempotencyKey: body.refund_id }
     )
   }
+
+  /**
+   * Every refund Cashfree holds against this order.
+   *
+   * The one call that can answer "did the money actually leave". Creating a
+   * refund is not proof: the POST usually comes back `PENDING` and settles
+   * days later, and a refund that Medusa recorded can be missing here
+   * entirely if the request failed and the failure was swallowed upstream.
+   */
+  getOrderRefunds(orderId: string): Promise<CashfreeRefund[]> {
+    return this.#request<CashfreeRefund[]>(
+      `/orders/${encodeURIComponent(orderId)}/refunds`
+    )
+  }
 }

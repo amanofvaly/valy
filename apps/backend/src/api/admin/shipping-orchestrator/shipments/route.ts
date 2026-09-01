@@ -1,10 +1,16 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { PAYMENT_MONEY_FIELDS } from "../order-money"
+import {
+  HIDDEN_BUCKETS,
+  lifecycleOf,
+  orderMoney,
+} from "../order-lifecycle"
 
 /**
  * GET /admin/shipping-orchestrator/shipments
  *
- * Orders, seen as shipping work.
+ * Orders, seen as work.
  *
  * The unit is an order, not a fulfilment, because an order is what a person
  * thinks in and what they need to act on. An earlier version listed fulfilments
@@ -12,57 +18,17 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  * nothing appeared here until somebody had already fulfilled it by hand
  * elsewhere. That is the work this screen exists to remove.
  *
- * Query: ?state=to_ship|awaiting_pickup|in_transit|delivered|all
+ * This used to be a shipping queue only, and it asked for `payment_status`
+ * without ever getting one: that field does not exist on the `order` graph
+ * entity — it lives on `OrderDetail`, which has no query entry point, and is
+ * synthesised inside `getOrdersListWorkflow`. The request silently returned
+ * null, nothing rendered it, and nobody noticed. Money now comes from captures
+ * and refunds instead, via `order-lifecycle`.
+ *
+ * Query: ?state=needs_attention|to_ship|payment_pending|in_transit
+ *              |refund_due|completed|all
  *        &limit=&offset=&q=
  */
-
-/*
- * Buckets that are not shipping work, and so are hidden from every tab except
- * "all" and left out of the counts.
- */
-const HIDDEN_BUCKETS = ["no_shipping", "canceled"]
-
-const bucketOf = (order: any): string => {
-  // A cancelled order is not work. Without this it keeps every unfulfilled
-  // line it had, so `outstanding` stays true and it sits in "to ship" for
-  // good — cancelled, uncancellable again, and still counted.
-  if (order.canceled_at) {
-    return "canceled"
-  }
-
-  const live = (order.fulfillments ?? []).filter((f: any) => !f.canceled_at)
-
-  // Nothing shippable at all: a services-only order never belongs in a queue
-  // about parcels.
-  const shippable = (order.items ?? []).filter(
-    (item: any) => item.requires_shipping !== false
-  )
-  if (shippable.length === 0) {
-    return "no_shipping"
-  }
-
-  const outstanding = shippable.some(
-    (item: any) =>
-      (item.detail?.quantity ?? item.quantity ?? 0) -
-        (item.detail?.fulfilled_quantity ?? 0) >
-      0
-  )
-  const booked = live.filter((f: any) => f.data?.shiprocket_awb_codes)
-
-  if (outstanding || booked.length === 0) {
-    return "to_ship"
-  }
-
-  const states = booked.map((f: any) =>
-    String(f.data?.shipment_state ?? "awaiting_pickup")
-  )
-
-  if (states.every((s: string) => s === "delivered")) return "delivered"
-  if (states.every((s: string) => s === "awaiting_pickup")) {
-    return "awaiting_pickup"
-  }
-  return "in_transit"
-}
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY) as any
@@ -80,7 +46,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "email",
       "created_at",
       "canceled_at",
-      "payment_status",
+      "status",
+      "summary",
       "total",
       "currency_code",
       "items.id",
@@ -98,6 +65,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "shipping_address.last_name",
       "shipping_address.city",
       "shipping_address.postal_code",
+      ...PAYMENT_MONEY_FIELDS,
     ],
   })
 
@@ -108,14 +76,36 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         ?? live[0]?.data
         ?? {}
 
+      const life = lifecycleOf(order)
+      const m = orderMoney(order)
+
       return {
         order_id: order.id,
         display_id: order.display_id,
         email: order.email,
         created_at: order.created_at,
-        payment_status: order.payment_status,
+        status: order.status,
+        canceled_at: order.canceled_at,
         total: order.total,
         currency_code: order.currency_code,
+        // The one sentence the row leads with.
+        label: life.label,
+        detail: life.detail,
+        tone: life.tone,
+        /*
+         * The courier's own view, so the UI can say what cancelling would
+         * actually do without re-deriving it from the bucket — which no longer
+         * distinguishes "booked" from "delivered".
+         */
+        shipment_states: (order.fulfillments ?? [])
+          .filter((f: any) => !f.canceled_at && f.data?.shiprocket_awb_codes)
+          .map((f: any) => String(f.data?.shipment_state ?? "awaiting_pickup")),
+        // The money, so the UI never has to recompute it and disagree.
+        captured: m.captured,
+        refunded: m.refunded,
+        customer_owes: m.customerOwes,
+        refund_owed: m.refundOwed,
+        phantom_refund: m.phantomRefund,
         customer: [
           order.shipping_address?.first_name,
           order.shipping_address?.last_name,
@@ -124,7 +114,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           .join(" "),
         city: order.shipping_address?.city ?? null,
         postal_code: order.shipping_address?.postal_code ?? null,
-        bucket: bucketOf(order),
+        bucket: life.bucket,
         items: (order.items ?? [])
           .filter((item: any) => item.requires_shipping !== false)
           .map((item: any) => ({
@@ -170,7 +160,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const counts = (orders ?? []).reduce(
     (acc: Record<string, number>, order: any) => {
-      const bucket = bucketOf(order)
+      const bucket = lifecycleOf(order).bucket
       if (HIDDEN_BUCKETS.includes(bucket)) return acc
       acc[bucket] = (acc[bucket] ?? 0) + 1
       acc.all = (acc.all ?? 0) + 1

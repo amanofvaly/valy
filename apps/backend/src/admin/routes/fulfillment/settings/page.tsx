@@ -1976,7 +1976,7 @@ const ShippingOrchestrator = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Settings",
+  label: "Shipping settings",
 })
 
 export default ShippingOrchestrator
