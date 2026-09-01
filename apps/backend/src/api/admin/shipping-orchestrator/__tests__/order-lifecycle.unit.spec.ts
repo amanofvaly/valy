@@ -181,6 +181,53 @@ describe("lifecycleOf", () => {
   })
 
   /*
+   * Production order #1 again, after a human has closed it.
+   *
+   * Its Cashfree order lives in the sandbox and the live gateway 404s on the
+   * id, so the refund the books recorded can never be issued. No automatic
+   * rule will ever agree that it is finished, which is exactly why a person
+   * has to be able to say so.
+   */
+  it("lets a person close an order no rule will ever settle", () => {
+    const life = lifecycleOf(
+      order({
+        canceled_at: "2026-09-01T03:18:34.665Z",
+        total: 1672.7,
+        summary: { refunded_total: 1672.7 },
+        payment_collections: paid(1672.7, 0),
+        metadata: {
+          desk_completed_at: "2026-09-02T10:00:00.000Z",
+          desk_completed_by: "user_1",
+          desk_completed_note: "Sandbox payment, no real money",
+          desk_completed_outstanding: 1672.7,
+        },
+      })
+    )
+
+    expect(life.bucket).toBe("completed")
+    expect(life.label).toBe("Closed by hand")
+    // It still says what was left, rather than reading as though it balanced.
+    expect(life.detail).toContain("1672.70")
+    expect(life.detail).toContain("Sandbox payment")
+  })
+
+  it("does not invent an outstanding amount when nothing was left", () => {
+    const life = lifecycleOf(
+      order({
+        payment_collections: paid(1000),
+        metadata: {
+          desk_completed_at: "2026-09-02T10:00:00.000Z",
+          desk_completed_note: "Paid by bank transfer",
+          desk_completed_outstanding: 0,
+        },
+      })
+    )
+
+    expect(life.bucket).toBe("completed")
+    expect(life.detail).toBe("Paid by bank transfer")
+  })
+
+  /*
    * Without the epsilon a residue like this parks the order in Refund due
    * for ever, owing four-thousandths of a rupee that can never be returned.
    */

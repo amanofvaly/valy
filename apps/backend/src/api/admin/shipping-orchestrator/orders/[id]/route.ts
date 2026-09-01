@@ -59,6 +59,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "total",
       "currency_code",
       "summary",
+      "metadata",
       "items.id",
       "items.title",
       "items.quantity",

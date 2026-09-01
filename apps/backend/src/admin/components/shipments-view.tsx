@@ -58,6 +58,7 @@ const ShipmentsView = () => {
    */
   const [refundOnCancel, setRefundOnCancel] = useState(true)
   const [confirmComplete, setConfirmComplete] = useState(false)
+  const [completeNote, setCompleteNote] = useState("")
   const [confirmRefund, setConfirmRefund] = useState(false)
   const [results, setResults] = useState<{
     action: string
@@ -141,9 +142,14 @@ const ShipmentsView = () => {
   const selectedRefundable = selectedForCancel.filter(
     (row) => row.refund_owed > 0.01 || row.phantom_refund > 0.01
   )
+  /*
+   * Cancelled orders included, deliberately. Medusa refuses to set
+   * `status = completed` on one, but "cancelled and settled outside the
+   * system" is the case manual completion exists for — the server records it
+   * in metadata instead.
+   */
   const selectedCompletable = selectedForCancel.filter(
-    (row) =>
-      row.status !== "completed" && !row.canceled_at
+    (row) => row.status !== "completed" && !row.closed_by_hand
   )
 
   /*
@@ -153,7 +159,10 @@ const ShipmentsView = () => {
    * one row you could not select.
    */
   const completeOutstanding = selectedCompletable.filter(
-    (row) => row.customer_owes > 0.01 || row.refund_owed > 0.01
+    (row) =>
+      row.customer_owes > 0.01 ||
+      row.refund_owed > 0.01 ||
+      row.phantom_refund > 0.01
   )
 
   const cancelRefundTotal = selectedCancellable.reduce(
@@ -329,8 +338,10 @@ const ShipmentsView = () => {
         const payload =
           action === "cancel"
             ? { refund: refundOnCancel }
-            : action === "refund" || action === "complete"
-              ? {}
+            : action === "complete"
+              ? { note: completeNote || undefined }
+              : action === "refund"
+                ? {}
               : { book: action === "ship" }
 
         const response = await fetch(
@@ -713,42 +724,86 @@ const ShipmentsView = () => {
 
       {/*
         Completing is an assertion that you are finished with an order, not a
-        claim that its books balance — so anything still outstanding is named
-        here rather than quietly closed over.
+        claim that its books balance. Anything still unaccounted for is named
+        here and carried onto the row afterwards, and has to be explained —
+        this is the one action that silences a money warning, and an
+        unexplained override is how the original problem stayed invisible.
       */}
-      <Prompt open={confirmComplete} onOpenChange={setConfirmComplete}>
-        <Prompt.Content>
-          <Prompt.Header>
-            <Prompt.Title>Mark {selectedCompletable.length} complete</Prompt.Title>
-            <Prompt.Description>
-              {completeOutstanding.length > 0
-                ? `${completeOutstanding.length} of these still has money outstanding: ${completeOutstanding
-                    .map(
-                      (row) =>
-                        `#${row.display_id} — ${formatMoney(
-                          row.customer_owes > 0.01
-                            ? row.customer_owes
-                            : row.refund_owed,
-                          row.currency_code
-                        )}`
-                    )
-                    .join(", ")}. Completing stops them appearing in the money queues.`
-                : "These orders leave the working queues and rest in Completed."}
-            </Prompt.Description>
-          </Prompt.Header>
-          <Prompt.Footer>
-            <Prompt.Cancel>Back</Prompt.Cancel>
-            <Prompt.Action
-              onClick={async () => {
-                setConfirmComplete(false)
-                await runBulk("complete", selectedCompletable)
-              }}
-            >
-              Mark complete
-            </Prompt.Action>
-          </Prompt.Footer>
-        </Prompt.Content>
-      </Prompt>
+      <FocusModal open={confirmComplete} onOpenChange={setConfirmComplete}>
+        <FocusModal.Content>
+          <FocusModal.Header>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
+                size="small"
+                isLoading={booking}
+                disabled={
+                  completeOutstanding.length > 0 && !completeNote.trim()
+                }
+                onClick={async () => {
+                  setConfirmComplete(false)
+                  await runBulk("complete", selectedCompletable)
+                }}
+              >
+                Mark {selectedCompletable.length} complete
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => setConfirmComplete(false)}
+              >
+                Back
+              </Button>
+            </div>
+          </FocusModal.Header>
+          <FocusModal.Body className="flex flex-col gap-4 p-6">
+            <div className="flex flex-col gap-1">
+              <Heading level="h2">Close these orders out</Heading>
+              <Text className="text-ui-fg-subtle text-sm">
+                They leave the working queues and rest in Completed.
+              </Text>
+            </div>
+
+            {completeOutstanding.length > 0 && (
+              <div className="bg-ui-bg-subtle flex flex-col gap-2 rounded-lg p-4">
+                <Text size="small" weight="plus" className="text-ui-tag-orange-text">
+                  {completeOutstanding.length} still {completeOutstanding.length === 1 ? "has" : "have"} money unaccounted for
+                </Text>
+                {completeOutstanding.map((row) => (
+                  <Text
+                    key={row.order_id}
+                    size="small"
+                    className="text-ui-fg-subtle"
+                  >
+                    #{row.display_id} —{" "}
+                    {formatMoney(
+                      Math.max(
+                        row.customer_owes,
+                        row.refund_owed,
+                        row.phantom_refund
+                      ),
+                      row.currency_code
+                    )}
+                  </Text>
+                ))}
+                <Text size="small" className="text-ui-fg-subtle">
+                  Closing them stops these amounts appearing in the money
+                  queues. The figure stays on each row so it is never lost.
+                </Text>
+                <Label size="small" weight="plus" htmlFor="complete-note">
+                  Why is this settled?
+                </Label>
+                <Input
+                  id="complete-note"
+                  placeholder="Refunded by bank transfer / sandbox payment, no real money / written off"
+                  value={completeNote}
+                  onChange={(e) => setCompleteNote(e.target.value)}
+                />
+              </div>
+            )}
+          </FocusModal.Body>
+        </FocusModal.Content>
+      </FocusModal>
 
       {/*
         The order's own history. Every complaint about the old screen came down
@@ -1407,7 +1462,7 @@ const ShipmentsView = () => {
                                 Refund&#8230;
                               </DropdownMenu.Item>
                             )}
-                            {row.status !== "completed" && !row.canceled_at && (
+                            {row.status !== "completed" && !row.closed_by_hand && (
                               <DropdownMenu.Item
                                 onClick={() => {
                                   setSelected(new Set([row.order_id]))

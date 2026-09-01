@@ -22,6 +22,7 @@ const row = (overrides: Partial<Shipment> = {}): Shipment =>
     customer_owes: 0,
     refund_owed: 0,
     phantom_refund: 0,
+    closed_by_hand: false,
     items: [],
     awb: null,
     quoted_courier: null,

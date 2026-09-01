@@ -48,6 +48,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "canceled_at",
       "status",
       "summary",
+      "metadata",
       "total",
       "currency_code",
       "items.id",
@@ -106,6 +107,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         customer_owes: m.customerOwes,
         refund_owed: m.refundOwed,
         phantom_refund: m.phantomRefund,
+        closed_by_hand: Boolean(order.metadata?.desk_completed_at),
         customer: [
           order.shipping_address?.first_name,
           order.shipping_address?.last_name,

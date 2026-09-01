@@ -32,6 +32,8 @@ export type Shipment = {
   customer_owes: number
   refund_owed: number
   phantom_refund: number
+  /** Someone closed this out by hand; see the complete route. */
+  closed_by_hand: boolean
   items: Array<{ title: string; quantity: number }>
   awb: string | null
   quoted_courier: string | null

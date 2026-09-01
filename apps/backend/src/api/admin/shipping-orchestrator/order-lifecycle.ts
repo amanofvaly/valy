@@ -142,6 +142,35 @@ export const lifecycleOf = (order: any): Lifecycle => {
   const delivered = states.length > 0 && states.every((s) => s === "delivered")
   const currency = String(order.currency_code ?? "").toUpperCase()
 
+  /*
+   * --- 0. A person has said this one is finished. ---------------------------
+   *
+   * Above everything, including the money checks, because this is the only
+   * branch that is a human statement rather than an inference. Someone looked
+   * at the order, saw what was outstanding, and said it is settled — usually
+   * offline, sometimes because the money can no longer be moved at all.
+   *
+   * It does not pretend the books balance. Whatever was unaccounted for is
+   * carried in the detail line, so the row still says so; it just stops
+   * shouting from a queue nobody can ever empty.
+   */
+  const closedByHand = order.metadata?.desk_completed_at
+
+  if (closedByHand) {
+    const left = Number(order.metadata?.desk_completed_outstanding ?? 0)
+    const note = order.metadata?.desk_completed_note
+
+    return {
+      bucket: "completed",
+      label: "Closed by hand",
+      detail:
+        left > MONEY_EPSILON
+          ? `${money(left)} ${currency} never accounted for${note ? ` — ${note}` : ""}`
+          : (note ?? "Settled outside the system"),
+      tone: "grey",
+    }
+  }
+
   // --- 1. Stuck. Anything where the books and the world disagree. -----------
 
   if (m.phantomRefund > MONEY_EPSILON) {
