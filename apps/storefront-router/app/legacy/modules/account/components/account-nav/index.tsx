@@ -10,6 +10,7 @@ import MapPin from "@modules/common/icons/map-pin"
 import Package from "@modules/common/icons/package"
 import User from "@modules/common/icons/user"
 import { useParams, usePathname } from "next/navigation"
+import { marketPath } from "~/lib/market"
 
 /**
  * The account sidebar, and on a phone a row of links.
@@ -49,7 +50,7 @@ const AccountNav = ({
   const route = usePathname()
   const { countryCode } = useParams() as { countryCode: string }
 
-  const isActive = (href: string) => route === `/${countryCode}${href}`
+  const isActive = (href: string) => route === marketPath(countryCode, href)
 
   return (
     <nav aria-label="Account" data-testid="account-nav">

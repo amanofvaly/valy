@@ -4,7 +4,8 @@ import { setAddresses } from "@lib/data/cart-actions"
 import { HttpTypes } from "@medusajs/types"
 import Step from "@modules/checkout/components/step"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, useRef } from "react"
+import { marketPath } from "~/lib/market"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
 import StepActions from "../step-actions"
@@ -35,17 +36,26 @@ const Addresses = ({
     message && typeof message !== "string" ? message.cart : null
   const currentCart = submittedCart ?? cart
 
+  // One advance per submission. `router.refresh()` below causes a re-render, so
+  // an effect that could run twice for the same result would keep re-triggering
+  // itself; this makes that impossible rather than relying on the dependencies.
+  const advanced = useRef<unknown>(null)
+
   useEffect(() => {
-    if (!message || typeof message === "string") {
+    if (!message || typeof message === "string" || advanced.current === message) {
       return
     }
 
+    advanced.current = message
+
     // This is a step change, not a page navigation. Keep the completed address
-    // mounted while the server refreshes delivery data in the background.
+    // mounted while the server refreshes delivery data in the background. The
+    // path has to be the canonical one for the market — the default market is
+    // served unprefixed, so `/in/checkout` is a redirect, not a destination.
     window.history.replaceState(
       null,
       "",
-      `/${message.countryCode}/checkout?step=delivery`
+      `${marketPath(message.countryCode, "/checkout")}?step=delivery`
     )
     router.refresh()
   }, [message, router])

@@ -7,6 +7,7 @@ import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import { useParams } from "next/navigation"
 import { useActionState } from "react"
+import { marketPath } from "~/lib/market"
 
 /**
  * Sign in.
@@ -60,7 +61,7 @@ const Login = ({
           <input
             type="hidden"
             name="redirect"
-            value={countryCode ? `/${countryCode}${redirectTo}` : redirectTo}
+            value={marketPath(countryCode, redirectTo)}
           />
         )}
 

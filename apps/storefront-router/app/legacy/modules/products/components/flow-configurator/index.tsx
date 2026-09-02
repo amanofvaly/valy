@@ -32,6 +32,7 @@ import { Button } from "@modules/common/components/ui"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { marketPath } from "~/lib/market"
 import { Choice, ChoiceGroup } from "./choice"
 
 /**
@@ -240,7 +241,7 @@ export default function FlowConfigurator({
           summary: buildSummary(selection, drivesLabel(selection)),
           countryCode,
         })
-        router.push(`/${countryCode}/checkout?step=address`)
+        router.push(`${marketPath(countryCode, "/checkout")}?step=address`)
       } catch (e) {
         setError(
           e instanceof Error

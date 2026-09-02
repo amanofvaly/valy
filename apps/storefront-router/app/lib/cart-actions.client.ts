@@ -1,3 +1,4 @@
+import { marketPath } from "./market"
 import { refreshSession } from "./client-refresh"
 
 async function cartMutation(operation: string, payload: Record<string, unknown>) {
@@ -53,7 +54,7 @@ export const placeOrder = async () => {
   const order = result.completed?.order
   if (order?.id) {
     const country = order.shipping_address?.country_code?.toLowerCase()
-    window.location.assign(country === "in" || !country ? `/order/${order.id}/confirmed` : `/${country}/order/${order.id}/confirmed`)
+    window.location.assign(marketPath(country, `/order/${order.id}/confirmed`))
   }
   return result
 }
