@@ -4,6 +4,7 @@ import { PageShell } from "../../app/components/page-shell"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
 import { RoutePending } from "../components/route-pending"
 import { orderQuery } from "../data/session"
+import { orderNumber } from "../../app/legacy/lib/util/order-number"
 
 export const Route = createFileRoute("/$countryCode/account/orders/details/$id")({
   loader: async ({ context, params }) => {
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/$countryCode/account/orders/details/$id")
   },
   pendingComponent: RoutePending,
   head: ({ loaderData }) => ({ meta: [
-    { title: `Order #${loaderData?.display_id ?? ""} · Valy` },
+    { title: loaderData ? `Order #${orderNumber(loaderData)} · Valy` : "Order · Valy" },
     { name: "description", content: "View your order" },
   ] }),
   component: OrderDetailsRoute,

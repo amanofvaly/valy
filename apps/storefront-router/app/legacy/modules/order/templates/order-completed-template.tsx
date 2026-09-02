@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import { orderNumber } from "@lib/util/order-number"
 import CartTotals from "@modules/common/components/cart-totals"
 import CheckCircle from "@modules/common/icons/check-circle"
 import Help from "@modules/order/components/help"
@@ -49,7 +50,7 @@ export default function OrderCompletedTemplate({
                 className="font-mono tabular text-ink"
                 data-testid="order-id"
               >
-                {order.display_id}
+                {orderNumber(order)}
               </span>
             </p>
           </div>

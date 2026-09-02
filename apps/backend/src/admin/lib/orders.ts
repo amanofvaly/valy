@@ -9,7 +9,7 @@
 
 export type Shipment = {
   order_id: string
-  display_id: number
+  display_id: string | number
   email: string
   city: string | null
   postal_code: string | null

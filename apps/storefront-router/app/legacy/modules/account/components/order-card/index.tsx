@@ -1,4 +1,5 @@
 import { convertToLocale } from "@lib/util/money"
+import { orderNumber } from "@lib/util/order-number"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Badge, Button } from "@modules/common/components/ui"
@@ -25,7 +26,7 @@ const OrderCard = ({ order }: { order: HttpTypes.StoreOrder }) => {
     <article className="flex flex-col gap-4" data-testid="order-card">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h3 className="font-mono text-sm tabular text-ink">
-          #<span data-testid="order-display-id">{order.display_id}</span>
+          #<span data-testid="order-display-id">{orderNumber(order)}</span>
         </h3>
         <span className="text-xs text-muted" data-testid="order-created-at">
           {new Date(order.created_at).toLocaleDateString("en-IN", {

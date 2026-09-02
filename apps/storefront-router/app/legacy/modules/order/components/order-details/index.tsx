@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import { orderNumber } from "@lib/util/order-number"
 import { Badge } from "@modules/common/components/ui"
 
 /**
@@ -25,7 +26,7 @@ const OrderDetails = ({
           className="font-mono text-sm tabular text-ink"
           data-testid="order-id"
         >
-          {order.display_id}
+          {orderNumber(order)}
         </dd>
       </div>
 

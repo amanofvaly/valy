@@ -1,4 +1,5 @@
 import { convertToLocale } from "@lib/util/money"
+import { orderNumber } from "@lib/util/order-number"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -65,9 +66,9 @@ const Overview = ({ customer, orders }: OverviewProps) => (
                   <span
                     className="font-mono text-sm tabular text-ink"
                     data-testid="order-id"
-                    data-value={order.display_id}
+                    data-value={orderNumber(order)}
                   >
-                    #{order.display_id}
+                    #{orderNumber(order)}
                   </span>
                   <span
                     className="text-xs text-muted"

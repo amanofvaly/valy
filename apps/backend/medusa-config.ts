@@ -1,4 +1,5 @@
-import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { randomInt } from "node:crypto"
+import { loadEnv, defineConfig, Modules } from "@medusajs/framework/utils"
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -15,6 +16,18 @@ module.exports = defineConfig({
     }
   },
   modules: [
+    {
+      key: Modules.ORDER,
+      options: {
+        /*
+         * Customer-visible order numbers must not reveal order volume. Medusa
+         * keeps its sequential display_id internally; this separately stored,
+         * uniquely indexed value is the reference customers and staff use.
+         */
+        generateCustomDisplayId: async () =>
+          String(randomInt(1_000_000_000, 10_000_000_000)),
+      },
+    },
     {
       resolve: "@medusajs/file",
       options: {

@@ -151,13 +151,17 @@ export async function submitContactMessage(request: Request, data: Record<string
 
 export async function listOrders(request: Request) {
   if (!readCookie(request, "_medusa_jwt")) return []
-  return medusa<{ orders: HttpTypes.StoreOrder[] }>("/store/orders?limit=100&order=-created_at", {}, request)
+  return medusa<{ orders: HttpTypes.StoreOrder[] }>(
+    `/store/orders?limit=100&order=-created_at&fields=${encodeURIComponent("+custom_display_id")}`,
+    {},
+    request
+  )
     .then(({ orders }) => orders)
     .catch(() => [])
 }
 
 export async function retrieveOrder(request: Request, id: string) {
-  const fields = "*payment_collections.payments,*items,*items.metadata,+items.is_tax_inclusive,*items.variant,*items.product,*items.product.type,*shipping_methods,*fulfillments"
+  const fields = "+custom_display_id,*payment_collections.payments,*items,*items.metadata,+items.is_tax_inclusive,*items.variant,*items.product,*items.product.type,*shipping_methods,*fulfillments"
   return medusa<{ order: HttpTypes.StoreOrder }>(`/store/orders/${id}?fields=${encodeURIComponent(fields)}`, {}, request)
     .then(({ order }) => order)
 }

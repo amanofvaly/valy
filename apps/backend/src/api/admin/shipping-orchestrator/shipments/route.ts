@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { orderNumber } from "../../../../utils/order-number"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { PAYMENT_MONEY_FIELDS } from "../order-money"
 import {
@@ -43,6 +44,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     fields: [
       "id",
       "display_id",
+      "custom_display_id",
       "email",
       "created_at",
       "canceled_at",
@@ -82,7 +84,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
       return {
         order_id: order.id,
-        display_id: order.display_id,
+        display_id: orderNumber(order),
         email: order.email,
         created_at: order.created_at,
         status: order.status,

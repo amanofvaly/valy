@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { orderNumber } from "../../../../../utils/order-number"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { PAYMENT_MONEY_FIELDS } from "../../order-money"
 import { lifecycleOf, orderMoney } from "../../order-lifecycle"
@@ -52,6 +53,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     fields: [
       "id",
       "display_id",
+      "custom_display_id",
       "email",
       "status",
       "created_at",
@@ -214,7 +216,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   return res.json({
     order: {
       order_id: order.id,
-      display_id: order.display_id,
+      display_id: orderNumber(order),
       email: order.email,
       status: order.status,
       canceled_at: order.canceled_at,
