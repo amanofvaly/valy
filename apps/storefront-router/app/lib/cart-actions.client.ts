@@ -1,7 +1,11 @@
 import { marketPath } from "./market"
 import { refreshSession } from "./client-refresh"
 
-async function cartMutation(operation: string, payload: Record<string, unknown>) {
+async function cartMutation(
+  operation: string,
+  payload: Record<string, unknown>,
+  refresh = true
+) {
   const response = await fetch("/api/cart", {
     method: "POST",
     credentials: "same-origin",
@@ -11,7 +15,9 @@ async function cartMutation(operation: string, payload: Record<string, unknown>)
   if (!response.ok) throw new Error((await response.text()) || "Cart update failed")
   const result = await response.json()
   // Stands in for the `revalidateTag` these actions used to end with.
-  await refreshSession()
+  if (refresh) {
+    await refreshSession()
+  }
   return result
 }
 
@@ -50,7 +56,13 @@ export const setAddresses = (_state: unknown, formData: FormData) => {
 }
 export const initiatePaymentSession = (_cart: unknown, data: unknown) => cartMutation("payment", { data })
 export const placeOrder = async () => {
-  const result = await cartMutation("complete", {})
+  /*
+   * Completion clears the cart cookie. Refreshing the checkout after that
+   * makes its loader render a 404 before this function can navigate to the
+   * newly-created order, so completion is the one cart mutation that carries
+   * its result straight into the next page without revalidating this one.
+   */
+  const result = await cartMutation("complete", {}, false)
   const order = result.completed?.order
   if (order?.id) {
     const country = order.shipping_address?.country_code?.toLowerCase()
