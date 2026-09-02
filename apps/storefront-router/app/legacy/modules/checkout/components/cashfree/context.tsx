@@ -143,8 +143,9 @@ export const CashfreeProvider = ({
          * than navigating away from a checkout that has not been completed in
          * Medusa yet. Where a method insists on a full redirect — a UPI intent
          * handing off to an app on a phone — Cashfree falls back to the order's
-         * `return_url`, which points at this step, and the review step
-         * finishes the order when the customer lands back on it.
+         * `return_url`. The dedicated return page completes the cart when the
+         * bank returns the whole browser, while an in-modal return leaves that
+         * work to this checkout after the SDK resolves.
          */
         const result = await sdk.pay({
           paymentMethod: component as never,
@@ -187,7 +188,8 @@ export const CashfreeProvider = ({
          * completed in Medusa yet, so navigating away from this page would
          * strand an order that Cashfree is about to take money for. Cashfree
          * still falls back to the order's `return_url` where a method insists
-         * on a real redirect, such as a UPI intent handing off to an app.
+         * on a real redirect, such as a UPI intent handing off to an app. The
+         * return page owns cart completion in that full-page case.
          */
         const result = await sdk.checkout({
           paymentSessionId,

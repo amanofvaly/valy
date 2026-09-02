@@ -78,10 +78,12 @@ rather than a store that looks like it is taking money and is not.
    `PAYMENT_SUCCESS_WEBHOOK` and `PAYMENT_FAILED_WEBHOOK`. Signatures are
    verified against `CASHFREE_SECRET_KEY`; anything that does not verify is
    logged and ignored rather than treated as a failed payment.
-4. **Check the return URL.** `medusa-config.ts` builds it from
-   `STOREFRONT_URL`, which must be the public origin. It is only used by
-   methods that force a full redirect, but those are exactly the ones on
-   phones.
+4. **Check the return URL.** `medusa-config.ts` builds the dedicated Cashfree
+   return route from `STOREFRONT_URL`, which must be the public origin. It is
+   only used by methods that force a redirect, but those are exactly the ones
+   commonly used on phones. The return route completes the cart before it
+   opens the confirmation page because Cashfree's order id is a payment-session
+   id, not a Medusa order id.
 
 ## What Cashfree does that Medusa does not expect
 

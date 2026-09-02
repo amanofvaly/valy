@@ -79,8 +79,13 @@ module.exports = defineConfig({
                   ? "production"
                   : "sandbox"),
               apiVersion: process.env.CASHFREE_API_VERSION || undefined,
-              // Where the bank's 3-D Secure page or the UPI app returns to.
-              returnUrl: `${process.env.STOREFRONT_URL || "http://localhost:8000"}/order/confirmed/{order_id}`,
+              /*
+               * Cashfree's order id is the Medusa payment-session id, not the
+               * Medusa order id. Return through checkout so the storefront can
+               * complete the cart and obtain the real order id before opening
+               * the confirmation page.
+               */
+              returnUrl: `${process.env.STOREFRONT_URL || "http://localhost:8000"}/payments/cashfree/return?order_id={order_id}`,
               notifyUrl: process.env.CASHFREE_NOTIFY_URL || undefined,
             },
           },

@@ -50,6 +50,7 @@ import { Route as CountryCodeCategoriesHandleRouteImport } from './routes/$count
 import { Route as CountryCodeCollectionsHandleRouteImport } from './routes/$countryCode.collections.$handle'
 import { Route as CountryCodeProductsHandleRouteImport } from './routes/$countryCode.products.$handle'
 import { Route as OrderIdConfirmedRouteImport } from './routes/order.$id.confirmed'
+import { Route as PaymentsCashfreeReturnRouteImport } from './routes/payments.cashfree.return'
 import { Route as CountryCodeOrderIdConfirmedRouteImport } from './routes/$countryCode.order.$id.confirmed'
 import { Route as AccountOrdersDetailsIdRouteImport } from './routes/account.orders.details.$id'
 import { Route as CountryCodeAccountOrdersDetailsIdRouteImport } from './routes/$countryCode.account.orders.details.$id'
@@ -274,6 +275,11 @@ const OrderIdConfirmedRoute = OrderIdConfirmedRouteImport.update({
   path: '/order/$id/confirmed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentsCashfreeReturnRoute = PaymentsCashfreeReturnRouteImport.update({
+  id: '/payments/cashfree/return',
+  path: '/payments/cashfree/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CountryCodeOrderIdConfirmedRoute =
   CountryCodeOrderIdConfirmedRouteImport.update({
     id: '/order/$id/confirmed',
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/$countryCode/collections/$handle': typeof CountryCodeCollectionsHandleRoute
   '/$countryCode/products/$handle': typeof CountryCodeProductsHandleRoute
   '/order/$id/confirmed': typeof OrderIdConfirmedRoute
+  '/payments/cashfree/return': typeof PaymentsCashfreeReturnRoute
   '/$countryCode/account/': typeof CountryCodeAccountIndexRoute
   '/$countryCode/order/$id/confirmed': typeof CountryCodeOrderIdConfirmedRoute
   '/account/orders/details/$id': typeof AccountOrdersDetailsIdRoute
@@ -420,6 +427,7 @@ export interface FileRoutesByTo {
   '/$countryCode/collections/$handle': typeof CountryCodeCollectionsHandleRoute
   '/$countryCode/products/$handle': typeof CountryCodeProductsHandleRoute
   '/order/$id/confirmed': typeof OrderIdConfirmedRoute
+  '/payments/cashfree/return': typeof PaymentsCashfreeReturnRoute
   '/$countryCode/account': typeof CountryCodeAccountIndexRoute
   '/$countryCode/order/$id/confirmed': typeof CountryCodeOrderIdConfirmedRoute
   '/account/orders/details/$id': typeof AccountOrdersDetailsIdRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/$countryCode/collections/$handle': typeof CountryCodeCollectionsHandleRoute
   '/$countryCode/products/$handle': typeof CountryCodeProductsHandleRoute
   '/order/$id/confirmed': typeof OrderIdConfirmedRoute
+  '/payments/cashfree/return': typeof PaymentsCashfreeReturnRoute
   '/$countryCode/account/': typeof CountryCodeAccountIndexRoute
   '/$countryCode/order/$id/confirmed': typeof CountryCodeOrderIdConfirmedRoute
   '/account/orders/details/$id': typeof AccountOrdersDetailsIdRoute
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/$countryCode/collections/$handle'
     | '/$countryCode/products/$handle'
     | '/order/$id/confirmed'
+    | '/payments/cashfree/return'
     | '/$countryCode/account/'
     | '/$countryCode/order/$id/confirmed'
     | '/account/orders/details/$id'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
     | '/$countryCode/collections/$handle'
     | '/$countryCode/products/$handle'
     | '/order/$id/confirmed'
+    | '/payments/cashfree/return'
     | '/$countryCode/account'
     | '/$countryCode/order/$id/confirmed'
     | '/account/orders/details/$id'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/$countryCode/collections/$handle'
     | '/$countryCode/products/$handle'
     | '/order/$id/confirmed'
+    | '/payments/cashfree/return'
     | '/$countryCode/account/'
     | '/$countryCode/order/$id/confirmed'
     | '/account/orders/details/$id'
@@ -667,6 +679,7 @@ export interface RootRouteChildren {
   ProductsHandleRoute: typeof ProductsHandleRoute
   AccountIndexRoute: typeof AccountIndexRoute
   OrderIdConfirmedRoute: typeof OrderIdConfirmedRoute
+  PaymentsCashfreeReturnRoute: typeof PaymentsCashfreeReturnRoute
   OrderIdTransferTokenAcceptRoute: typeof OrderIdTransferTokenAcceptRoute
   OrderIdTransferTokenDeclineRoute: typeof OrderIdTransferTokenDeclineRoute
   OrderIdTransferTokenIndexRoute: typeof OrderIdTransferTokenIndexRoute
@@ -961,6 +974,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderIdConfirmedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payments/cashfree/return': {
+      id: '/payments/cashfree/return'
+      path: '/payments/cashfree/return'
+      fullPath: '/payments/cashfree/return'
+      preLoaderRoute: typeof PaymentsCashfreeReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$countryCode/order/$id/confirmed': {
       id: '/$countryCode/order/$id/confirmed'
       path: '/order/$id/confirmed'
@@ -1134,6 +1154,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsHandleRoute: ProductsHandleRoute,
   AccountIndexRoute: AccountIndexRoute,
   OrderIdConfirmedRoute: OrderIdConfirmedRoute,
+  PaymentsCashfreeReturnRoute: PaymentsCashfreeReturnRoute,
   OrderIdTransferTokenAcceptRoute: OrderIdTransferTokenAcceptRoute,
   OrderIdTransferTokenDeclineRoute: OrderIdTransferTokenDeclineRoute,
   OrderIdTransferTokenIndexRoute: OrderIdTransferTokenIndexRoute,
